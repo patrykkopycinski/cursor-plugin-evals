@@ -1,0 +1,135 @@
+version: "3.8"
+
+services:
+  test-es:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+    container_name: cpe-test-es
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=changeme
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - xpack.security.http.ssl.enabled=false
+      - xpack.license.self_generated.type=trial
+    ports:
+      - "9220:9200"
+    networks:
+      - test-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf -u elastic:changeme http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  test-kibana:
+    image: docker.elastic.co/kibana/kibana:8.17.0
+    container_name: cpe-test-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://test-es:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=changeme
+      - xpack.security.enabled=true
+      - xpack.encryptedSavedObjects.encryptionKey=a]3{~+FY-90bcd1234ef5678abcde90f
+      - server.host=0.0.0.0
+    ports:
+      - "5620:5601"
+    networks:
+      - test-net
+    depends_on:
+      test-es:
+        condition: service_healthy
+
+  obs-es:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+    container_name: cpe-obs-es
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=changeme
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - xpack.security.http.ssl.enabled=false
+      - xpack.license.self_generated.type=trial
+    ports:
+      - "9210:9200"
+    networks:
+      - obs-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf -u elastic:changeme http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  obs-kibana:
+    image: docker.elastic.co/kibana/kibana:8.17.0
+    container_name: cpe-obs-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://obs-es:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=changeme
+      - xpack.security.enabled=true
+      - xpack.encryptedSavedObjects.encryptionKey=a]3{~+FY-90bcd1234ef5678abcde90f
+      - server.host=0.0.0.0
+    ports:
+      - "5601:5601"
+    networks:
+      - obs-net
+    depends_on:
+      obs-es:
+        condition: service_healthy
+
+  edot-collector:
+    image: docker.elastic.co/beats/elastic-agent:8.17.0
+    container_name: cpe-edot-collector
+    volumes:
+      - ./edot-collector.yml:/etc/otelcol/config.yaml:ro
+    command: ["otel-collector", "--config", "/etc/otelcol/config.yaml"]
+    ports:
+      - "4318:4318"
+    networks:
+      - test-net
+      - obs-net
+    depends_on:
+      obs-es:
+        condition: service_healthy
+
+  test-setup:
+    image: curlimages/curl:latest
+    container_name: cpe-test-setup
+    depends_on:
+      test-es:
+        condition: service_healthy
+    networks:
+      - test-net
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Waiting for Elasticsearch..."
+        until curl -sf -u elastic:changeme http://test-es:9200/_cluster/health; do
+          sleep 2
+        done
+        echo ""
+        echo "Setting kibana_system password..."
+        curl -sf -u elastic:changeme -X POST \
+          "http://test-es:9200/_security/user/kibana_system/_password" \
+          -H 'Content-Type: application/json' \
+          -d '{"password":"changeme"}'
+        echo ""
+        echo "Creating API key..."
+        curl -sf -u elastic:changeme -X POST \
+          "http://test-es:9200/_security/api_key" \
+          -H 'Content-Type: application/json' \
+          -d '{"name":"cpe-test-key","role_descriptors":{"all_access":{"cluster":["all"],"index":[{"names":["*"],"privileges":["all"]}]}}}'
+        echo ""
+        echo "Creating sample detection rule index..."
+        curl -sf -u elastic:changeme -X PUT \
+          "http://test-es:9200/.siem-signals-default" \
+          -H 'Content-Type: application/json' \
+          -d '{"settings":{"number_of_shards":1}}'
+        echo ""
+        echo "Setup complete."
+
+networks:
+  test-net:
+    driver: bridge
+  obs-net:
+    driver: bridge

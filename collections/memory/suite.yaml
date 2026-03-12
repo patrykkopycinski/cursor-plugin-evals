@@ -1,0 +1,85 @@
+name: memory-server
+layer: integration
+
+tests:
+  - name: store-memory
+    tool: store_memory
+    args:
+      key: test-key
+      value: "test value"
+    assert:
+      - field: content[0].text
+        op: contains
+        value: stored
+
+  - name: retrieve-memory
+    tool: retrieve_memory
+    args:
+      key: test-key
+    assert:
+      - field: content[0].text
+        op: contains
+        value: test value
+
+  - name: list-memories
+    tool: list_memories
+    args: {}
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: delete-memory
+    tool: delete_memory
+    args:
+      key: test-key
+    assert:
+      - field: content[0].text
+        op: contains
+        value: deleted
+
+  - name: search-memories
+    tool: search_memories
+    args:
+      query: test
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: update-memory
+    tool: update_memory
+    args:
+      key: update-key
+      value: "updated value"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: retrieve-missing-key
+    tool: retrieve_memory
+    args:
+      key: nonexistent-key-xyz
+    expect_error: true
+
+  - name: delete-missing-key
+    tool: delete_memory
+    args:
+      key: nonexistent-key-xyz
+    expect_error: true
+
+  - name: store-duplicate-key
+    tool: store_memory
+    args:
+      key: dup-key
+      value: "value-1"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: overwrite-duplicate-key
+    tool: store_memory
+    args:
+      key: dup-key
+      value: "value-2"
+    assert:
+      - field: content[0].text
+        op: exists

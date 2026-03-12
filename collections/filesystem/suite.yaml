@@ -1,0 +1,110 @@
+name: filesystem-server
+layer: integration
+
+tests:
+  - name: read-file
+    tool: read_file
+    args:
+      path: /tmp/test-eval/hello.txt
+    assert:
+      - field: content[0].text
+        op: exists
+      - field: content[0].type
+        op: eq
+        value: text
+
+  - name: write-file
+    tool: write_file
+    args:
+      path: /tmp/test-eval/output.txt
+      content: "hello from eval"
+    assert:
+      - field: content[0].text
+        op: contains
+        value: successfully
+
+  - name: list-directory
+    tool: list_directory
+    args:
+      path: /tmp/test-eval
+    assert:
+      - field: content[0].text
+        op: exists
+      - field: content[0].type
+        op: eq
+        value: text
+
+  - name: create-directory
+    tool: create_directory
+    args:
+      path: /tmp/test-eval/new-dir
+    assert:
+      - field: content[0].text
+        op: contains
+        value: created
+
+  - name: move-file
+    tool: move_file
+    args:
+      source: /tmp/test-eval/moveme.txt
+      destination: /tmp/test-eval/moved.txt
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: search-files
+    tool: search_files
+    args:
+      path: /tmp/test-eval
+      pattern: "*.txt"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: get-file-info
+    tool: get_file_info
+    args:
+      path: /tmp/test-eval/hello.txt
+    assert:
+      - field: content[0].text
+        op: contains
+        value: size
+
+  - name: read-multiple-files
+    tool: read_multiple_files
+    args:
+      paths:
+        - /tmp/test-eval/hello.txt
+        - /tmp/test-eval/output.txt
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: list-allowed-directories
+    tool: list_allowed_directories
+    args: {}
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: edit-file
+    tool: edit_file
+    args:
+      path: /tmp/test-eval/hello.txt
+      old_text: hello
+      new_text: goodbye
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: read-missing-file-error
+    tool: read_file
+    args:
+      path: /tmp/test-eval/does-not-exist.txt
+    expect_error: true
+
+  - name: restricted-path-error
+    tool: read_file
+    args:
+      path: /etc/shadow
+    expect_error: true

@@ -1,0 +1,143 @@
+plugin:
+  name: elastic-cursor-plugin
+  dir: "${PLUGIN_DIR}"
+  entry: "node dist/index.js"
+  build_command: "npm run build"
+  env:
+    ES_URL: "${ES_URL:-http://localhost:9200}"
+    ES_API_KEY: "${ES_API_KEY}"
+    KIBANA_URL: "${KIBANA_URL:-http://localhost:5601}"
+
+infrastructure:
+  docker_compose: "./docker/docker-compose.yml"
+  obs_es_url: "http://localhost:9210"
+
+tracing:
+  otel_endpoint: "http://localhost:4318"
+  langsmith_project: "cursor-plugin-evals"
+
+defaults:
+  timeout: 30000
+  judge_model: "gpt-4o"
+  repetitions: 3
+  thresholds:
+    tool-selection: 0.9
+    tool-args: 0.7
+    tool-sequence: 0.8
+    response-quality: 0.7
+    mcp-protocol: 1.0
+    security: 1.0
+
+suites:
+  # Unit tests
+  - name: tool-registration
+    layer: unit
+    tests:
+      - name: all-tools-registered
+        check: registration
+        expected_tools:
+          - elasticsearch_api
+          - esql_query
+          - kibana_api
+          - cloud_api
+          - discover_data
+          - discover_o11y_data
+          - discover_security_data
+          - get_cluster_context
+          - manage_detection_rules
+          - triage_alerts
+          - manage_cases
+
+      - name: schema-validation
+        check: schema
+
+  # Integration tests
+  - name: gateway-tools
+    layer: integration
+    defaults:
+      timeout: 15000
+    tests:
+      - name: elasticsearch-cluster-health
+        tool: elasticsearch_api
+        args:
+          method: GET
+          path: "/_cluster/health"
+        assert:
+          - field: content.0.text
+            op: contains
+            value: "cluster_name"
+
+      - name: esql-simple-query
+        tool: esql_query
+        args:
+          query: "FROM .kibana | LIMIT 1"
+        assert:
+          - field: isError
+            op: eq
+            value: false
+
+      - name: kibana-status
+        tool: kibana_api
+        args:
+          method: GET
+          path: "/api/status"
+        assert:
+          - field: content.0.text
+            op: contains
+            value: "overall"
+
+  - name: error-handling
+    layer: integration
+    tests:
+      - name: invalid-es-method
+        tool: elasticsearch_api
+        args:
+          method: INVALID
+          path: "/"
+        expect_error: true
+
+      - name: nonexistent-index
+        tool: elasticsearch_api
+        args:
+          method: GET
+          path: "/nonexistent_index_12345/_search"
+        assert:
+          - field: isError
+            op: eq
+            value: true
+
+  # LLM eval tests
+  - name: agent-tool-selection
+    layer: llm
+    defaults:
+      repetitions: 3
+    tests:
+      - name: cluster-health-query
+        prompt: "What's the health of my Elasticsearch cluster?"
+        expected:
+          tools:
+            - elasticsearch_api
+        evaluators:
+          - tool-selection
+          - response-quality
+          - security
+
+      - name: security-rules-query
+        prompt: "Show me all active detection rules in my SIEM"
+        expected:
+          tools:
+            - manage_detection_rules
+        evaluators:
+          - tool-selection
+          - tool-args
+          - response-quality
+
+      - name: discovery-workflow
+        prompt: "What data sources do I have available for security monitoring?"
+        expected:
+          tools:
+            - discover_security_data
+        evaluators:
+          - tool-selection
+          - response-quality
+          - security

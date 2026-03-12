@@ -1,0 +1,31 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: "0.0.0.0:4318"
+
+exporters:
+  elasticsearch:
+    endpoints:
+      - "http://obs-es:9200"
+    user: elastic
+    password: changeme
+    logs_index: otel-logs
+    traces_index: traces-apm-default
+    tls:
+      insecure: true
+
+  logging:
+    loglevel: info
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 1024
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [elasticsearch, logging]

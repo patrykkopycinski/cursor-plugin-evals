@@ -1,0 +1,89 @@
+name: github-server
+layer: integration
+
+tests:
+  - name: list-repos
+    tool: list_repos
+    args:
+      owner: octocat
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: get-issue
+    tool: get_issue
+    args:
+      owner: octocat
+      repo: Hello-World
+      issue_number: 1
+    assert:
+      - field: content[0].text
+        op: exists
+      - field: content[0].type
+        op: eq
+        value: text
+
+  - name: create-issue
+    tool: create_issue
+    args:
+      owner: test-owner
+      repo: test-repo
+      title: "Test issue from eval"
+      body: "Automated test"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: search-code
+    tool: search_code
+    args:
+      query: "console.log repo:octocat/Hello-World"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: list-branches
+    tool: list_branches
+    args:
+      owner: octocat
+      repo: Hello-World
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: get-pull-request
+    tool: get_pull_request
+    args:
+      owner: octocat
+      repo: Hello-World
+      pull_number: 1
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: list-commits
+    tool: list_commits
+    args:
+      owner: octocat
+      repo: Hello-World
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: get-file-contents
+    tool: get_file_contents
+    args:
+      owner: octocat
+      repo: Hello-World
+      path: README
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: get-nonexistent-issue
+    tool: get_issue
+    args:
+      owner: octocat
+      repo: Hello-World
+      issue_number: 999999999
+    expect_error: true

@@ -1,0 +1,64 @@
+name: fetch-server
+layer: integration
+
+tests:
+  - name: get-request
+    tool: fetch
+    args:
+      url: "https://httpbin.org/get"
+    assert:
+      - field: content[0].text
+        op: exists
+      - field: content[0].type
+        op: eq
+        value: text
+
+  - name: post-request
+    tool: fetch
+    args:
+      url: "https://httpbin.org/post"
+      method: POST
+      body: '{"key":"value"}'
+    assert:
+      - field: content[0].text
+        op: contains
+        value: key
+
+  - name: custom-headers
+    tool: fetch
+    args:
+      url: "https://httpbin.org/headers"
+      headers:
+        X-Custom-Header: test-value
+    assert:
+      - field: content[0].text
+        op: contains
+        value: X-Custom-Header
+
+  - name: json-response
+    tool: fetch
+    args:
+      url: "https://httpbin.org/json"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: redirect-follow
+    tool: fetch
+    args:
+      url: "https://httpbin.org/redirect/1"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: not-found-error
+    tool: fetch
+    args:
+      url: "https://httpbin.org/status/404"
+    expect_error: true
+
+  - name: server-error
+    tool: fetch
+    args:
+      url: "https://httpbin.org/status/500"
+    expect_error: true

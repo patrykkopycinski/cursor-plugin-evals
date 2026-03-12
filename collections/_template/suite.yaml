@@ -1,0 +1,21 @@
+# Community Test Collection Template
+#
+# Copy this directory and customize for your MCP server.
+# See README.md for format details.
+
+name: my-server-tests
+layer: integration
+
+tests:
+  - name: example-tool-call
+    tool: my_tool
+    args:
+      param: value
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: example-error-handling
+    tool: my_tool
+    args: {}
+    expect_error: true

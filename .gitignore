@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.tgz
+.env
+.env.*
+!.env.example
+coverage/
+.nyc_output/
+fixtures/**/*.jsonl.gz
+!fixtures/.gitkeep
+*.log
+.DS_Store
+.cursor-plugin-evals/
+openspec/

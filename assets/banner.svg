@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F0F1A"/>
+      <stop offset="100%" stop-color="#1A1A2E"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6C5CE7"/>
+      <stop offset="50%" stop-color="#A29BFE"/>
+      <stop offset="100%" stop-color="#74B9FF"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6C5CE7" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#74B9FF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="check-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00E676"/>
+      <stop offset="100%" stop-color="#69F0AE"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#6C5CE7" flood-opacity="0.3"/>
+    </filter>
+    <filter id="glow-filter" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="300" rx="16" fill="url(#bg)"/>
+  <rect width="1200" height="300" rx="16" stroke="url(#accent)" stroke-width="1" stroke-opacity="0.2"/>
+
+  <!-- Subtle grid -->
+  <g opacity="0.03" stroke="#A29BFE" stroke-width="1">
+    <line x1="0" y1="60" x2="1200" y2="60"/>
+    <line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="180" x2="1200" y2="180"/>
+    <line x1="0" y1="240" x2="1200" y2="240"/>
+    <line x1="120" y1="0" x2="120" y2="300"/>
+    <line x1="240" y1="0" x2="240" y2="300"/>
+    <line x1="360" y1="0" x2="360" y2="300"/>
+    <line x1="480" y1="0" x2="480" y2="300"/>
+    <line x1="600" y1="0" x2="600" y2="300"/>
+    <line x1="720" y1="0" x2="720" y2="300"/>
+    <line x1="840" y1="0" x2="840" y2="300"/>
+    <line x1="960" y1="0" x2="960" y2="300"/>
+    <line x1="1080" y1="0" x2="1080" y2="300"/>
+  </g>
+
+  <!-- Ambient glow behind logo -->
+  <ellipse cx="150" cy="150" rx="120" ry="120" fill="url(#glow)"/>
+
+  <!-- Small shield logo -->
+  <g transform="translate(90, 50)" filter="shadow">
+    <path d="M60 10 L110 35 L110 100 C110 128 90 150 60 160 C30 150 10 128 10 100 L10 35 Z"
+          fill="url(#bg)" stroke="url(#accent)" stroke-width="2"/>
+    <!-- Layer bars -->
+    <g filter="glow-filter">
+      <rect x="30" y="50" width="60" height="10" rx="5" fill="#6C5CE7" opacity="0.9"/>
+      <rect x="30" y="66" width="50" height="10" rx="5" fill="#A29BFE" opacity="0.8"/>
+      <rect x="30" y="82" width="40" height="10" rx="5" fill="#74B9FF" opacity="0.7"/>
+      <rect x="30" y="98" width="30" height="10" rx="5" fill="#00E676" opacity="0.8"/>
+    </g>
+    <!-- Checkmark -->
+    <path d="M38 125 L52 139 L78 108" stroke="url(#check-grad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <!-- Bracket accents -->
+    <path d="M-5 25 L-15 25 L-15 50" stroke="url(#accent)" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.4"/>
+    <path d="M125 140 L135 140 L135 115" stroke="url(#accent)" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.4"/>
+  </g>
+
+  <!-- Title text -->
+  <text x="280" y="120" font-family="system-ui, -apple-system, Helvetica, Arial, sans-serif"
+        font-size="52" font-weight="700" fill="white" letter-spacing="-1">cursor-plugin-evals</text>
+
+  <!-- Subtitle -->
+  <text x="280" y="160" font-family="system-ui, -apple-system, Helvetica, Arial, sans-serif"
+        font-size="20" font-weight="400" fill="#A29BFE" letter-spacing="0.5"
+        opacity="0.8">End-to-end testing framework for Cursor plugins</text>
+
+  <!-- Layer badges -->
+  <g transform="translate(280, 185)">
+    <!-- Static badge -->
+    <rect x="0" y="0" width="72" height="28" rx="14" fill="#6C5CE7" fill-opacity="0.15" stroke="#6C5CE7" stroke-width="1" stroke-opacity="0.4"/>
+    <text x="36" y="19" text-anchor="middle" font-family="Courier New, Courier, monospace" font-size="11" font-weight="500" fill="#A29BFE">Static</text>
+
+    <!-- Unit badge -->
+    <rect x="84" y="0" width="60" height="28" rx="14" fill="#A29BFE" fill-opacity="0.15" stroke="#A29BFE" stroke-width="1" stroke-opacity="0.4"/>
+    <text x="114" y="19" text-anchor="middle" font-family="Courier New, Courier, monospace" font-size="11" font-weight="500" fill="#A29BFE">Unit</text>
+
+    <!-- Integration badge -->
+    <rect x="156" y="0" width="104" height="28" rx="14" fill="#74B9FF" fill-opacity="0.15" stroke="#74B9FF" stroke-width="1" stroke-opacity="0.4"/>
+    <text x="208" y="19" text-anchor="middle" font-family="Courier New, Courier, monospace" font-size="11" font-weight="500" fill="#74B9FF">Integration</text>
+
+    <!-- LLM Eval badge -->
+    <rect x="272" y="0" width="90" height="28" rx="14" fill="#00E676" fill-opacity="0.15" stroke="#00E676" stroke-width="1" stroke-opacity="0.4"/>
+    <text x="317" y="19" text-anchor="middle" font-family="Courier New, Courier, monospace" font-size="11" font-weight="500" fill="#69F0AE">LLM Eval</text>
+  </g>
+
+  <!-- Decorative elements - right side floating code fragments -->
+  <g opacity="0.12" fill="#A29BFE" font-family="Courier New, Courier, monospace" font-size="12">
+    <text x="820" y="60">assert: { op: contains }</text>
+    <text x="870" y="90">evaluators: [tool-selection]</text>
+    <text x="840" y="120">layer: integration</text>
+    <text x="900" y="150">threshold: 0.9</text>
+    <text x="850" y="180">check: manifest PASS</text>
+    <text x="880" y="210">security: 1.0 PASS</text>
+    <text x="830" y="240">mock: true</text>
+  </g>
+
+  <!-- Bottom accent line -->
+  <rect x="280" y="240" width="200" height="2" rx="1" fill="url(#accent)" opacity="0.3"/>
+  <text x="280" y="268" font-family="Courier New, Courier, monospace" font-size="13" fill="#666" letter-spacing="1">MIT | TypeScript | MCP</text>
+</svg>

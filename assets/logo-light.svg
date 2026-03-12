@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6C5CE7"/>
+      <stop offset="50%" stop-color="#A29BFE"/>
+      <stop offset="100%" stop-color="#74B9FF"/>
+    </linearGradient>
+    <linearGradient id="check-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00C853"/>
+      <stop offset="100%" stop-color="#00E676"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#6C5CE7" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+
+  <!-- Shield shape -->
+  <g filter="shadow">
+    <path d="M256 60 L400 135 L400 300 C400 370 336 430 256 455 C176 430 112 370 112 300 L112 135 Z"
+          fill="white" stroke="url(#accent)" stroke-width="4"/>
+  </g>
+
+  <!-- Four-layer bars -->
+  <rect x="176" y="175" width="160" height="22" rx="11" fill="#6C5CE7" opacity="0.9"/>
+  <rect x="176" y="213" width="130" height="22" rx="11" fill="#A29BFE" opacity="0.85"/>
+  <rect x="176" y="251" width="100" height="22" rx="11" fill="#74B9FF" opacity="0.8"/>
+  <rect x="176" y="289" width="70" height="22" rx="11" fill="#00E676" opacity="0.85"/>
+
+  <!-- Checkmark -->
+  <path d="M210 345 L240 375 L302 295"
+        stroke="url(#check-grad)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Bracket accents -->
+  <path d="M88 110 L64 110 L64 170" stroke="url(#accent)" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.4"/>
+  <path d="M424 400 L448 400 L448 340" stroke="url(#accent)" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.4"/>
+</svg>
