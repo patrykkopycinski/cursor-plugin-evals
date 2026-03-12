@@ -866,6 +866,133 @@ program
   );
 
 program
+  .command('replay')
+  .description('Re-score recorded eval outputs against current evaluators (no LLM or cluster needed)')
+  .requiredOption('--skill <name>', 'skill name to replay')
+  .option('--run-id <id>', 'specific recording run ID (defaults to latest)')
+  .option('--recordings-dir <path>', 'recordings directory', '.cursor-plugin-evals/recordings')
+  .option('-e, --evaluators <names...>', 'evaluators to run (defaults to all CODE evaluators)')
+  .option('--judge <model>', 'judge model override for LLM evaluators')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: {
+      skill: string;
+      runId?: string;
+      recordingsDir: string;
+      evaluators?: string[];
+      judge?: string;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+      const { replayCommand } = await import('./replay.js');
+      await replayCommand({
+        skill: opts.skill,
+        runId: opts.runId,
+        recordingsDir: opts.recordingsDir,
+        evaluators: opts.evaluators,
+        judge: opts.judge,
+      });
+    },
+  );
+
+program
+  .command('history')
+  .description('List past evaluation runs from Elasticsearch')
+  .option('--skill <name>', 'filter by skill name')
+  .option('--model <id>', 'filter by model')
+  .option('--limit <n>', 'number of runs to show', '20')
+  .option('--es-url <url>', 'Elasticsearch URL')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: {
+      skill?: string;
+      model?: string;
+      limit: string;
+      esUrl?: string;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+      const { historyCommand } = await import('./history.js');
+      await historyCommand({
+        skill: opts.skill,
+        model: opts.model,
+        limit: parseInt(opts.limit, 10) || 20,
+        esUrl: opts.esUrl,
+      });
+    },
+  );
+
+program
+  .command('env')
+  .description('Show supported environment variables with current values')
+  .option('--no-color', 'disable colors')
+  .action(async (opts: { noColor?: boolean }) => {
+    if (opts.noColor) setNoColor(true);
+    const { envCommand } = await import('./env.js');
+    envCommand();
+  });
+
+program
+  .command('security-lint')
+  .description('Run static security checks against skill files')
+  .option('-d, --dir <path>', 'plugin directory to scan', '.')
+  .option('--skill <name>', 'check a single skill directory')
+  .option('--report <format>', 'output format: terminal, json', 'terminal')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: {
+      dir: string;
+      skill?: string;
+      report: string;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+
+      log.header('Security Lint');
+
+      const { runSkillSecurityChecks, runAllSkillSecurityChecks, formatSecurityReport } =
+        await import('../analyzers/security-lint.js');
+
+      try {
+        if (opts.skill) {
+          const skillDir = resolve(process.cwd(), opts.dir, opts.skill);
+          const report = await runSkillSecurityChecks(skillDir);
+          if (opts.report === 'json') {
+            console.log(JSON.stringify(report, null, 2));
+          } else {
+            console.log(formatSecurityReport([report]));
+          }
+          if (!report.passed) process.exitCode = EXIT_FAIL;
+        } else {
+          const reports = await runAllSkillSecurityChecks(resolve(process.cwd(), opts.dir));
+          if (reports.length === 0) {
+            log.info('No skills found.');
+            return;
+          }
+          if (opts.report === 'json') {
+            console.log(JSON.stringify(reports, null, 2));
+          } else {
+            console.log(formatSecurityReport(reports));
+          }
+          if (reports.some((r) => !r.passed)) process.exitCode = EXIT_FAIL;
+        }
+      } catch (err) {
+        log.error('Security lint failed', err);
+        process.exitCode = EXIT_FAIL;
+      }
+    },
+  );
+
+program
   .command('compare')
   .description('Run evaluations across multiple models and produce a comparison matrix')
   .option('-c, --config <path>', 'config file path', './plugin-eval.yaml')

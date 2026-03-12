@@ -44,27 +44,30 @@ All of the above must pass before submitting changes.
 
 ```
 src/
-  adapters/       Task adapter implementations (mcp, plain-llm, etc.)
-  analyzers/      Skill collision detection
+  adapters/       Task adapter implementations (mcp, plain-llm, headless-coder, gemini-cli, claude-sdk)
+  analyzers/      Skill collision detection and security lint
   auth/           Authentication providers (API key, bearer, OAuth2)
+  cache/          LLM response cache with disk persistence and TTL
   ci/             CI threshold enforcement
-  cli/            CLI commands and logger
-  comparison/     Model A/B comparison
+  cli/            CLI commands (18 commands), logger, setup wizard
+  comparison/     Model A/B comparison matrix
   core/           Types, config loader, runner, utilities
   dashboard/      Web dashboard (Hono + SQLite)
-  docker/         Docker health checks and setup
-  evaluators/     All 17 evaluators (CODE and LLM kinds)
+  dataset/        Dataset generator for programmatic test creation
+  docker/         Docker health checks and test cluster setup
+  evaluators/     All 20 evaluators (13 CODE + 7 LLM kinds)
   expect/         TypeScript Expect API for programmatic suites
-  fixtures/       Record/replay/mock-gen
+  fixtures/       Record/replay/mock-gen for MCP tool calls
   layers/         Layer implementations (static, unit, integration, llm, performance, skill)
   mcp/            MCP client, schema converter, tool discovery
-  plugins/        Plugin loader
+  plugins/        Plugin loader for custom evaluators/reporters/transports
   plugin/         Plugin discovery and frontmatter parsing
-  pricing/        Token cost calculation
-  reporting/      Report generators (terminal, markdown, JSON, HTML, JUnit XML)
+  pricing/        Token cost calculation with 11+ model catalog
+  recordings/     Recording repository for storing and replaying full eval runs
+  reporting/      Report generators (terminal, markdown, JSON, HTML, JUnit XML, failure clustering)
   scoring/        Quality score dimensions, composite, badges, confidence intervals
-  templates/      CI pipeline templates
-  tracing/        OTel spans and exporters
+  templates/      CI pipeline templates (GitHub Actions, GitLab CI, shell)
+  tracing/        OTel spans and exporters (OTLP, Elasticsearch)
   transports/     MCP transport implementations (stdio, HTTP, SSE, streamable-HTTP)
 ```
 
@@ -131,6 +134,22 @@ try {
 - **Prettier** for formatting (run `npm run format`)
 - **No comments that just narrate** — comments should explain non-obvious intent
 - Test helper factories use `makeXxx(overrides: Partial<T>)` pattern
+
+## Documentation Requirements
+
+Every non-trivial change **must** update documentation:
+
+| What changed | What to update |
+|---|---|
+| New evaluator | `src/evaluators/index.ts` registration, evaluator table in `README.md`, `CONTRIBUTING.md` counts |
+| New CLI command | `src/cli/main.ts` wiring, CLI Reference in `README.md`, architecture diagram, `CHANGELOG.md` CLI count |
+| New adapter | `src/adapters/index.ts` registration, Task Adapters table in `README.md` |
+| New module/directory | `src/index.ts` exports, Project Structure in `CONTRIBUTING.md`, architecture diagram |
+| New env variable | `.env.example`, `src/cli/env.ts` ENV_VARS array |
+| Any feature change | `CHANGELOG.md` entry under appropriate section |
+| Badge-visible counts | README badges (evaluators, adapters, layers) |
+
+Run `npm test` and `npm run typecheck` before considering docs complete.
 
 ## Commit Messages
 

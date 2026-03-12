@@ -16,8 +16,9 @@ Initial release of the cursor-plugin-evals framework.
 - Interactive `setup` wizard — checks prerequisites, auto-fixes what it can, and prints guided next steps
 
 ### Evaluators
-- 12 deterministic (CODE) evaluators: tool-selection, tool-args, tool-sequence, response-quality, path-efficiency, cluster-state, mcp-protocol, security, tool-poisoning, skill-trigger, content-quality, keywords
-- 5 LLM-as-judge evaluators: correctness, groundedness, g-eval, similarity, context-faithfulness
+- 13 deterministic (CODE) evaluators: tool-selection, tool-args, tool-sequence, response-quality, path-efficiency, cluster-state, mcp-protocol, security, tool-poisoning, skill-trigger, content-quality, keywords, rag (Precision@K/Recall@K/F1@K)
+- 7 LLM-as-judge evaluators: correctness, groundedness, g-eval, similarity, context-faithfulness, conversation-coherence, criteria
+- Evaluator name pattern matching (wildcard RAG metric patterns)
 - Configurable LLM judge model via `JUDGE_MODEL` and `LITELLM_URL`
 
 ### Task Adapters
@@ -62,14 +63,21 @@ Initial release of the cursor-plugin-evals framework.
 - Web dashboard with Hono + SQLite (run history, suite drill-down, quality trends)
 - Elasticsearch datastream export
 - OTel tracing with spans and exporters
+- Failure clustering with recommended actions per category
 
 ### Fixture System
 - Record/replay MCP tool calls with compressed JSONL (.jsonl.gz)
 - SHA-256 argument hashing for fixture matching
 - Mock MCP server generation from recorded fixtures
+- Recording repository for storing and replaying full eval runs
+
+### Infrastructure
+- LLM response cache with disk persistence, configurable TTL, hit/miss stats
+- Dataset generator for programmatic test case creation from JS/TS modules
+- Security lint: 4 static checks on skill files (credentials, scope, data, hygiene)
 
 ### CLI
-- 14 commands: run, init, score, discover, doctor, dashboard, collections, ci-init, mock-gen, skill-eval, collision-check, compare, generate, record
+- 18 commands: run, init, setup, score, discover, doctor, dashboard, collections, ci-init, mock-gen, skill-eval, collision-check, compare, replay, history, env, security-lint, record
 
 ### Cursor Integration
 - 5 skills: run-plugin-evals, debug-eval-failure, write-eval-suite, record-fixtures, eval-doctor

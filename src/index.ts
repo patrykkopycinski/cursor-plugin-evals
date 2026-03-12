@@ -122,6 +122,31 @@ export type { AdapterName } from './adapters/index.js';
 export { calculateCost, getPricingCatalog } from './pricing/index.js';
 export { evaluateCi, convertFlatThresholds } from './ci/index.js';
 export { analyzeCollisions, scanSkills } from './analyzers/skill-collision.js';
+export {
+  runSkillSecurityChecks,
+  runAllSkillSecurityChecks,
+  formatSecurityReport,
+} from './analyzers/security-lint.js';
+export type { SecurityCheckResult, SkillSecurityReport } from './analyzers/security-lint.js';
 export { buildComparisonFromRuns, formatComparisonTable } from './comparison/index.js';
 export { runSkillSuite } from './layers/skill/index.js';
 export { loadSkillDataset } from './layers/skill/loader.js';
+export { LlmCache } from './cache/index.js';
+export type { CacheConfig, CacheStats } from './cache/index.js';
+export { loadFromGenerator } from './dataset/index.js';
+export type { GeneratorConfig, GeneratedExample } from './dataset/index.js';
+export { clusterFailures } from './reporting/failure-clustering.js';
+export type { FailureCategory, FailureCluster, TestResultForClustering } from './reporting/failure-clustering.js';
+export { saveRecording, loadRecording, listRecordings } from './recordings/index.js';
+export type { RecordedRun, RecordedExample } from './recordings/index.js';
+export {
+  RAG_METRIC_PATTERNS,
+  isKSpecificRagEvaluator,
+  matchesEvaluatorPattern,
+  expandPatternsToEvaluators,
+} from './evaluators/patterns.js';
+export {
+  ConversationCoherenceEvaluator,
+  CriteriaEvaluator,
+  RagEvaluator,
+} from './evaluators/index.js';

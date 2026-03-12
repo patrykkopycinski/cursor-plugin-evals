@@ -17,6 +17,9 @@ import { GEvalEvaluator } from './g-eval.js';
 import { KeywordsEvaluator } from './keywords.js';
 import { SimilarityEvaluator } from './similarity.js';
 import { ContextFaithfulnessEvaluator } from './context-faithfulness.js';
+import { ConversationCoherenceEvaluator } from './conversation-coherence.js';
+import { CriteriaEvaluator } from './criteria.js';
+import { RagEvaluator } from './rag.js';
 
 export const EVALUATOR_NAMES = [
   'tool-selection',
@@ -36,6 +39,9 @@ export const EVALUATOR_NAMES = [
   'keywords',
   'similarity',
   'context-faithfulness',
+  'conversation-coherence',
+  'criteria',
+  'rag',
 ] as const;
 
 export type EvaluatorName = (typeof EVALUATOR_NAMES)[number];
@@ -58,6 +64,9 @@ const EVALUATOR_MAP: Record<EvaluatorName, new () => Evaluator> = {
   keywords: KeywordsEvaluator,
   similarity: SimilarityEvaluator,
   'context-faithfulness': ContextFaithfulnessEvaluator,
+  'conversation-coherence': ConversationCoherenceEvaluator,
+  criteria: CriteriaEvaluator,
+  rag: RagEvaluator,
 };
 
 export function createEvaluator(name: string): Evaluator {
@@ -86,4 +95,7 @@ export {
   KeywordsEvaluator,
   SimilarityEvaluator,
   ContextFaithfulnessEvaluator,
+  ConversationCoherenceEvaluator,
+  CriteriaEvaluator,
+  RagEvaluator,
 };

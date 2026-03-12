@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="#six-testing-layers"><img src="https://img.shields.io/badge/layers-6-6C5CE7?style=flat-square" alt="6 Layers" /></a>
-  <a href="#evaluators"><img src="https://img.shields.io/badge/evaluators-17-A29BFE?style=flat-square" alt="17 Evaluators" /></a>
+  <a href="#evaluators"><img src="https://img.shields.io/badge/evaluators-20-A29BFE?style=flat-square" alt="20 Evaluators" /></a>
   <a href="#task-adapters"><img src="https://img.shields.io/badge/adapters-5-74B9FF?style=flat-square" alt="5 Adapters" /></a>
   <a href="#cli-reference"><img src="https://img.shields.io/badge/CLI-cursor--plugin--evals-DFE6E9?style=flat-square" alt="CLI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Elastic--2.0-00E676?style=flat-square" alt="Elastic License 2.0" /></a>
@@ -52,6 +52,7 @@ npx cursor-plugin-evals score
 │                              CLI                                      │
 │  run · init · setup · score · discover · doctor · dashboard · watch   │
 │  skill-eval · collision-check · compare · ci-init · mock-gen          │
+│  replay · history · env · security-lint                               │
 ├──────────────────────────────────────────────────────────────────────┤
 │                          Test Runner                                  │
 │  Suite routing · Concurrency · Aggregation · Watch mode · CI gating   │
@@ -72,13 +73,17 @@ npx cursor-plugin-evals score
 │  Plugin Discovery  │  MCP Client (stdio / HTTP / SSE / stream-HTTP)   │
 │  Manifest parsing  │  Spawn · Connect · Execute · Auth flows          │
 ├──────────────────────────────────────────────────────────────────────┤
-│ Evaluators (17)    │ CI Thresholds  │ Fixtures      │ Tracing         │
-│ 11 CODE + 6 LLM   │ Score / Latency│ Record/Replay │ OTel spans      │
+│ Evaluators (20)    │ CI Thresholds  │ Fixtures      │ Tracing         │
+│ 13 CODE + 7 LLM   │ Score / Latency│ Record/Replay │ OTel spans      │
 │ LLM-as-judge       │ Cost / Per-eval│ Mock-gen      │ ES export       │
 ├────────────────────┼────────────────┼───────────────┼─────────────────┤
 │ Quality Score      │ Token Pricing  │ Skill Collis. │ Model A/B       │
-│ 5 dimensions A-F   │ 11 models      │ TF-IDF + tool │ Comparison      │
-│ SVG badges         │ Cost tracking  │ overlap       │ matrix          │
+│ A-F grading        │ Per-model cost │ TF-IDF sim.   │ Comparison      │
+│ Confidence CIs     │ 11+ models     │ Tool overlap  │ matrix          │
+├────────────────────┼────────────────┼───────────────┼─────────────────┤
+│ LLM Cache          │ Failure Clust. │ Security Lint │ Recordings      │
+│ Disk-persisted     │ Categorize +   │ 4 static      │ Store/replay    │
+│ TTL + hit/miss     │ recommend fix  │ skill checks  │ full eval runs  │
 ├────────────────────┴────────────────┴───────────────┴─────────────────┤
 │ Reporting: Terminal · Markdown · JSON · HTML · JUnit XML               │
 ├──────────────────────────────────────────────────────────────────────┤
@@ -200,6 +205,7 @@ suites:
 | `skill-trigger` | LLM selects correct skill from a set (F1) | 0.8 |
 | `content-quality` | Component content scored on clarity/completeness | 0.6 |
 | `keywords` | Expected keywords present in output | 0.7 |
+| `rag` | Retrieval quality: Precision@K, Recall@K, F1@K | 0.7 |
 
 ### LLM-as-Judge (LLM)
 
@@ -212,6 +218,8 @@ These evaluators call an LLM judge (configurable via `JUDGE_MODEL` / `LITELLM_UR
 | `g-eval` | Multi-criteria scoring (relevance, coherence, configurable) | 0.6 |
 | `similarity` | Semantic similarity between actual and expected output | 0.7 |
 | `context-faithfulness` | RAG faithfulness — output only uses information from retrieved context | 0.7 |
+| `conversation-coherence` | Multi-turn quality: turn relevance, consistency, goal progression | 0.7 |
+| `criteria` | Configurable pass/fail criteria with weighted scoring | 0.7 |
 
 ## CI Thresholds
 
@@ -289,6 +297,83 @@ const cost = calculateCost('gpt-4o', { input: 5000, output: 2000, cached: 1000 }
 // => 0.0345 (USD)
 ```
 
+## LLM Response Cache
+
+Disk-persisted cache for LLM judge responses, reducing cost during iterative development:
+
+```typescript
+import { LlmCache } from 'cursor-plugin-evals';
+
+const cache = new LlmCache({ ttl: '7d', dir: '.cursor-plugin-evals/cache' });
+const cached = await cache.get('gpt-4o', systemPrompt, userPrompt);
+if (!cached) {
+  const response = await callLlm(...);
+  await cache.set('gpt-4o', systemPrompt, userPrompt, response);
+}
+console.log(cache.getStats()); // { hits: 42, misses: 3 }
+```
+
+Configure via environment variables: `CPE_CACHE_ENABLED`, `CPE_CACHE_TTL`, `CPE_CACHE_DIR`.
+
+## Failure Clustering
+
+Automatically categorizes test failures and recommends fixes:
+
+```typescript
+import { clusterFailures } from 'cursor-plugin-evals';
+
+const clusters = clusterFailures(failedTests);
+// [{ category: 'wrong_tool_selection', count: 3, testNames: [...],
+//    recommendedAction: 'Review SKILL.md tool descriptions...' }]
+```
+
+Categories: `wrong_tool_selection`, `wrong_arguments`, `wrong_ordering`, `hallucination`, `empty_response`, `content_quality`.
+
+## Recording & Replay
+
+Store full eval runs for later re-scoring without re-running LLMs:
+
+```bash
+# Replay recorded outputs with current evaluators
+cursor-plugin-evals replay --skill alert-triage
+cursor-plugin-evals replay --skill alert-triage --evaluators correctness groundedness --judge gpt-4o
+```
+
+```typescript
+import { saveRecording, loadRecording, listRecordings } from 'cursor-plugin-evals';
+
+await saveRecording('.cursor-plugin-evals/recordings', recordedRun);
+const run = await loadRecording('.cursor-plugin-evals/recordings', 'alert-triage');
+const all = await listRecordings('.cursor-plugin-evals/recordings');
+```
+
+## Security Lint
+
+Static security checks on skill files — catches credentials, scope issues, and prompt injection:
+
+```bash
+cursor-plugin-evals security-lint --dir .cursor-plugin/skills
+```
+
+| Check | What it detects |
+|---|---|
+| `no-hardcoded-creds` | API keys, tokens, passwords in source files |
+| `scope-declaration` | Skills that don't declare their tool/resource needs |
+| `clean-example-data` | Real emails, non-RFC1918 IPs, production domains in examples |
+| `tool-description-hygiene` | Prompt injection patterns in tool descriptions |
+
+## Dataset Generator
+
+Programmatically generate test examples from JS/TS modules:
+
+```typescript
+import { loadFromGenerator } from 'cursor-plugin-evals';
+
+const examples = await loadFromGenerator('./generators/alert-triage.ts', { count: 50 });
+```
+
+Generator modules export a default async function returning an array of `{ prompt, input, expected, metadata }` objects.
+
 ## CLI Reference
 
 ```bash
@@ -365,6 +450,23 @@ cursor-plugin-evals doctor
 cursor-plugin-evals setup
 cursor-plugin-evals setup --skip-docker    # skip Docker checks
 cursor-plugin-evals setup --no-interactive # report only, no auto-fix
+
+# --- Replay & History Commands ---
+
+# Re-score recorded outputs against current evaluators (no LLM needed)
+cursor-plugin-evals replay --skill alert-triage
+cursor-plugin-evals replay --skill alert-triage --evaluators correctness groundedness
+
+# List past evaluation runs from Elasticsearch
+cursor-plugin-evals history
+cursor-plugin-evals history --skill alert-triage --limit 10
+
+# Show all supported environment variables
+cursor-plugin-evals env
+
+# Static security checks on skill files
+cursor-plugin-evals security-lint --dir .cursor-plugin/skills
+cursor-plugin-evals security-lint --skill my-skill
 ```
 
 ## Expect API (TypeScript)
@@ -466,10 +568,22 @@ import {
   // Analysis
   analyzeCollisions, scanSkills,
   buildComparisonFromRuns, formatComparisonTable,
+  runSkillSecurityChecks, runAllSkillSecurityChecks,
+  clusterFailures,
 
   // CI & pricing
   evaluateCi, convertFlatThresholds,
   calculateCost, getPricingCatalog,
+
+  // Cache & recordings
+  LlmCache,
+  saveRecording, loadRecording, listRecordings,
+
+  // Dataset generation
+  loadFromGenerator,
+
+  // Evaluator patterns
+  matchesEvaluatorPattern, expandPatternsToEvaluators,
 } from 'cursor-plugin-evals';
 
 // Run evaluation
@@ -482,8 +596,20 @@ console.log(`Quality: ${result.qualityScore?.grade} (${result.qualityScore?.comp
 const ciResult = evaluateCi(result.suites.flatMap(s => s.tests), config.ci ?? {});
 console.log(ciResult.summary);
 
-// Calculate cost
-const cost = calculateCost('gpt-4o', { input: 5000, output: 2000 });
+// Cluster failures for actionable triage
+const clusters = clusterFailures(
+  result.suites.flatMap(s => s.tests.filter(t => !t.pass).map(t => ({
+    name: t.name,
+    toolsCalled: t.toolCalls.map(tc => tc.tool),
+    expected: undefined,
+    evaluators: t.evaluatorResults.map(e => ({
+      name: e.evaluator, score: e.score, label: e.label ?? null,
+    })),
+  }))),
+);
+
+// Cache LLM judge responses
+const cache = new LlmCache({ ttl: '7d' });
 ```
 
 ## Fixture System
@@ -553,7 +679,7 @@ This framework includes Cursor skills, commands, and rules:
 ```bash
 npm install
 npm run typecheck    # TypeScript check
-npm test             # Run framework tests (468 tests)
+npm test             # Run framework tests (468 tests, 33 suites)
 npm run build        # Build CLI binary
 npm run lint:fix     # Fix linting issues
 npm run format       # Format with prettier
