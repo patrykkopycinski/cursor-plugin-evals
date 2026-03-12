@@ -44,17 +44,22 @@ function resolveVariableRefs(
   return resolved;
 }
 
-function parseToolResponse(result: { content: Array<{ type: string; text?: string }> }): unknown {
+function parseToolResponse(result: { content: Array<{ type: string; text?: string }>; isError?: boolean }): unknown {
   const textParts = result.content.filter((c) => c.type === 'text' && c.text).map((c) => c.text!);
-
-  if (textParts.length === 0) return result;
-
   const joined = textParts.join('');
+
+  let parsed: unknown;
   try {
-    return JSON.parse(joined);
+    parsed = JSON.parse(joined);
   } catch {
-    return joined;
+    parsed = joined;
   }
+
+  if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+    return { ...parsed, content: result.content, isError: result.isError ?? false };
+  }
+
+  return { content: result.content, isError: result.isError ?? false, _body: parsed };
 }
 
 async function executeToolCall(

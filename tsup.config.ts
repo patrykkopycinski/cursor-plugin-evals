@@ -12,7 +12,4 @@ export default defineConfig({
   target: 'node20',
   splitting: true,
   shims: true,
-  banner: {
-    js: '#!/usr/bin/env node',
-  },
 });
