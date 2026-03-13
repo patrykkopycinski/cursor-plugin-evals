@@ -158,6 +158,29 @@ export {
   buildToolCatalogSection,
 } from './utils/shell-command.js';
 export type { ScriptToolMapping, NormalizeToolCallOptions } from './utils/shell-command.js';
+export { lintToolMappings, formatLintToolsReport } from './utils/lint-tools.js';
+export type { LintToolsResult, LintToolsOptions } from './utils/lint-tools.js';
+export { computeFirstTryPassRate } from './utils/first-try-pass-rate.js';
+export type { FirstTryStats } from './utils/first-try-pass-rate.js';
+export {
+  CliFixtureRecorder,
+  CliFixtureResponder,
+  hashToolArgs,
+  buildMockOutput,
+} from './fixtures/cli-recorder.js';
+export type {
+  CliFixtureEntry,
+  CliFixtureMetadata,
+  CliFixtureResponderOptions,
+} from './fixtures/cli-recorder.js';
+export {
+  scoreClaimsWeighted,
+  LABEL_FLOORS,
+} from './evaluators/correctness.js';
+export type {
+  ClaimVerdict,
+  LabelAwareScoringConfig,
+} from './evaluators/correctness.js';
 export { calculateCost, getPricingCatalog } from './pricing/index.js';
 export { evaluateCi, convertFlatThresholds } from './ci/index.js';
 export type { EvaluateCiOptions } from './ci/index.js';

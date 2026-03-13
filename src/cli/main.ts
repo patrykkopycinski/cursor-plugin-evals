@@ -1001,6 +1001,58 @@ program
   );
 
 program
+  .command('lint-tools')
+  .description('Validate SCRIPT_TO_TOOL mapping coverage against actual script files')
+  .requiredOption('-d, --scripts-dir <path>', 'directory containing tool scripts')
+  .option('--mapping-file <path>', 'JSON file with script-to-tool mapping (default: uses built-in)')
+  .option('--extensions <exts...>', 'file extensions to scan', ['.js', '.sh', '.ts'])
+  .option('--ignore <names...>', 'directory/file names to ignore', ['node_modules', '.git'])
+  .option('--report <format>', 'output format: terminal, json', 'terminal')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: {
+      scriptsDir: string;
+      mappingFile?: string;
+      extensions: string[];
+      ignore: string[];
+      report: string;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+
+      log.header('Lint Tools');
+
+      const { lintToolMappings, formatLintToolsReport } = await import(
+        '../utils/lint-tools.js'
+      );
+
+      let mapping: Record<string, string> = {};
+      if (opts.mappingFile) {
+        const { readFileSync } = await import('fs');
+        mapping = JSON.parse(readFileSync(resolve(process.cwd(), opts.mappingFile), 'utf-8'));
+      }
+
+      const result = await lintToolMappings({
+        scriptsDir: resolve(process.cwd(), opts.scriptsDir),
+        mapping,
+        extensions: opts.extensions,
+        ignore: opts.ignore,
+      });
+
+      if (opts.report === 'json') {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        console.log(formatLintToolsReport(result));
+      }
+
+      process.exitCode = result.pass ? EXIT_OK : EXIT_FAIL;
+    },
+  );
+
+program
   .command('regression')
   .description('Run evaluations and detect regressions against a baseline fingerprint')
   .requiredOption('--baseline <run-id>', 'baseline fingerprint run ID to compare against')
