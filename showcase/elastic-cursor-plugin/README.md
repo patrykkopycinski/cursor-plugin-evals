@@ -26,6 +26,11 @@ Full evaluation suite for the [elastic-cursor-plugin](https://github.com/patrykk
 | LLM | `llm-multi-turn-coherence` | Multi-turn conversation coherence evaluation |
 | Conformance | `conformance-protocol` | MCP protocol compliance (Tier 1/2/3, 25 checks) |
 | Security | `security-audit` | 3-pass audit: static rules, capability graph, dependency chain |
+| Chaos | `chaos-resilience` | Fault injection: timeouts, drops, corruption, disconnects |
+| Schema Drift | `schema-drift-detection` | Auto-probe for declared-vs-actual schema mismatches |
+| Fuzz | `fuzz-gateway-tools` | Property-based input space exploration |
+| Compliance | `safe-mcp-compliance` | SAFE-MCP technique coverage (MITRE ATT&CK for MCP) |
+| Multi-Server | `multi-server-attacks` | Cross-tool poisoning attack resistance |
 
 ### TypeScript Expect API Suites (`showcase.eval.ts`)
 
@@ -35,6 +40,7 @@ Full evaluation suite for the [elastic-cursor-plugin](https://github.com/patrykk
 | `ts-new-assertion-ops` | New assertion operators: `oneOf`, `startsWith`, `endsWith` |
 | `ts-run-assertions` | RunAssertion API: `maxIterations`, `callCount`, `successRate`, `noErrors`, `outputMatches`, `latencyUnder` |
 | `ts-llm-demo` | Standard tool-selection + `conversation-coherence` evaluator |
+| `ts-trajectory-demo` | Trajectory-based evaluation with golden path scoring |
 | `ts-multi-judge-demo` | Multi-judge blind evaluation with Borda Count aggregation |
 
 ## Prerequisites
@@ -167,6 +173,58 @@ npx cursor-plugin-evals run --config ... --mock hybrid    # hybrid mode
 ```bash
 npx cursor-plugin-evals leaderboard --format markdown --output leaderboard.md
 npx cursor-plugin-evals leaderboard --format html --output leaderboard.html
+```
+
+### Chaos Engineering / Fault Injection
+
+Tests plugin resilience under degraded conditions — timeouts, dropped connections, corrupted messages, disconnects, slow drains, reordering, and duplicate responses. Configurable intensity (low/medium/high) with deterministic seeded PRNG.
+
+```bash
+npx cursor-plugin-evals chaos --config showcase/elastic-cursor-plugin/plugin-eval.yaml --intensity medium
+```
+
+### Schema Drift Detection
+
+Auto-generates probe inputs from tool schemas and detects mismatches between declared schema and actual behavior (hidden required fields, accepted invalid types, enum mismatches, missing validation).
+
+```bash
+npx cursor-plugin-evals schema-drift --config showcase/elastic-cursor-plugin/plugin-eval.yaml
+```
+
+### Property-Based / Fuzz Testing
+
+Systematically explores the input space of each tool — boundary values, type coercion, null injection, overflow, unicode edge cases, deeply nested objects, and combinatorial field subsets.
+
+```bash
+npx cursor-plugin-evals fuzz --config showcase/elastic-cursor-plugin/plugin-eval.yaml
+```
+
+### SAFE-MCP Compliance Mapping
+
+Maps all security rules and red-team findings to the SAFE-MCP framework (Linux Foundation's MITRE ATT&CK adaptation for MCP) with per-tactic coverage percentages.
+
+```bash
+npx cursor-plugin-evals safe-mcp --config showcase/elastic-cursor-plugin/plugin-eval.yaml
+```
+
+### Multi-Server Cross-Tool Attack Testing
+
+Tests resistance to tool poisoning in multi-server environments — description injection, response hijacking, context manipulation, tool shadowing, and data exfiltration relay.
+
+### Trajectory-Based Evaluation
+
+Scores the full reasoning path of agent interactions using LCS-based path similarity, step efficiency, backtrack/redundancy penalties, and error recovery bonuses. See `ts-trajectory-demo` in `showcase.eval.ts`.
+
+### SVG Badge Generation
+
+Generate embeddable SVG badges for GitHub READMEs:
+
+```bash
+npx cursor-plugin-evals badge --type score --output badge.svg
+npx cursor-plugin-evals badge --type pass-rate --output pass-rate.svg
+npx cursor-plugin-evals badge --type conformance --output conformance.svg
+npx cursor-plugin-evals badge --type security --output security.svg
+npx cursor-plugin-evals badge --type resilience --output resilience.svg
 ```
 
 ## Fixture Recording

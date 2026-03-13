@@ -3,20 +3,22 @@
 </p>
 
 <p align="center">
-  <a href="#seven-testing-layers"><img src="https://img.shields.io/badge/layers-7-6C5CE7?style=flat-square" alt="7 Layers" /></a>
-  <a href="#evaluators"><img src="https://img.shields.io/badge/evaluators-23-A29BFE?style=flat-square" alt="23 Evaluators" /></a>
+  <a href="#testing-layers"><img src="https://img.shields.io/badge/layers-12-6C5CE7?style=flat-square" alt="12 Layers" /></a>
+  <a href="#evaluators"><img src="https://img.shields.io/badge/evaluators-24-A29BFE?style=flat-square" alt="24 Evaluators" /></a>
   <a href="#task-adapters"><img src="https://img.shields.io/badge/adapters-5-74B9FF?style=flat-square" alt="5 Adapters" /></a>
   <a href="#security--red-teaming"><img src="https://img.shields.io/badge/security--rules-20-E74C3C?style=flat-square" alt="20 Security Rules" /></a>
   <a href="#community-collections"><img src="https://img.shields.io/badge/community--tests-154-FD79A8?style=flat-square" alt="154 Community Tests" /></a>
   <a href="#reporting"><img src="https://img.shields.io/badge/reporters-6-55E6C1?style=flat-square" alt="6 Reporters" /></a>
   <a href="#red-teaming"><img src="https://img.shields.io/badge/red--team-10%20attacks-FF6B6B?style=flat-square" alt="10 Attack Categories" /></a>
+  <a href="#safe-mcp-compliance"><img src="https://img.shields.io/badge/SAFE--MCP-26%20techniques-FF7675?style=flat-square" alt="SAFE-MCP 26 Techniques" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Elastic--2.0-00E676?style=flat-square" alt="Elastic License 2.0" /></a>
 </p>
 
 <p align="center">
   The most comprehensive testing framework for Cursor &amp; MCP plugins.<br/>
-  7 testing layers · 23 evaluators · 20 OWASP-aligned security rules · 3-pass security audit<br/>
-  Multi-judge blind evaluation · Fair benchmarking · MCP conformance · Cross-platform compatibility<br/>
+  12 testing layers · 24 evaluators · 20 OWASP-aligned security rules · SAFE-MCP compliance<br/>
+  Chaos engineering · Schema drift detection · Fuzz testing · Trajectory evaluation<br/>
+  Multi-server attack testing · Multi-judge blind evaluation · Fair benchmarking · SVG badges<br/>
   154 pre-built community tests · 12-page web dashboard · Production monitoring · Red-teaming
 </p>
 

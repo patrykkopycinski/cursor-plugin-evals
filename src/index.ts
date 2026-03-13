@@ -358,3 +358,41 @@ export {
   formatLeaderboardHtml,
 } from './leaderboard/formatter.js';
 export type { Leaderboard, LeaderboardEntry } from './leaderboard/types.js';
+
+export { ChaosEngine, applyFault, formatChaosReport } from './chaos/index.js';
+export type {
+  FaultKind, FaultRule, ChaosConfig, ChaosEvent, ChaosReport,
+} from './chaos/index.js';
+
+export { generateProbes, generateValidValue, generateWrongType } from './schema-drift/index.js';
+export { analyzeDrift, formatDriftReport } from './schema-drift/index.js';
+export type {
+  DriftKind, DriftFinding, ProbeInput, ProbeResult, SchemaDriftReport,
+} from './schema-drift/index.js';
+
+export { SAFE_MCP_TECHNIQUES, buildComplianceReport, formatComplianceReport } from './safe-mcp/index.js';
+export type {
+  SafeMcpTechnique, SafeMcpTactic, ComplianceMapping, ComplianceReport,
+} from './safe-mcp/index.js';
+
+export { CROSS_SERVER_SCENARIOS, analyzeResults, formatCrossServerReport } from './multi-server/index.js';
+export type {
+  AttackVector, MaliciousToolDef, CrossServerTestCase,
+  CrossServerResult, CrossServerReport,
+} from './multi-server/index.js';
+
+export {
+  extractTrajectory, computeLevenshteinDistance, computeLCS,
+  scoreTrajectory, TrajectoryEvaluator,
+} from './evaluators/trajectory.js';
+export type { TrajectoryStep, TrajectoryMetrics } from './evaluators/trajectory.js';
+
+export { generateFuzzInputs, analyzeFuzzResults, formatFuzzReport } from './fuzz/index.js';
+export type { FuzzInput, FuzzResult, FuzzReport } from './fuzz/index.js';
+
+export {
+  generateBadgeSvg, generateScoreBadge, generatePassRateBadge,
+  generateConformanceBadge, generateSecurityBadge, generateResilienceBadge,
+  gradeColor,
+} from './badges/index.js';
+export type { BadgeConfig, BadgeStyle } from './badges/index.js';

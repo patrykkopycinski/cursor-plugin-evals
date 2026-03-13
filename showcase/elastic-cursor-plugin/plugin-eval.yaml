@@ -1012,3 +1012,92 @@ suites:
         check: dependency_audit
         thresholds:
           max_critical_deps: 0
+
+  # ═══════════════════════════════════════════════════════════════════════
+  #  CHAOS LAYER — resilience under fault injection
+  # ═══════════════════════════════════════════════════════════════════════
+
+  - name: chaos-resilience
+    layer: chaos
+    defaults:
+      timeout: 30000
+    chaos:
+      intensity: medium
+      seed: 42
+      network: true
+      protocol: true
+    tests:
+      - name: elasticsearch-api-chaos
+        tool: elasticsearch_api
+        args:
+          method: GET
+          path: "/_cluster/health"
+        thresholds:
+          survival_rate: 0.70
+
+      - name: esql-query-chaos
+        tool: esql_query
+        args:
+          query: "ROW x = 1"
+        thresholds:
+          survival_rate: 0.70
+
+      - name: cluster-context-chaos
+        tool: get_cluster_context
+        args: {}
+        thresholds:
+          survival_rate: 0.70
+
+  # ═══════════════════════════════════════════════════════════════════════
+  #  SCHEMA DRIFT — detect declared-vs-actual mismatches
+  # ═══════════════════════════════════════════════════════════════════════
+
+  - name: schema-drift-detection
+    layer: schema-drift
+    tests:
+      - name: drift-all-tools
+        check: drift
+        thresholds:
+          max_critical: 0
+          min_drift_score: 0.85
+
+  # ═══════════════════════════════════════════════════════════════════════
+  #  FUZZ — property-based input space exploration
+  # ═══════════════════════════════════════════════════════════════════════
+
+  - name: fuzz-gateway-tools
+    layer: fuzz
+    tests:
+      - name: fuzz-elasticsearch-api
+        tool: elasticsearch_api
+        thresholds:
+          max_crash_rate: 0.10
+      - name: fuzz-esql-query
+        tool: esql_query
+        thresholds:
+          max_crash_rate: 0.10
+
+  # ═══════════════════════════════════════════════════════════════════════
+  #  SAFE-MCP — compliance mapping
+  # ═══════════════════════════════════════════════════════════════════════
+
+  - name: safe-mcp-compliance
+    layer: compliance
+    tests:
+      - name: safe-mcp-coverage
+        check: compliance
+        thresholds:
+          min_coverage: 80
+
+  # ═══════════════════════════════════════════════════════════════════════
+  #  MULTI-SERVER — cross-tool attack resistance
+  # ═══════════════════════════════════════════════════════════════════════
+
+  - name: multi-server-attacks
+    layer: multi-server
+    require_env: [OPENAI_API_KEY|AZURE_OPENAI_API_KEY]
+    tests:
+      - name: cross-server-resistance
+        check: all_scenarios
+        thresholds:
+          min_resistance: 0.80

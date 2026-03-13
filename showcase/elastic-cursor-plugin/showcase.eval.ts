@@ -184,6 +184,40 @@ export const llmDemo = defineSuite(
   },
 );
 
+// ─── Trajectory evaluation demo ─────────────────────────────────────────────
+
+export const trajectoryDemo = defineSuite(
+  { name: 'ts-trajectory-demo', layer: 'llm', defaults: { repetitions: 2 } },
+  ({ llm }) => {
+    llm('trajectory-cluster-diagnostics', {
+      prompt:
+        'Run full cluster diagnostics: health, data overview, then a test query.',
+      expected: {
+        tools: ['get_cluster_context', 'discover_data', 'esql_query'],
+        goldenPath: ['get_cluster_context', 'discover_data', 'esql_query'],
+      },
+      evaluators: [
+        'tool-selection',
+        'trajectory',
+        'response-quality',
+        'security',
+      ],
+      maxTurns: 8,
+    });
+
+    llm('trajectory-security-investigation', {
+      prompt:
+        'Investigate potential security incidents: check alerts, then rules, then data sources.',
+      expected: {
+        tools: ['triage_alerts', 'manage_detection_rules', 'discover_security_data'],
+        goldenPath: ['triage_alerts', 'manage_detection_rules', 'discover_security_data'],
+      },
+      evaluators: ['tool-selection', 'trajectory', 'security'],
+      maxTurns: 8,
+    });
+  },
+);
+
 // ─── Multi-judge configuration demo ─────────────────────────────────────────
 
 export const multiJudgeDemo = defineSuite(
@@ -224,4 +258,5 @@ export default [
   runAssertionDemo,
   llmDemo,
   multiJudgeDemo,
+  trajectoryDemo,
 ];
