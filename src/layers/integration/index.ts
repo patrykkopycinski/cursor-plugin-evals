@@ -8,7 +8,7 @@ import type {
 } from '../../core/types.js';
 import type { McpPluginClient } from '../../mcp/client.js';
 import { evaluateAssertions } from './assertions.js';
-import { mergeDefaults, resolveDotPath } from '../../core/utils.js';
+import { mergeDefaults, resolveDotPath, getMissingEnvVars } from '../../core/utils.js';
 import { log } from '../../cli/logger.js';
 
 const PREV_REF_PATTERN = /\$prev\.([a-zA-Z0-9_.]+)/g;
@@ -117,7 +117,7 @@ async function runSingleTest(
       return await runWorkflow(test, suiteName, client, timeout, start);
     }
 
-    const record = await executeToolCall(client, test.tool, test.args, timeout);
+    const record = await executeToolCall(client, test.tool, test.args ?? {}, timeout);
     toolCalls.push(record);
 
     if (record.result.isError && !test.expectError) {
@@ -282,6 +282,23 @@ export async function runIntegrationSuite(
 
   for (const test of suite.tests) {
     const integrationTest = test as IntegrationTestConfig;
+    const missingEnv = getMissingEnvVars(integrationTest.requireEnv, suite.requireEnv);
+
+    if (missingEnv.length > 0) {
+      log.test(integrationTest.name, 'skip');
+      results.push({
+        name: integrationTest.name,
+        suite: suite.name,
+        layer: 'integration',
+        pass: true,
+        skipped: true,
+        toolCalls: [],
+        evaluatorResults: [],
+        latencyMs: 0,
+        error: `Skipped: missing env ${missingEnv.join(', ')}`,
+      });
+      continue;
+    }
 
     log.test(integrationTest.name, 'running');
     const result = await runSingleTest(integrationTest, suite.name, client, mergedDefaults);

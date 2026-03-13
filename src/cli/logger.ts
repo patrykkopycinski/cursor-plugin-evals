@@ -112,14 +112,16 @@ export const log = {
     }
   },
 
-  summary(total: number, passed: number, failed: number, duration: number): void {
+  summary(total: number, passed: number, failed: number, duration: number, skipped?: number): void {
     if (!shouldLog('info')) return;
     console.log();
     log.divider();
     const rate = total > 0 ? ((passed / total) * 100).toFixed(1) : '0.0';
     const color = failed === 0 ? chalk.green : chalk.red;
+    const parts = [`${passed} passed`, `${failed} failed`];
+    if (skipped && skipped > 0) parts.push(`${skipped} skipped`);
     console.log(
-      `  ${c(color, `${rate}% pass rate`)} — ${passed} passed, ${failed} failed, ${total} total (${(duration / 1000).toFixed(1)}s)`,
+      `  ${c(color, `${rate}% pass rate`)} — ${parts.join(', ')}, ${total} total (${(duration / 1000).toFixed(1)}s)`,
     );
     console.log();
   },

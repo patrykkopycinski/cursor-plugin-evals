@@ -17,7 +17,8 @@ function difficultyTag(test: TestResult): string {
 }
 
 function printTestResult(test: TestResult): void {
-  log.test(test.name + difficultyTag(test), test.pass ? 'pass' : 'fail');
+  const status = test.skipped ? 'skip' : test.pass ? 'pass' : 'fail';
+  log.test(test.name + difficultyTag(test), status);
 
   for (const ev of test.evaluatorResults) {
     log.evaluator(ev.evaluator, ev.score, ev.pass);
@@ -60,10 +61,13 @@ function printSuiteResult(suite: SuiteResult): void {
   }
 
   const passRate = (suite.passRate * 100).toFixed(1);
-  const passed = suite.tests.filter((t) => t.pass).length;
-  const failed = suite.tests.length - passed;
+  const skipped = suite.tests.filter((t) => t.skipped).length;
+  const passed = suite.tests.filter((t) => t.pass && !t.skipped).length;
+  const failed = suite.tests.length - passed - skipped;
+  const parts = [`${passed} passed`, `${failed} failed`];
+  if (skipped > 0) parts.push(`${skipped} skipped`);
   log.info(
-    `    ${chalk.gray(`${passRate}% — ${passed} passed, ${failed} failed (${formatDuration(suite.duration)})`)}`,
+    `    ${chalk.gray(`${passRate}% — ${parts.join(', ')} (${formatDuration(suite.duration)})`)}`,
   );
   log.info('');
 }
@@ -160,5 +164,6 @@ export function printTerminalReport(result: RunResult): void {
     result.overall.passed,
     result.overall.failed,
     result.overall.duration,
+    result.overall.skipped,
   );
 }

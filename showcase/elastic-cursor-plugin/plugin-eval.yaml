@@ -76,7 +76,6 @@ suites:
           - get_connection_config
           - setup_apm
           - setup_log_shipping
-          - observability_info
           - kibana_info
           - create_dashboard
           - create_iot_dashboard
@@ -124,6 +123,7 @@ suites:
   #  INTEGRATION LAYER — executes tool calls against live/mock cluster
   # ═══════════════════════════════════════════════════════════════════════
 
+  # --- Gateway API tools ---
   - name: integration-gateway
     layer: integration
     defaults:
@@ -135,9 +135,22 @@ suites:
           method: GET
           path: "/_cluster/health"
         assert:
+          - field: isError
+            op: eq
+            value: false
           - field: content.0.text
             op: contains
             value: "cluster_name"
+
+      - name: elasticsearch-cat-indices
+        tool: elasticsearch_api
+        args:
+          method: GET
+          path: "/_cat/indices?format=json"
+        assert:
+          - field: isError
+            op: eq
+            value: false
 
       - name: esql-simple-query
         tool: esql_query
@@ -147,6 +160,9 @@ suites:
           - field: isError
             op: eq
             value: false
+          - field: content.0.text
+            op: contains
+            value: "x"
 
       - name: esql-function-query
         tool: esql_query
@@ -156,6 +172,9 @@ suites:
           - field: isError
             op: eq
             value: false
+          - field: content.0.text
+            op: contains
+            value: "hello world"
 
       - name: kibana-status
         tool: kibana_api
@@ -163,6 +182,9 @@ suites:
           method: GET
           path: "/api/status"
         assert:
+          - field: isError
+            op: eq
+            value: false
           - field: content.0.text
             op: contains
             value: "overall"
@@ -172,11 +194,13 @@ suites:
         args:
           method: GET
           path: "/api/v1/deployments"
+        require_env: [ELASTIC_CLOUD_API_KEY]
         assert:
           - field: isError
             op: eq
             value: false
 
+  # --- Discovery tools ---
   - name: integration-discovery
     layer: integration
     defaults:
@@ -189,6 +213,11 @@ suites:
           - field: isError
             op: eq
             value: false
+          - field: content.0.text
+            op: exists
+          - field: content.0.text
+            op: matches
+            value: "[Dd]iscover|indices|data"
 
       - name: discover-o11y-data
         tool: discover_o11y_data
@@ -197,6 +226,11 @@ suites:
           - field: isError
             op: eq
             value: false
+          - field: content.0.text
+            op: exists
+          - field: content.0.text
+            op: matches
+            value: "[Oo]bservability|[Dd]iscover|APM|metrics|logs"
 
       - name: discover-security-data
         tool: discover_security_data
@@ -205,6 +239,11 @@ suites:
           - field: isError
             op: eq
             value: false
+          - field: content.0.text
+            op: exists
+          - field: content.0.text
+            op: matches
+            value: "[Ss]ecurity|detection|alerts|SIEM"
 
       - name: cluster-context
         tool: get_cluster_context
@@ -215,7 +254,25 @@ suites:
             value: false
           - field: content.0.text
             op: exists
+          - field: content.0.text
+            op: matches
+            value: "[Cc]luster|node|health"
 
+      # data-summary: Skipped — get_data_summary requires a discovery_result
+      # object (output of discover_data) as input, making it unsuitable for
+      # standalone integration testing.
+
+      - name: security-summary
+        tool: get_security_summary
+        args: {}
+        assert:
+          - field: isError
+            op: eq
+            value: false
+          - field: content.0.text
+            op: exists
+
+  # --- Security tools ---
   - name: integration-security
     layer: integration
     defaults:
@@ -229,6 +286,9 @@ suites:
           - field: isError
             op: eq
             value: false
+          - field: content.0.text
+            op: matches
+            value: "[Dd]etection [Rr]ule|No detection rules|rules"
 
       - name: triage-alerts-list
         tool: triage_alerts
@@ -238,6 +298,9 @@ suites:
           - field: isError
             op: eq
             value: false
+          - field: content.0.text
+            op: matches
+            value: "[Aa]lert|No alerts|triage"
 
       - name: manage-cases-list
         tool: manage_cases
@@ -247,7 +310,22 @@ suites:
           - field: isError
             op: eq
             value: false
+          - field: content.0.text
+            op: matches
+            value: "[Cc]ase|No cases"
 
+      - name: siem-quickstart
+        tool: siem_quickstart
+        args: {}
+        assert:
+          - field: isError
+            op: eq
+            value: false
+          - field: content.0.text
+            op: matches
+            value: "[Ss]ecurity|SIEM|detection|rule"
+
+  # --- Smart tools ---
   - name: integration-smart-tools
     layer: integration
     defaults:
@@ -286,14 +364,9 @@ suites:
           - field: isError
             op: eq
             value: false
-
-      - name: observability-info
-        tool: observability_info
-        args: {}
-        assert:
-          - field: isError
-            op: eq
-            value: false
+          - field: content.0.text
+            op: matches
+            value: "[Cc]onfig|[Cc]lient|connection"
 
       - name: kibana-info
         tool: kibana_info
@@ -302,6 +375,9 @@ suites:
           - field: isError
             op: eq
             value: false
+          - field: content.0.text
+            op: matches
+            value: "[Kk]ibana|dashboard|UI"
 
       - name: generate-search-ui
         tool: generate_search_ui
@@ -311,6 +387,70 @@ suites:
           - field: isError
             op: eq
             value: false
+          - field: content.0.text
+            op: matches
+            value: "[Ss]earch|index|query"
+
+      - name: setup-apm
+        tool: setup_apm
+        args:
+          framework: express
+        assert:
+          - field: isError
+            op: eq
+            value: false
+          - field: content.0.text
+            op: matches
+            value: "APM|apm|agent|instrument"
+
+      - name: setup-log-shipping
+        tool: setup_log_shipping
+        args:
+          log_path: "/var/log/app/*.log"
+        assert:
+          - field: isError
+            op: eq
+            value: false
+          - field: content.0.text
+            op: matches
+            value: "[Ll]og|shipping|Filebeat|ingest"
+
+      - name: create-dashboard-guide
+        tool: create_dashboard
+        args:
+          title: "System Overview"
+        assert:
+          - field: isError
+            op: eq
+            value: false
+          - field: content.0.text
+            op: matches
+            value: "[Dd]ashboard|visualization|panel"
+
+      - name: create-iot-dashboard
+        tool: create_iot_dashboard
+        args: {}
+        expect_error: true
+        assert:
+          - field: isError
+            op: eq
+            value: true
+          - field: content.0.text
+            op: contains
+            value: "No IoT data found"
+
+      - name: create-alert-rule-guide
+        tool: create_alert_rule
+        args:
+          name: "CPU Alert"
+          rule_type: threshold
+        assert:
+          - field: isError
+            op: eq
+            value: false
+          - field: content.0.text
+            op: matches
+            value: "[Aa]lert|rule|threshold|condition"
 
       - name: deploy-telemetry-dashboard
         tool: deploy_telemetry_dashboard
@@ -323,6 +463,82 @@ suites:
             op: contains
             value: "telemetry"
 
+  # --- Agent Builder tools ---
+  - name: integration-agent-builder
+    layer: integration
+    defaults:
+      timeout: 20000
+    tests:
+      - name: list-agent-builder-tools
+        tool: list_agent_builder_tools
+        args: {}
+        assert:
+          - field: isError
+            op: eq
+            value: false
+          - field: content.0.text
+            op: exists
+
+      - name: get-agent-builder-mcp-config
+        tool: get_agent_builder_mcp_config
+        args:
+          kibana_url: "http://localhost:5620"
+        assert:
+          - field: isError
+            op: eq
+            value: false
+          - field: content.0.text
+            op: matches
+            value: "[Mm][Cc][Pp]|config|endpoint"
+
+      - name: list-agent-builder-agents
+        tool: list_agent_builder_agents
+        args: {}
+        assert:
+          - field: isError
+            op: eq
+            value: false
+          - field: content.0.text
+            op: exists
+
+  # --- Knowledge-base lifecycle ---
+  - name: integration-knowledge-base
+    layer: integration
+    defaults:
+      timeout: 20000
+    tests:
+      - name: cluster-context-knowledge
+        tool: get_cluster_context
+        args: {}
+        assert:
+          - field: isError
+            op: eq
+            value: false
+          - field: content.0.text
+            op: matches
+            value: "[Cc]luster|node|health"
+
+      - name: refresh-knowledge
+        tool: refresh_cluster_knowledge
+        args: {}
+        assert:
+          - field: isError
+            op: eq
+            value: false
+          - field: content.0.text
+            op: exists
+
+      - name: clear-knowledge
+        tool: clear_cluster_knowledge
+        args: {}
+        assert:
+          - field: isError
+            op: eq
+            value: false
+          - field: content.0.text
+            op: exists
+
+  # --- Workflow tools ---
   - name: integration-workflows
     layer: integration
     defaults:
@@ -335,6 +551,66 @@ suites:
           - field: isError
             op: eq
             value: false
+          - field: content.0.text
+            op: matches
+            value: "[Ww]orkflow|No workflow|saved"
+
+      - name: save-workflow
+        tool: save_workflow
+        args:
+          name: "test-eval-workflow"
+          definition:
+            name: "test-eval-workflow"
+            description: "Test workflow for eval"
+            steps:
+              - id: "health_check"
+                name: "Check cluster health"
+                tool: elasticsearch_api
+                parameters:
+                  method: GET
+                  path: "/_cluster/health"
+        assert:
+          - field: isError
+            op: eq
+            value: false
+          - field: content.0.text
+            op: exists
+
+      - name: run-workflow
+        tool: run_workflow
+        args:
+          name: "infrastructure-overview"
+        assert:
+          - field: isError
+            op: eq
+            value: false
+          - field: content.0.text
+            op: exists
+
+  # --- Mutation round-trip ---
+  - name: integration-mutation-roundtrip
+    layer: integration
+    defaults:
+      timeout: 30000
+    tests:
+      - name: create-detection-rule
+        tool: manage_detection_rules
+        args:
+          operation: create
+          name: "eval-test-rule-cleanup"
+          description: "Temporary rule for eval testing - will be deleted"
+          type: query
+          query: "process.name: eval-test-*"
+          severity: low
+          risk_score: 5
+          enabled: false
+        assert:
+          - field: isError
+            op: eq
+            value: false
+          - field: content.0.text
+            op: matches
+            value: "[Cc]reated|success|rule"
 
   # ═══════════════════════════════════════════════════════════════════════
   #  PERFORMANCE LAYER — benchmark tool latency
@@ -386,12 +662,40 @@ suites:
         thresholds:
           p95: 1000
 
+      - name: discover-data-p95
+        tool: discover_data
+        args: {}
+        warmup: 2
+        iterations: 10
+        concurrency: 1
+        thresholds:
+          p95: 5000
+
+      - name: discover-o11y-p95
+        tool: discover_o11y_data
+        args: {}
+        warmup: 2
+        iterations: 10
+        concurrency: 1
+        thresholds:
+          p95: 5000
+
+      - name: discover-security-p95
+        tool: discover_security_data
+        args: {}
+        warmup: 2
+        iterations: 10
+        concurrency: 1
+        thresholds:
+          p95: 5000
+
   # ═══════════════════════════════════════════════════════════════════════
   #  LLM EVAL LAYER — agent loop with tool selection quality
   # ═══════════════════════════════════════════════════════════════════════
 
   - name: llm-tool-selection
     layer: llm
+    require_env: [OPENAI_API_KEY]
     defaults:
       repetitions: 3
     tests:
@@ -487,6 +791,7 @@ suites:
 
   - name: llm-workflows
     layer: llm
+    require_env: [OPENAI_API_KEY]
     defaults:
       repetitions: 2
     tests:
@@ -519,6 +824,7 @@ suites:
 
   - name: llm-security
     layer: llm
+    require_env: [OPENAI_API_KEY]
     defaults:
       repetitions: 2
     tests:

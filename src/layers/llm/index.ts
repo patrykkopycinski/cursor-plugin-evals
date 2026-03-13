@@ -13,7 +13,7 @@ import { McpPluginClient } from '../../mcp/client.js';
 import { runAgentLoop } from './agent-loop.js';
 import { buildSystemPrompt } from './system-prompt.js';
 import { generateDistractors } from './distractors.js';
-import { mergeDefaults, parseEntry } from '../../core/utils.js';
+import { mergeDefaults, parseEntry, getMissingEnvVars } from '../../core/utils.js';
 import { log } from '../../cli/logger.js';
 
 const DEFAULT_MAX_TURNS = 10;
@@ -160,6 +160,24 @@ export async function runLlmSuite(
 
     for (const test of suite.tests) {
       const llmTest = test as LlmTestConfig;
+      const missingEnv = getMissingEnvVars(llmTest.requireEnv, suite.requireEnv);
+
+      if (missingEnv.length > 0) {
+        log.test(llmTest.name, 'skip');
+        results.push({
+          name: llmTest.name,
+          suite: suite.name,
+          layer: 'llm',
+          pass: true,
+          skipped: true,
+          toolCalls: [],
+          evaluatorResults: [],
+          latencyMs: 0,
+          error: `Skipped: missing env ${missingEnv.join(', ')}`,
+        });
+        continue;
+      }
+
       const models = llmTest.models ?? [mergedDefaults.judgeModel ?? DEFAULT_MODEL];
 
       const testEvaluators: Evaluator[] = [];

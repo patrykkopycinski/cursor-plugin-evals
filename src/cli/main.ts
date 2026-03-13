@@ -761,6 +761,7 @@ program
           overall: {
             passed: passCount,
             failed: failCount,
+            skipped: 0,
             total: tests.length,
             passRate: tests.length > 0 ? passCount / tests.length : 0,
             duration: totalDuration,

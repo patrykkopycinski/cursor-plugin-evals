@@ -42,6 +42,7 @@ function makeRunResult(overrides: Partial<RunResult> = {}): RunResult {
       total: 2,
       passed: 1,
       failed: 1,
+      skipped: 0,
       passRate: 0.5,
       duration: 57,
     },

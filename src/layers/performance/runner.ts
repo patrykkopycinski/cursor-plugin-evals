@@ -3,7 +3,7 @@ import type { TestResult, SuiteConfig, DefaultsConfig } from '../../core/types.j
 import type { McpPluginClient } from '../../mcp/client.js';
 import type { PerformanceTestConfig, PerformanceMetrics } from './types.js';
 import { DEFAULT_WARMUP, DEFAULT_ITERATIONS, DEFAULT_CONCURRENCY } from './types.js';
-import { mergeDefaults } from '../../core/utils.js';
+import { mergeDefaults, getMissingEnvVars } from '../../core/utils.js';
 import { log } from '../../cli/logger.js';
 
 export function computePercentile(sorted: number[], p: number): number {
@@ -126,6 +126,24 @@ export async function runPerformanceSuite(
 
   for (const test of suite.tests) {
     const perfTest = test as unknown as PerformanceTestConfig;
+    const missingEnv = getMissingEnvVars(perfTest.requireEnv, suite.requireEnv);
+
+    if (missingEnv.length > 0) {
+      log.test(perfTest.name, 'skip');
+      results.push({
+        name: perfTest.name,
+        suite: suite.name,
+        layer: 'performance',
+        pass: true,
+        skipped: true,
+        toolCalls: [],
+        evaluatorResults: [],
+        latencyMs: 0,
+        error: `Skipped: missing env ${missingEnv.join(', ')}`,
+      });
+      continue;
+    }
+
     log.test(perfTest.name, 'running');
     const result = await runSinglePerformanceTest(perfTest, suite.name, client);
     log.test(perfTest.name, result.pass ? 'pass' : 'fail');

@@ -46,6 +46,7 @@ export interface TestResult {
   suite: string;
   layer: Layer;
   pass: boolean;
+  skipped?: boolean;
   toolCalls: ToolCallRecord[];
   evaluatorResults: EvaluatorResult[];
   tokenUsage?: TokenUsage;
@@ -76,6 +77,7 @@ export interface RunResult {
     total: number;
     passed: number;
     failed: number;
+    skipped: number;
     passRate: number;
     duration: number;
   };
@@ -185,6 +187,7 @@ export type Difficulty = 'simple' | 'moderate' | 'complex' | 'adversarial';
 export interface UnitTestConfig {
   name: string;
   difficulty?: Difficulty;
+  requireEnv?: string[];
   check: 'registration' | 'schema' | 'conditional_registration' | 'response_format';
   expectedTools?: string[];
   tool?: string;
@@ -196,6 +199,7 @@ export interface UnitTestConfig {
 export interface IntegrationTestConfig {
   name: string;
   difficulty?: Difficulty;
+  requireEnv?: string[];
   tool: string;
   args: Record<string, unknown>;
   assert?: AssertionConfig[];
@@ -215,6 +219,7 @@ export interface WorkflowStep {
 export interface LlmTestConfig {
   name: string;
   difficulty?: Difficulty;
+  requireEnv?: string[];
   prompt: string;
   expected: ExpectedOutput;
   evaluators: string[];
@@ -236,6 +241,7 @@ export interface PerformanceTestConfig {
   concurrency?: number;
   thresholds?: { p50?: number; p95?: number; p99?: number };
   difficulty?: Difficulty;
+  requireEnv?: string[];
 }
 
 export type TestConfig = UnitTestConfig | StaticTestConfig | IntegrationTestConfig | LlmTestConfig | PerformanceTestConfig;
@@ -255,6 +261,7 @@ export type StaticCheck =
 export interface StaticTestConfig {
   name: string;
   difficulty?: Difficulty;
+  requireEnv?: string[];
   check: StaticCheck;
   components?: string[];
 }
@@ -331,6 +338,7 @@ export interface PluginManifest {
 export interface SuiteConfig {
   name: string;
   layer: Layer;
+  requireEnv?: string[];
   setup?: string;
   teardown?: string;
   defaults?: DefaultsConfig;

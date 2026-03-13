@@ -276,11 +276,12 @@ export async function runEvaluation(
   );
 
   const allTests = suiteResults.flatMap((s) => s.tests);
+  const skipped = allTests.filter((t) => t.skipped).length;
   const passed = allTests.filter((t) => t.pass).length;
   const failed = allTests.length - passed;
   const duration = performance.now() - runStart;
 
-  log.summary(allTests.length, passed, failed, duration);
+  log.summary(allTests.length, passed, failed, duration, skipped);
 
   const dimensions = computeDimensions({
     runId,
@@ -291,6 +292,7 @@ export async function runEvaluation(
       total: allTests.length,
       passed,
       failed,
+      skipped,
       passRate: allTests.length > 0 ? passed / allTests.length : 1,
       duration,
     },
@@ -322,6 +324,7 @@ export async function runEvaluation(
       total: allTests.length,
       passed,
       failed,
+      skipped,
       passRate: allTests.length > 0 ? passed / allTests.length : 1,
       duration,
     },

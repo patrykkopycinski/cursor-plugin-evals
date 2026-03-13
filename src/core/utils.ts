@@ -51,3 +51,26 @@ export function formatDuration(ms: number): string {
   if (ms < 1_000) return `${Math.round(ms)}ms`;
   return `${(ms / 1_000).toFixed(1)}s`;
 }
+
+/**
+ * Returns the list of env var names that are missing or empty.
+ * If all are present, returns an empty array.
+ */
+export function getMissingEnvVars(
+  testRequireEnv?: string[],
+  suiteRequireEnv?: string[],
+): string[] {
+  const required = new Set<string>([
+    ...(suiteRequireEnv ?? []),
+    ...(testRequireEnv ?? []),
+  ]);
+  if (required.size === 0) return [];
+
+  const missing: string[] = [];
+  for (const name of required) {
+    if (!process.env[name]) {
+      missing.push(name);
+    }
+  }
+  return missing;
+}

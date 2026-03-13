@@ -83,6 +83,7 @@ const IntegrationTestSchema = z.object({
   teardown: z.string().optional(),
   workflow: z.array(WorkflowStepSchema).optional(),
   expect_error: z.boolean().optional(),
+  require_env: z.array(z.string()).optional(),
 });
 
 const DistractorConfigSchema = z
@@ -137,6 +138,7 @@ const PerformanceTestSchema = z.object({
       p99: z.number().positive().optional(),
     })
     .optional(),
+  require_env: z.array(z.string()).optional(),
 });
 
 const TestSchema = z.union([
@@ -158,6 +160,7 @@ const SuiteSchema = z.object({
   tests: z.array(TestSchema),
   adapter: z.union([z.string(), z.array(z.string())]).optional(),
   skillDir: z.string().optional(),
+  require_env: z.array(z.string()).optional(),
 });
 
 const AuthSchema = z.discriminatedUnion('type', [
@@ -290,14 +293,15 @@ function interpolateDeep(obj: unknown): unknown {
   return obj;
 }
 
-function snakeToCamel(obj: unknown): unknown {
+function snakeToCamel(obj: unknown, preserveKey = false): unknown {
   if (typeof obj !== 'object' || obj === null) return obj;
-  if (Array.isArray(obj)) return obj.map(snakeToCamel);
+  if (Array.isArray(obj)) return obj.map((item) => snakeToCamel(item, preserveKey));
 
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
-    const camelKey = key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
-    result[camelKey] = snakeToCamel(value);
+    const camelKey = preserveKey ? key : key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+    const shouldPreserveChildren = key === 'args' || key === 'env' || key === 'minimal_env' || key === 'minimalEnv';
+    result[camelKey] = snakeToCamel(value, shouldPreserveChildren);
   }
   return result;
 }

@@ -39,6 +39,7 @@ function makeRunResult(suites: SuiteResult[]): RunResult {
       total: allTests.length,
       passed,
       failed: allTests.length - passed,
+      skipped: 0,
       passRate: allTests.length > 0 ? passed / allTests.length : 1,
       duration: 5000,
     },
