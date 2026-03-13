@@ -20,6 +20,8 @@ import { ContextFaithfulnessEvaluator } from './context-faithfulness.js';
 import { ConversationCoherenceEvaluator } from './conversation-coherence.js';
 import { CriteriaEvaluator } from './criteria.js';
 import { RagEvaluator } from './rag.js';
+import { PlanQualityEvaluator } from './plan-quality.js';
+import { TaskCompletionEvaluator } from './task-completion.js';
 
 export const EVALUATOR_NAMES = [
   'tool-selection',
@@ -42,6 +44,8 @@ export const EVALUATOR_NAMES = [
   'conversation-coherence',
   'criteria',
   'rag',
+  'plan-quality',
+  'task-completion',
 ] as const;
 
 export type EvaluatorName = (typeof EVALUATOR_NAMES)[number];
@@ -67,6 +71,8 @@ const EVALUATOR_MAP: Record<EvaluatorName, new () => Evaluator> = {
   'conversation-coherence': ConversationCoherenceEvaluator,
   criteria: CriteriaEvaluator,
   rag: RagEvaluator,
+  'plan-quality': PlanQualityEvaluator,
+  'task-completion': TaskCompletionEvaluator,
 };
 
 export function createEvaluator(name: string): Evaluator {
@@ -98,4 +104,6 @@ export {
   ConversationCoherenceEvaluator,
   CriteriaEvaluator,
   RagEvaluator,
+  PlanQualityEvaluator,
+  TaskCompletionEvaluator,
 };

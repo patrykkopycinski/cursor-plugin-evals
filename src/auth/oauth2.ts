@@ -1,7 +1,11 @@
 import type { OAuth2AuthConfig, AuthProvider } from './types.js';
+import { runOAuthPkceFlow, refreshAccessToken } from './oauth2-flow.js';
+import type { OAuthFlowConfig, OAuthTokens } from './oauth2-flow.js';
+import { cacheTokens, loadCachedTokens, isTokenExpired } from './token-cache.js';
 
 interface TokenResponse {
   access_token: string;
+  refresh_token?: string;
   expires_in: number;
   token_type: string;
 }
@@ -22,8 +26,53 @@ export class OAuth2AuthProvider implements AuthProvider {
       return { Authorization: `Bearer ${this.cachedToken}` };
     }
 
+    if (this.config.authorizationUrl) {
+      return this.getHeadersWithPkce();
+    }
+
     const token = await this.fetchToken();
     return { Authorization: `Bearer ${token}` };
+  }
+
+  private async getHeadersWithPkce(): Promise<Record<string, string>> {
+    const cacheKey = `oauth2_${this.config.clientId}`;
+
+    const cached = await loadCachedTokens(cacheKey);
+    if (cached && !isTokenExpired(cached)) {
+      this.cachedToken = cached.accessToken;
+      this.expiresAt = cached.expiresAt ?? 0;
+      return { Authorization: `Bearer ${cached.accessToken}` };
+    }
+
+    if (cached?.refreshToken) {
+      try {
+        const flowConfig = this.buildFlowConfig();
+        const refreshed = await refreshAccessToken(flowConfig, cached.refreshToken);
+        await cacheTokens(cacheKey, refreshed);
+        this.cachedToken = refreshed.accessToken;
+        this.expiresAt = refreshed.expiresAt ?? 0;
+        return { Authorization: `Bearer ${refreshed.accessToken}` };
+      } catch {
+        // Refresh failed — fall through to full PKCE flow
+      }
+    }
+
+    const flowConfig = this.buildFlowConfig();
+    const tokens = await runOAuthPkceFlow(flowConfig);
+    await cacheTokens(cacheKey, tokens);
+    this.cachedToken = tokens.accessToken;
+    this.expiresAt = tokens.expiresAt ?? 0;
+    return { Authorization: `Bearer ${tokens.accessToken}` };
+  }
+
+  private buildFlowConfig(): OAuthFlowConfig {
+    return {
+      authorizationUrl: this.config.authorizationUrl!,
+      tokenUrl: this.config.tokenUrl,
+      clientId: this.config.clientId,
+      scopes: this.config.scopes ?? [],
+      redirectPort: this.config.redirectPort,
+    };
   }
 
   private async fetchToken(): Promise<string> {

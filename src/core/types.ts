@@ -57,6 +57,7 @@ export interface TestResult {
   performanceMetrics?: PerformanceMetrics;
   costUsd?: number;
   adapter?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface SuiteResult {
@@ -216,16 +217,25 @@ export interface WorkflowStep {
   assert?: AssertionConfig[];
 }
 
+export interface ConversationTurn {
+  prompt: string;
+  system?: string;
+  expected?: ExpectedOutput;
+  evaluators?: string[];
+}
+
 export interface LlmTestConfig {
   name: string;
   difficulty?: Difficulty;
   requireEnv?: string[];
+  type?: 'single' | 'conversation';
   prompt: string;
   expected: ExpectedOutput;
   evaluators: string[];
   maxTurns?: number;
   models?: string[];
   system?: string;
+  turns?: ConversationTurn[];
   distractors?: {
     mode: 'random' | 'targeted' | 'none';
     count?: number;
@@ -411,6 +421,13 @@ export interface PluginsConfig {
   transports?: PluginEntry[];
 }
 
+export interface GuardrailRuleConfig {
+  name: string;
+  pattern: string;
+  action: 'block' | 'warn' | 'log';
+  message?: string;
+}
+
 export interface EvalConfig {
   plugin: PluginConfig;
   infrastructure?: InfrastructureConfig;
@@ -419,6 +436,7 @@ export interface EvalConfig {
   scoring?: ScoringConfig;
   plugins?: PluginsConfig;
   ci?: CiThresholds;
+  guardrails?: GuardrailRuleConfig[];
   suites: SuiteConfig[];
 }
 

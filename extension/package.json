@@ -1,0 +1,57 @@
+{
+  "name": "cursor-plugin-evals-extension",
+  "displayName": "Cursor Plugin Evals",
+  "description": "Inline evaluation results for Cursor plugins",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Testing"
+  ],
+  "activationEvents": [
+    "workspaceContains:plugin-eval.yaml"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "cursorPluginEvals.runAll",
+        "title": "Plugin Eval: Run All"
+      },
+      {
+        "command": "cursorPluginEvals.runSuite",
+        "title": "Plugin Eval: Run Suite"
+      },
+      {
+        "command": "cursorPluginEvals.showDashboard",
+        "title": "Plugin Eval: Show Dashboard"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "plugin-evals",
+          "title": "Plugin Evals",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "plugin-evals": [
+        {
+          "id": "pluginEvals.results",
+          "name": "Eval Results"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "watch": "tsc -watch -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
+  }
+}

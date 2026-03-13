@@ -13,6 +13,7 @@ import { McpPluginClient } from '../../mcp/client.js';
 import { runAgentLoop } from './agent-loop.js';
 import { buildSystemPrompt } from './system-prompt.js';
 import { generateDistractors } from './distractors.js';
+import { runConversationTest } from './conversation.js';
 import { mergeDefaults, parseEntry, getMissingEnvVars } from '../../core/utils.js';
 import { log } from '../../cli/logger.js';
 
@@ -199,17 +200,33 @@ export async function runLlmSuite(
 
           log.test(displayName, 'running');
 
-          const result = await runSingleLlmTest(
-            llmTest,
-            suite.name,
-            pluginConfig,
-            tools,
-            client,
-            mergedDefaults,
-            model,
-            testEvaluators,
-            repetitions > 1 ? rep : undefined,
-          );
+          let result: TestResult;
+
+          if (llmTest.type === 'conversation') {
+            result = await runConversationTest(
+              llmTest,
+              suite.name,
+              pluginConfig,
+              tools,
+              client,
+              mergedDefaults,
+              model,
+              evaluatorRegistry,
+              repetitions > 1 ? rep : undefined,
+            );
+          } else {
+            result = await runSingleLlmTest(
+              llmTest,
+              suite.name,
+              pluginConfig,
+              tools,
+              client,
+              mergedDefaults,
+              model,
+              testEvaluators,
+              repetitions > 1 ? rep : undefined,
+            );
+          }
 
           log.test(displayName, result.pass ? 'pass' : 'fail');
 

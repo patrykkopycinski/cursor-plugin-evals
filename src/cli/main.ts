@@ -995,6 +995,89 @@ program
   );
 
 program
+  .command('regression')
+  .description('Run evaluations and detect regressions against a baseline fingerprint')
+  .requiredOption('--baseline <run-id>', 'baseline fingerprint run ID to compare against')
+  .option('-c, --config <path>', 'config file path', './plugin-eval.yaml')
+  .option('--alpha <number>', 'significance level for Welch t-test', parseFloat, 0.05)
+  .option('-l, --layer <layers...>', 'filter layers')
+  .option('-s, --suite <suites...>', 'filter suite names')
+  .option('-r, --repeat <n>', 'override repetitions', parsePositiveInt)
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: {
+      baseline: string;
+      config: string;
+      alpha: number;
+      layer?: string[];
+      suite?: string[];
+      repeat?: number;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+
+      log.header('Regression Detection');
+
+      const { loadFingerprint, buildFingerprint, detectRegressions } =
+        await import('../regression/index.js');
+      const { formatRegressionReport } = await import('../regression/report.js');
+
+      const baselineFp = await loadFingerprint(opts.baseline);
+      if (!baselineFp) {
+        log.error(`Baseline fingerprint not found: ${opts.baseline}`);
+        log.info('Available fingerprints:');
+        const { listFingerprints } = await import('../regression/index.js');
+        const ids = await listFingerprints();
+        if (ids.length === 0) {
+          log.info('  (none — run an evaluation first to create a baseline)');
+        } else {
+          for (const id of ids) log.info(`  ${id}`);
+        }
+        process.exitCode = EXIT_CONFIG_ERROR;
+        return;
+      }
+
+      let config;
+      try {
+        config = loadConfig(opts.config);
+      } catch (err) {
+        log.error('Configuration error', err);
+        process.exitCode = EXIT_CONFIG_ERROR;
+        return;
+      }
+
+      let result: RunResult;
+      try {
+        result = await runEvaluation(config, {
+          layers: opts.layer,
+          suites: opts.suite,
+          repeat: opts.repeat,
+        });
+      } catch (err) {
+        log.error('Evaluation failed', err);
+        process.exitCode = EXIT_CONFIG_ERROR;
+        return;
+      }
+
+      printTerminalReport(result);
+
+      const allTests = result.suites.flatMap((s) => s.tests);
+      const currentFp = buildFingerprint(result.runId, allTests);
+
+      const regressions = detectRegressions(baselineFp, currentFp, opts.alpha);
+      console.log(formatRegressionReport(regressions));
+
+      const hasFail = regressions.some((r) => r.verdict === 'FAIL');
+      if (hasFail) {
+        process.exitCode = EXIT_FAIL;
+      }
+    },
+  );
+
+program
   .command('compare')
   .description('Run evaluations across multiple models and produce a comparison matrix')
   .option('-c, --config <path>', 'config file path', './plugin-eval.yaml')
@@ -1076,6 +1159,317 @@ program
         }
       } catch (err) {
         log.error('Comparison failed', err);
+        process.exitCode = EXIT_FAIL;
+      }
+    },
+  );
+
+program
+  .command('gen-tests')
+  .description('Auto-generate integration tests from MCP tool schemas')
+  .option('-c, --config <path>', 'config file path', './plugin-eval.yaml')
+  .option('-t, --tool <name>', 'generate tests for a single tool')
+  .option('-o, --output <path>', 'write generated YAML to file')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: {
+      config: string;
+      tool?: string;
+      output?: string;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+
+      log.header('Generate Tests from Schemas');
+
+      let config;
+      try {
+        config = loadConfig(opts.config);
+      } catch (err) {
+        log.error('Configuration error', err);
+        process.exitCode = EXIT_CONFIG_ERROR;
+        return;
+      }
+
+      try {
+        const { McpPluginClient } = await import('../mcp/client.js');
+        const { parseEntry } = await import('../core/utils.js');
+        const { generateTestsFromSchema } = await import('../gen-tests/schema-walker.js');
+        const { formatAsYaml } = await import('../gen-tests/formatter.js');
+
+        const connectConfig: Parameters<typeof McpPluginClient.connect>[0] = {
+          buildCommand: config.plugin.buildCommand,
+          env: config.plugin.env,
+        };
+
+        if (config.plugin.transport && config.plugin.transport !== 'stdio') {
+          connectConfig.transport = {
+            type: config.plugin.transport,
+            url: config.plugin.url,
+            headers: config.plugin.headers,
+          };
+        } else if (config.plugin.entry) {
+          const { command, args } = parseEntry(config.plugin.entry);
+          connectConfig.command = command;
+          connectConfig.args = args;
+          connectConfig.cwd = config.plugin.dir;
+        }
+
+        const client = await McpPluginClient.connect(connectConfig);
+
+        try {
+          const tools = await client.listTools();
+          const filtered = opts.tool ? tools.filter((t) => t.name === opts.tool) : tools;
+
+          if (filtered.length === 0) {
+            log.warn(opts.tool ? `Tool "${opts.tool}" not found` : 'No tools discovered');
+            return;
+          }
+
+          log.info(`Generating tests for ${filtered.length} tool(s)...`);
+
+          const allTests = filtered.flatMap((tool) =>
+            generateTestsFromSchema(tool.name, tool.inputSchema as Record<string, unknown>),
+          );
+
+          const yaml = formatAsYaml(allTests, config.plugin.name);
+
+          if (opts.output) {
+            const outPath = resolve(process.cwd(), opts.output);
+            writeFileSync(outPath, yaml, 'utf-8');
+            log.success(`Generated ${allTests.length} test(s) → ${outPath}`);
+          } else {
+            console.log(yaml);
+          }
+        } finally {
+          await client.disconnect();
+        }
+      } catch (err) {
+        log.error('Test generation failed', err);
+        process.exitCode = EXIT_FAIL;
+      }
+    },
+  );
+
+program
+  .command('trace-import')
+  .description('Import OTel trace JSON and generate evaluation test definitions')
+  .requiredOption('-f, --file <path>', 'OTel trace JSON file path')
+  .option('--llm', 'generate LLM-layer tests from prompt spans')
+  .option('-o, --output <path>', 'write generated YAML to file')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: {
+      file: string;
+      llm?: boolean;
+      output?: string;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+
+      log.header('Trace Import');
+
+      try {
+        const { readFileSync } = await import('fs');
+        const { parseOtelTrace } = await import('../trace-import/parser.js');
+        const { generateTestsFromTrace } = await import('../trace-import/generator.js');
+
+        const filePath = resolve(process.cwd(), opts.file);
+        const raw = readFileSync(filePath, 'utf-8');
+        const json = JSON.parse(raw);
+
+        const trace = parseOtelTrace(json);
+        log.info(`Parsed trace ${trace.traceId} with ${trace.spans.length} span(s)`);
+
+        const yaml = generateTestsFromTrace(trace, { llm: opts.llm });
+
+        if (opts.output) {
+          const outPath = resolve(process.cwd(), opts.output);
+          writeFileSync(outPath, yaml, 'utf-8');
+          log.success(`Tests written to ${outPath}`);
+        } else {
+          console.log(yaml);
+        }
+      } catch (err) {
+        log.error('Trace import failed', err);
+        process.exitCode = EXIT_FAIL;
+      }
+    },
+  );
+
+program
+  .command('prompt-sensitivity')
+  .description('Analyze how sensitive LLM test results are to prompt rephrasings')
+  .requiredOption('-s, --suite <name>', 'LLM suite name to analyze')
+  .option('-c, --config <path>', 'config file path', './plugin-eval.yaml')
+  .option('-n, --variants <n>', 'number of prompt variants to generate', parsePositiveInt, 5)
+  .option('--threshold <n>', 'variance threshold for fragile classification', parseFloat, 0.15)
+  .option('-o, --output <path>', 'write report to file')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: {
+      suite: string;
+      config: string;
+      variants: number;
+      threshold: number;
+      output?: string;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+
+      log.header('Prompt Sensitivity Analysis');
+
+      let config;
+      try {
+        config = loadConfig(opts.config);
+      } catch (err) {
+        log.error('Configuration error', err);
+        process.exitCode = EXIT_CONFIG_ERROR;
+        return;
+      }
+
+      try {
+        const { analyzeSensitivity } = await import('../prompt-sensitivity/analyzer.js');
+        const { formatSensitivityReport } = await import('../prompt-sensitivity/report.js');
+
+        log.info(`Suite: ${opts.suite}, Variants: ${opts.variants}, Threshold: ${opts.threshold}`);
+        console.log();
+
+        const results = await analyzeSensitivity(
+          config,
+          opts.suite,
+          opts.variants,
+          opts.threshold,
+        );
+
+        const report = formatSensitivityReport(results, opts.threshold);
+        console.log(report);
+
+        if (opts.output) {
+          const outPath = resolve(process.cwd(), opts.output);
+          writeFileSync(outPath, report, 'utf-8');
+          log.success(`Report written to ${outPath}`);
+        }
+
+        const fragileCount = results.filter((r) => r.isFragile).length;
+        if (fragileCount > 0) {
+          process.exitCode = EXIT_FAIL;
+        }
+      } catch (err) {
+        log.error('Prompt sensitivity analysis failed', err);
+        process.exitCode = EXIT_FAIL;
+      }
+    },
+  );
+
+const registry = program
+  .command('registry')
+  .description('Browse, pull, and push evaluation suites from the community registry');
+
+registry
+  .command('list')
+  .description('List available suites in the remote registry')
+  .option('--url <registryUrl>', 'custom registry URL')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: { url?: string; verbose?: boolean; noColor?: boolean }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+
+      log.header('Registry — Available Suites');
+
+      try {
+        const { fetchRegistry } = await import('../registry/index.js');
+        const entries = await fetchRegistry(opts.url);
+
+        if (entries.length === 0) {
+          log.info('No suites found in the registry.');
+          return;
+        }
+
+        for (const entry of entries) {
+          log.info(`  ${entry.name.padEnd(24)} v${entry.version.padEnd(8)} [${entry.layer}]`);
+          log.info(`    ${entry.description}`);
+          log.info(`    by ${entry.author}`);
+          console.log();
+        }
+
+        log.success(`${entries.length} suite(s) available`);
+      } catch (err) {
+        log.error('Failed to fetch registry', err);
+        process.exitCode = EXIT_FAIL;
+      }
+    },
+  );
+
+registry
+  .command('pull <name>')
+  .description('Download a suite YAML from the registry into collections/')
+  .option('--url <registryUrl>', 'custom registry URL')
+  .option('-o, --output <dir>', 'output directory for downloaded suite', './collections')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (name: string, opts: { url?: string; output: string; verbose?: boolean; noColor?: boolean }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+
+      try {
+        const { fetchRegistry, pullSuite } = await import('../registry/index.js');
+        const entries = await fetchRegistry(opts.url);
+        const entry = entries.find((e) => e.name === name);
+
+        if (!entry) {
+          log.error(`Suite "${name}" not found in registry`);
+          log.info('Available suites:');
+          for (const e of entries) {
+            log.info(`  ${e.name}`);
+          }
+          process.exitCode = EXIT_FAIL;
+          return;
+        }
+
+        const outDir = resolve(process.cwd(), opts.output);
+        const path = await pullSuite(entry, outDir);
+        log.success(`Downloaded ${entry.name} → ${path}`);
+      } catch (err) {
+        log.error('Failed to pull suite', err);
+        process.exitCode = EXIT_FAIL;
+      }
+    },
+  );
+
+registry
+  .command('push')
+  .description('Package a suite YAML and output its registry metadata')
+  .requiredOption('--suite <path>', 'path to suite YAML file')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: { suite: string; verbose?: boolean; noColor?: boolean }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+
+      try {
+        const { packageSuite } = await import('../registry/index.js');
+        const suitePath = resolve(process.cwd(), opts.suite);
+        const entry = packageSuite(suitePath);
+
+        log.header('Registry — Package Suite');
+        log.info('Add this entry to registry.json:\n');
+        console.log(JSON.stringify(entry, null, 2));
+      } catch (err) {
+        log.error('Failed to package suite', err);
         process.exitCode = EXIT_FAIL;
       }
     },

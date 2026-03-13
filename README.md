@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="#six-testing-layers"><img src="https://img.shields.io/badge/layers-6-6C5CE7?style=flat-square" alt="6 Layers" /></a>
-  <a href="#evaluators"><img src="https://img.shields.io/badge/evaluators-20-A29BFE?style=flat-square" alt="20 Evaluators" /></a>
+  <a href="#evaluators"><img src="https://img.shields.io/badge/evaluators-22-A29BFE?style=flat-square" alt="22 Evaluators" /></a>
   <a href="#task-adapters"><img src="https://img.shields.io/badge/adapters-5-74B9FF?style=flat-square" alt="5 Adapters" /></a>
   <a href="#cli-reference"><img src="https://img.shields.io/badge/CLI-cursor--plugin--evals-DFE6E9?style=flat-square" alt="CLI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Elastic--2.0-00E676?style=flat-square" alt="Elastic License 2.0" /></a>
@@ -12,7 +12,8 @@
 
 <p align="center">
   End-to-end testing framework for Cursor plugins — validates structure, tests MCP tools,<br/>
-  benchmarks performance, evaluates LLM agent quality, detects skill collisions, and compares models.
+  benchmarks performance, evaluates LLM agent quality, detects regressions, protects with guardrails,<br/>
+  analyzes prompt sensitivity, and compares models.
 </p>
 
 ---
@@ -43,6 +44,21 @@ npx cursor-plugin-evals compare --model gpt-4o --model claude-sonnet-4-20250514
 
 # Quality score with badge
 npx cursor-plugin-evals score
+
+# Auto-generate tests from tool schemas
+npx cursor-plugin-evals gen-tests
+
+# Detect regressions between runs
+npx cursor-plugin-evals regression --baseline <run-id>
+
+# Analyze prompt fragility
+npx cursor-plugin-evals prompt-sensitivity --suite llm-tests
+
+# Import production traces as test cases
+npx cursor-plugin-evals trace-import --file trace.json
+
+# Browse community eval suites
+npx cursor-plugin-evals registry list
 ```
 
 ## Architecture
@@ -52,10 +68,12 @@ npx cursor-plugin-evals score
 │                              CLI                                      │
 │  run · init · setup · score · discover · doctor · dashboard · watch   │
 │  skill-eval · collision-check · compare · ci-init · mock-gen          │
-│  replay · history · env · security-lint                               │
+│  replay · history · env · security-lint · regression · gen-tests      │
+│  trace-import · prompt-sensitivity · registry                         │
 ├──────────────────────────────────────────────────────────────────────┤
 │                          Test Runner                                  │
 │  Suite routing · Concurrency · Aggregation · Watch mode · CI gating   │
+│  Multi-turn conversations · Guardrails · Regression detection         │
 ├────────┬────────┬──────────────┬────────────┬──────────┬─────────────┤
 │ Static │ Unit   │ Integration  │ Perf.      │ LLM Eval │ Skill Eval  │
 │ Layer  │ Layer  │ Layer        │ Layer      │ Layer    │ Layer        │
@@ -65,7 +83,7 @@ npx cursor-plugin-evals score
 │ Front- │ trat-  │ Workflows    │ Through-   │ Tool     │ Per-example  │
 │ matter │ ion    │ Error paths  │ put        │ select   │ overrides    │
 │ Coher- │ Cond.  │ Auth flows   │ Memory     │ Multi-   │ Multi-       │
-│ ence   │ regis. │              │            │ model    │ adapter      │
+│ ence   │ regis. │ OAuth 2.0    │            │ turn     │ adapter      │
 ├────────┴────────┴──────────────┴────────────┴──────────┴─────────────┤
 │                        Task Adapters                                  │
 │  mcp · plain-llm · headless-coder · gemini-cli · claude-sdk           │
@@ -73,22 +91,31 @@ npx cursor-plugin-evals score
 │  Plugin Discovery  │  MCP Client (stdio / HTTP / SSE / stream-HTTP)   │
 │  Manifest parsing  │  Spawn · Connect · Execute · Auth flows          │
 ├──────────────────────────────────────────────────────────────────────┤
-│ Evaluators (20)    │ CI Thresholds  │ Fixtures      │ Tracing         │
-│ 13 CODE + 7 LLM   │ Score / Latency│ Record/Replay │ OTel spans      │
+│ Evaluators (22)    │ CI Thresholds  │ Fixtures      │ Tracing         │
+│ 13 CODE + 9 LLM   │ Score / Latency│ Record/Replay │ OTel spans      │
 │ LLM-as-judge       │ Cost / Per-eval│ Mock-gen      │ ES export       │
 ├────────────────────┼────────────────┼───────────────┼─────────────────┤
-│ Quality Score      │ Token Pricing  │ Skill Collis. │ Model A/B       │
-│ A-F grading        │ Per-model cost │ TF-IDF sim.   │ Comparison      │
-│ Confidence CIs     │ 11+ models     │ Tool overlap  │ matrix          │
+│ Guardrails         │ Token Pricing  │ Skill Collis. │ Model A/B       │
+│ Block/warn/log     │ Per-model cost │ TF-IDF sim.   │ Comparison      │
+│ Pattern matching   │ 11+ models     │ Tool overlap  │ matrix          │
 ├────────────────────┼────────────────┼───────────────┼─────────────────┤
-│ LLM Cache          │ Failure Clust. │ Security Lint │ Recordings      │
-│ Disk-persisted     │ Categorize +   │ 4 static      │ Store/replay    │
-│ TTL + hit/miss     │ recommend fix  │ skill checks  │ full eval runs  │
+│ Regression Detect. │ Prompt Sens.   │ Test Auto-Gen │ Trace Import    │
+│ Welch's t-test     │ Variant gen    │ Schema walker │ OTel → YAML     │
+│ Fingerprints       │ Fragility flag │ Boundary/neg  │ Prod → tests    │
+├────────────────────┼────────────────┼───────────────┼─────────────────┤
+│ Quality Score      │ Failure Clust. │ Security Lint │ Recordings      │
+│ A-F grading        │ Categorize +   │ 4 static      │ Store/replay    │
+│ Confidence CIs     │ recommend fix  │ skill checks  │ full eval runs  │
+├────────────────────┼────────────────┼───────────────┼─────────────────┤
+│ LLM Cache          │ Eval Registry  │ OAuth 2.0     │ GitHub Action   │
+│ Disk-persisted     │ Community      │ PKCE flow     │ CI/CD ready     │
+│ TTL + hit/miss     │ share/import   │ Token cache   │ Composite       │
 ├────────────────────┴────────────────┴───────────────┴─────────────────┤
 │ Reporting: Terminal · Markdown · JSON · HTML · JUnit XML               │
 ├──────────────────────────────────────────────────────────────────────┤
 │                   Web Dashboard (Hono + SQLite)                        │
-│  Run history · Suite drill-down · Quality trends · Events              │
+│  Run history · Suite drill-down · Quality trends · Real-time SSE      │
+│  Model comparison · Regression trends · Live progress                  │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -136,6 +163,8 @@ Pairs an LLM with MCP tools to evaluate agent quality.
 - **Agent loop**: LLM selects tools, framework executes them, results fed back
 - **Multi-model**: Test across OpenAI, Azure OpenAI, Anthropic, and any OpenAI-compatible endpoint
 - **Azure OpenAI**: Native support via `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, and `AZURE_OPENAI_DEPLOYMENT`
+- **Multi-turn conversations**: Scripted turn sequences with message history carry-over and per-turn assertions
+- **Guardrails**: Real-time agent loop protection — block, warn, or log dangerous tool calls before execution
 - **Difficulty tags**: simple, moderate, complex, adversarial
 - **Distractor injection**: Random or targeted fake tools to test selection accuracy
 - **Golden paths**: Path-efficiency scoring via LCS coverage
@@ -222,6 +251,8 @@ These evaluators call an LLM judge (configurable via `JUDGE_MODEL` / `LITELLM_UR
 | `context-faithfulness` | RAG faithfulness — output only uses information from retrieved context | 0.7 |
 | `conversation-coherence` | Multi-turn quality: turn relevance, consistency, goal progression | 0.7 |
 | `criteria` | Configurable pass/fail criteria with weighted scoring | 0.7 |
+| `plan-quality` | Reasoning chain quality: goal decomposition, step ordering, tool appropriateness | 0.7 |
+| `task-completion` | Whether the user's actual goal was achieved (fully/partially/not at all) | 0.7 |
 
 ## LLM Provider Configuration
 
@@ -421,6 +452,246 @@ const examples = await loadFromGenerator('./generators/alert-triage.ts', { count
 
 Generator modules export a default async function returning an array of `{ prompt, input, expected, metadata }` objects.
 
+## Multi-Turn Conversations
+
+Test stateful multi-turn interactions where message history carries across turns:
+
+```yaml
+suites:
+  - name: conversation-tests
+    layer: llm
+    tests:
+      - name: multi-turn-cluster-check
+        type: conversation
+        turns:
+          - prompt: "What's the cluster health?"
+            expected:
+              tools: [elasticsearch_api]
+          - prompt: "Now show me the indices"
+            expected:
+              tools: [elasticsearch_api]
+              responseContains: ["index"]
+        evaluators: [tool-selection, conversation-coherence]
+```
+
+Each turn inherits the full message history from previous turns, and per-turn evaluators run independently.
+
+## Guardrails
+
+Protect agent loops from dangerous operations with pattern-based guardrails:
+
+```yaml
+guardrails:
+  - name: block-delete-all
+    pattern: "DELETE.*/_all|_delete_by_query"
+    action: block
+    message: "Blocked destructive DELETE operation"
+  - name: warn-wildcards
+    pattern: "\\*"
+    action: warn
+  - name: log-all-writes
+    pattern: "PUT|POST"
+    action: log
+```
+
+Actions: `block` prevents execution and returns an error to the LLM, `warn` logs a warning but continues, `log` records silently. Violations are tracked in test result metadata. Default guardrails for destructive operations (DELETE /_all, DROP DATABASE) are included.
+
+## Regression Detection
+
+Detect quality regressions between eval runs using statistical hypothesis testing:
+
+```bash
+# Run evaluation and compare against a saved baseline
+npx cursor-plugin-evals regression --baseline <run-id>
+
+# With custom significance level
+npx cursor-plugin-evals regression --baseline <run-id> --alpha 0.01
+```
+
+Uses Welch's t-test to compare per-test score distributions between runs:
+- **PASS**: No statistically significant regression detected
+- **FAIL**: Statistically significant score drop (p < α and negative delta)
+- **INCONCLUSIVE**: Insufficient samples (< 3) for statistical testing
+
+Fingerprints (score vectors per test/evaluator) are automatically saved after each run in `.cursor-plugin-evals/fingerprints/`.
+
+```typescript
+import { buildFingerprint, detectRegressions } from 'cursor-plugin-evals';
+
+const results = detectRegressions(baseline, current, 0.05);
+results.forEach(r => console.log(`${r.key}: ${r.verdict} (p=${r.pValue.toFixed(4)})`));
+```
+
+## Test Auto-Generation
+
+Generate test cases automatically from MCP tool JSON schemas:
+
+```bash
+# Generate tests for all tools
+npx cursor-plugin-evals gen-tests
+
+# Generate for a specific tool
+npx cursor-plugin-evals gen-tests --tool elasticsearch_api
+
+# Write to file
+npx cursor-plugin-evals gen-tests --output generated-tests.yaml
+```
+
+Generates three categories per tool:
+- **Valid**: Realistic values matching types, enums, patterns
+- **Boundary**: Empty strings, 0, min/max values, empty arrays
+- **Negative**: Missing required fields, wrong types, null for required fields
+
+```typescript
+import { generateTestsFromSchema, formatAsYaml } from 'cursor-plugin-evals';
+
+const tests = generateTestsFromSchema('elasticsearch_api', toolSchema);
+const yaml = formatAsYaml(tests, 'my-plugin');
+```
+
+## Prompt Sensitivity Analysis
+
+Detect fragile prompts that produce inconsistent tool selections across rephrasings:
+
+```bash
+# Analyze a specific suite's prompts
+npx cursor-plugin-evals prompt-sensitivity --suite llm-tools
+
+# Custom variant count and threshold
+npx cursor-plugin-evals prompt-sensitivity --suite llm-tools --variants 10 --threshold 0.15
+```
+
+The framework generates N LLM-powered rephrasings of each test prompt, runs all variants through the evaluation pipeline, and measures tool-selection score variance. Tests with variance above the threshold are flagged as "fragile".
+
+```typescript
+import { analyzeSensitivity } from 'cursor-plugin-evals';
+
+const results = await analyzeSensitivity(config, 'llm-tools', 5, 0.2);
+results.filter(r => r.isFragile).forEach(r => {
+  console.log(`FRAGILE: ${r.testName} (variance: ${r.variance.toFixed(3)})`);
+});
+```
+
+## Trace Import
+
+Import production OTel traces and auto-generate test cases:
+
+```bash
+# Generate integration tests from a trace file
+npx cursor-plugin-evals trace-import --file trace.json
+
+# Also generate LLM tests from user prompts in traces
+npx cursor-plugin-evals trace-import --file trace.json --llm
+
+# Write to file
+npx cursor-plugin-evals trace-import --file trace.json --output production-tests.yaml
+```
+
+Parses OpenTelemetry JSON traces, extracts tool_call spans (with `tool.*`, `gen_ai.*`, and `mcp.*` attribute prefixes), and generates YAML test definitions.
+
+```typescript
+import { parseOtelTrace, generateTestsFromTrace } from 'cursor-plugin-evals';
+
+const trace = parseOtelTrace(JSON.parse(traceJson));
+const yaml = generateTestsFromTrace(trace, { includeLlm: true });
+```
+
+## Eval Registry
+
+Share and reuse community eval suites:
+
+```bash
+# Browse available suites
+npx cursor-plugin-evals registry list
+
+# Pull a suite into collections/
+npx cursor-plugin-evals registry pull mcp-compliance
+
+# Package your suite for sharing
+npx cursor-plugin-evals registry push --suite ./my-suite.yaml
+```
+
+The registry index is a JSON file hosted on GitHub. Suites are YAML files pulled into `collections/` and run via `--collection <name>`.
+
+```typescript
+import { fetchRegistry, pullSuite } from 'cursor-plugin-evals';
+
+const entries = await fetchRegistry();
+const path = await pullSuite(entries[0]);
+```
+
+## OAuth 2.0 MCP Server Testing
+
+Test OAuth-protected MCP servers with automated PKCE flow:
+
+```yaml
+plugin:
+  auth:
+    type: oauth2
+    tokenUrl: https://auth.example.com/token
+    authorizationUrl: https://auth.example.com/authorize
+    clientId: my-client-id
+    scopes: [read, write]
+```
+
+The framework handles the full OAuth 2.0 PKCE flow:
+1. Generates code_verifier/code_challenge (SHA-256)
+2. Opens browser to authorization URL
+3. Starts temporary local HTTP server for the redirect callback
+4. Exchanges auth code for tokens
+5. Caches tokens in `.cursor-plugin-evals/tokens/` for reuse
+6. Automatically refreshes expired tokens
+
+Falls back to manual token input if the browser flow fails.
+
+## GitHub Action
+
+Drop-in CI/CD integration:
+
+```yaml
+# .github/workflows/eval.yml
+name: Plugin Evaluation
+on: [push, pull_request]
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/action
+        with:
+          config-path: plugin-eval.yaml
+          layers: 'static unit integration'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+```
+
+Outputs: `score`, `pass-rate`, `report-path`. Uploads JUnit XML and HTML reports as artifacts. See [docs/github-action.md](docs/github-action.md) for full documentation.
+
+## Cursor Extension
+
+A VS Code/Cursor extension scaffold is provided in `extension/` with:
+
+- **CodeLens**: "Run Eval" and "Last: X%" annotations above test definitions in plugin-eval.yaml
+- **Status Bar**: Quality score display (e.g., "Plugin Eval: A (96%)") with click-to-dashboard
+- **Tree View**: Hierarchical suite > test > evaluator results with pass/fail icons
+- **Commands**: "Plugin Eval: Run All", "Plugin Eval: Run Suite", "Plugin Eval: Show Dashboard"
+
+See [docs/cursor-extension.md](docs/cursor-extension.md) for setup instructions.
+
+## Real-Time Dashboard
+
+The web dashboard (powered by Hono + SQLite) now includes:
+
+- **SSE streaming**: Real-time progress during eval runs via `/api/events` endpoint
+- **Model comparison**: Side-by-side view when runs include multiple models
+- **Regression trends**: Quality score chart over time from stored run history
+- **Live progress**: Test-by-test results appearing as they complete
+
+```bash
+npx cursor-plugin-evals dashboard --port 6280
+```
+
 ## CLI Reference
 
 ```bash
@@ -470,6 +741,35 @@ cursor-plugin-evals collision-check --dir .cursor-plugin/skills --report json
 # Compare models side-by-side
 cursor-plugin-evals compare --model gpt-4o --model claude-sonnet-4-20250514
 
+# --- Analysis Commands ---
+
+# Detect regressions against a baseline run
+cursor-plugin-evals regression --baseline <run-id>
+cursor-plugin-evals regression --baseline <run-id> --alpha 0.01
+
+# Auto-generate tests from tool schemas
+cursor-plugin-evals gen-tests
+cursor-plugin-evals gen-tests --tool elasticsearch_api --output generated.yaml
+
+# Import production traces as test cases
+cursor-plugin-evals trace-import --file trace.json
+cursor-plugin-evals trace-import --file trace.json --llm --output prod-tests.yaml
+
+# Analyze prompt sensitivity/fragility
+cursor-plugin-evals prompt-sensitivity --suite llm-tools
+cursor-plugin-evals prompt-sensitivity --suite llm-tools --variants 10 --threshold 0.15
+
+# --- Registry Commands ---
+
+# Browse community eval suites
+cursor-plugin-evals registry list
+
+# Pull a suite into collections/
+cursor-plugin-evals registry pull mcp-compliance
+
+# Package a suite for sharing
+cursor-plugin-evals registry push --suite ./my-suite.yaml
+
 # --- Infrastructure Commands ---
 
 # Discover plugin components
@@ -487,7 +787,7 @@ cursor-plugin-evals ci-init --preset github
 # List community test collections
 cursor-plugin-evals collections
 
-# Web dashboard
+# Web dashboard (with real-time SSE streaming)
 cursor-plugin-evals dashboard --port 6280
 
 # Check infrastructure health
@@ -570,6 +870,14 @@ scoring:
     performance: 0.15
     agentReadiness: 0.20
 
+guardrails:
+  - name: block-delete-all
+    pattern: "DELETE.*/_all"
+    action: block
+  - name: warn-wildcards
+    pattern: "\\*"
+    action: warn
+
 defaults:
   timeout: 30000
   judge_model: "gpt-4o"
@@ -631,6 +939,35 @@ import {
 
   // Evaluator patterns
   matchesEvaluatorPattern, expandPatternsToEvaluators,
+
+  // Multi-turn conversations
+  runConversationTest,
+
+  // Regression detection
+  buildFingerprint, saveFingerprint, loadFingerprint,
+  detectRegressions, welchTTest, formatRegressionReport,
+
+  // Guardrails
+  checkGuardrails, DEFAULT_GUARDRAILS,
+
+  // Test auto-generation
+  generateTestsFromSchema, formatAsYaml,
+
+  // Trace import
+  parseOtelTrace, generateTestsFromTrace,
+
+  // Prompt sensitivity
+  generateVariants, analyzeSensitivity, formatSensitivityReport,
+
+  // Eval registry
+  fetchRegistry, pullSuite, packageSuite,
+
+  // Dashboard events
+  EvalEventEmitter, globalEmitter,
+
+  // OAuth 2.0
+  runOAuthPkceFlow, refreshAccessToken,
+  cacheTokens, loadCachedTokens, isTokenExpired,
 } from 'cursor-plugin-evals';
 
 // Run evaluation
@@ -726,7 +1063,7 @@ This framework includes Cursor skills, commands, and rules:
 ```bash
 npm install
 npm run typecheck    # TypeScript check
-npm test             # Run framework tests (468 tests, 33 suites)
+npm test             # Run framework tests (581 tests, 44 suites)
 npm run build        # Build CLI binary
 npm run lint:fix     # Fix linting issues
 npm run format       # Format with prettier

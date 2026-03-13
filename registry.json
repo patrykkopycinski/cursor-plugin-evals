@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "suites": [
+    {
+      "name": "mcp-compliance",
+      "description": "Standard MCP protocol compliance tests",
+      "version": "1.0.0",
+      "author": "cursor-plugin-evals",
+      "layer": "integration",
+      "url": "https://raw.githubusercontent.com/patrykkopycinski/cursor-plugin-evals/main/collections/mcp-compliance.yaml"
+    }
+  ]
+}

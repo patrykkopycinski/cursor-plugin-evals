@@ -1,7 +1,10 @@
 import { Hono } from 'hono';
 import { resolve } from 'path';
 import { readFileSync, existsSync } from 'fs';
+import { streamSSE } from 'hono/streaming';
 import { initDb, getRuns, getRun, getLatestRuns } from './db.js';
+import { globalEmitter } from './events.js';
+import type { EvalEvent } from './events.js';
 import type { StoredRun, StoredSuiteResult } from './db.js';
 import type Database from 'better-sqlite3';
 
@@ -26,7 +29,85 @@ export function createApp(dbPath: string): { app: Hono; db: Database.Database } 
     });
   });
 
+  app.get('/api/runs/:id/comparison', (c) => {
+    const data = getRun(db, c.req.param('id'));
+    if (!data) return c.json({ error: 'Run not found' }, 404);
+
+    const models: Record<string, { passed: number; failed: number; totalScore: number; count: number; latencyMs: number }> = {};
+
+    for (const suite of data.suites) {
+      const details = JSON.parse(suite.results_json);
+      for (const test of details.tests ?? []) {
+        const model = test.model ?? 'default';
+        if (!models[model]) {
+          models[model] = { passed: 0, failed: 0, totalScore: 0, count: 0, latencyMs: 0 };
+        }
+        const entry = models[model];
+        entry.count++;
+        entry.latencyMs += test.latencyMs ?? 0;
+        if (test.pass) {
+          entry.passed++;
+        } else {
+          entry.failed++;
+        }
+        const avgScore = test.evaluatorResults?.length
+          ? test.evaluatorResults.reduce((s: number, e: { score: number }) => s + e.score, 0) / test.evaluatorResults.length
+          : test.pass ? 1 : 0;
+        entry.totalScore += avgScore;
+      }
+    }
+
+    const comparison = Object.entries(models).map(([model, stats]) => ({
+      model,
+      passed: stats.passed,
+      failed: stats.failed,
+      total: stats.count,
+      passRate: stats.count > 0 ? stats.passed / stats.count : 0,
+      avgScore: stats.count > 0 ? stats.totalScore / stats.count : 0,
+      avgLatencyMs: stats.count > 0 ? stats.latencyMs / stats.count : 0,
+    }));
+
+    return c.json({ comparison });
+  });
+
+  app.get('/api/trends', (c) => {
+    const limit = Number(c.req.query('limit')) || 30;
+    const runs = getLatestRuns(db, limit).reverse();
+
+    const trends = runs.map((run) => {
+      const overall = JSON.parse(run.overall_json);
+      return {
+        runId: run.id,
+        timestamp: run.timestamp,
+        passRate: overall.passRate ?? 0,
+        composite: overall.qualityScore?.composite ?? null,
+        grade: overall.qualityScore?.grade ?? null,
+        total: overall.total ?? 0,
+        duration: overall.duration ?? 0,
+      };
+    });
+
+    return c.json({ trends });
+  });
+
   app.get('/api/events', (c) => {
+    return streamSSE(c, async (stream) => {
+      const unsubscribe = globalEmitter.subscribe((event: EvalEvent) => {
+        stream.writeSSE({ data: JSON.stringify(event) }).catch(() => {});
+      });
+
+      stream.onAbort(() => {
+        unsubscribe();
+      });
+
+      while (true) {
+        await stream.writeSSE({ data: '', event: 'keepalive' });
+        await stream.sleep(15_000);
+      }
+    });
+  });
+
+  app.get('/api/events/history', (c) => {
     const eventsPath = resolve(dbPath, '..', 'events.jsonl');
     if (!existsSync(eventsPath)) {
       return c.json({ events: [] });
@@ -93,6 +174,10 @@ function dashboardHtml(): string {
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
     header h1 { font-size: 20px; font-weight: 600; }
     header .subtitle { color: var(--text-muted); font-size: 13px; }
+    .tabs { display: flex; gap: 4px; margin-bottom: 24px; }
+    .tab { padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); }
+    .tab.active { background: var(--surface); color: var(--text); border-color: var(--accent); }
+    .tab:hover { color: var(--text); }
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
     th { color: var(--text-muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -122,6 +207,17 @@ function dashboardHtml(): string {
     .test-fail { color: var(--red); }
     .empty { text-align: center; padding: 48px; color: var(--text-muted); }
     .loading { text-align: center; padding: 32px; color: var(--text-muted); }
+    #progress { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 24px; display: none; }
+    #progress h3 { font-size: 14px; margin-bottom: 10px; color: var(--accent); }
+    #progress-events { max-height: 200px; overflow-y: auto; font-size: 12px; font-family: 'SF Mono', Consolas, monospace; }
+    .event-line { padding: 2px 0; border-bottom: 1px solid var(--border); }
+    .event-pass { color: var(--green); }
+    .event-fail { color: var(--red); }
+    .event-info { color: var(--text-muted); }
+    #trend-chart { margin-bottom: 24px; }
+    #comparison { display: none; }
+    .comp-table th, .comp-table td { text-align: center; }
+    .comp-table th:first-child, .comp-table td:first-child { text-align: left; }
     @media (max-width: 640px) {
       th, td { padding: 8px 6px; font-size: 13px; }
     }
@@ -135,14 +231,33 @@ function dashboardHtml(): string {
         <div class="subtitle">cursor-plugin-evals</div>
       </div>
     </header>
-    <div id="list">
-      <div class="loading">Loading runs...</div>
+    <div id="progress">
+      <h3>Live Progress</h3>
+      <div id="progress-events"></div>
     </div>
-    <div id="detail"></div>
+    <div class="tabs">
+      <div class="tab active" onclick="showTab('runs')">Runs</div>
+      <div class="tab" onclick="showTab('trends')">Trends</div>
+    </div>
+    <div id="runs-tab">
+      <div id="list">
+        <div class="loading">Loading runs...</div>
+      </div>
+      <div id="detail"></div>
+      <div id="comparison"></div>
+    </div>
+    <div id="trends-tab" style="display:none">
+      <div id="trend-chart">
+        <div class="loading">Loading trends...</div>
+      </div>
+    </div>
   </div>
   <script>
     const listEl = document.getElementById('list');
     const detailEl = document.getElementById('detail');
+    const compEl = document.getElementById('comparison');
+    const progressEl = document.getElementById('progress');
+    const progressEventsEl = document.getElementById('progress-events');
 
     function fmtDuration(ms) {
       if (ms < 1000) return ms.toFixed(0) + 'ms';
@@ -163,6 +278,51 @@ function dashboardHtml(): string {
     function gradeClass(grade) {
       if (!grade) return '';
       return 'grade-' + grade.charAt(0);
+    }
+
+    function showTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('runs-tab').style.display = name === 'runs' ? 'block' : 'none';
+      document.getElementById('trends-tab').style.display = name === 'trends' ? 'block' : 'none';
+      if (name === 'trends') loadTrends();
+    }
+
+    // SSE real-time events
+    function connectSSE() {
+      const evtSource = new EventSource('/api/events');
+      evtSource.onmessage = function(e) {
+        if (!e.data) return;
+        try {
+          const evt = JSON.parse(e.data);
+          progressEl.style.display = 'block';
+          const line = document.createElement('div');
+          line.className = 'event-line';
+          if (evt.type === 'test-pass') {
+            line.className += ' event-pass';
+            line.textContent = '\\u2713 ' + evt.suite + ' / ' + evt.test + ' (score: ' + (evt.score * 100).toFixed(0) + '%)';
+          } else if (evt.type === 'test-fail') {
+            line.className += ' event-fail';
+            line.textContent = '\\u2717 ' + evt.suite + ' / ' + evt.test + (evt.error ? ' — ' + evt.error : '');
+          } else if (evt.type === 'test-start') {
+            line.className += ' event-info';
+            line.textContent = '\\u25B6 ' + evt.suite + ' / ' + evt.test;
+          } else if (evt.type === 'suite-complete') {
+            line.className += ' event-info';
+            line.textContent = '\\u2014 Suite ' + evt.suite + ': ' + evt.passed + ' passed, ' + evt.failed + ' failed';
+          } else if (evt.type === 'run-complete') {
+            line.className += ' event-pass';
+            line.textContent = '\\u2714 Run complete — ' + (evt.passRate * 100).toFixed(1) + '% pass rate';
+            setTimeout(() => loadRuns(), 1000);
+          }
+          progressEventsEl.appendChild(line);
+          progressEventsEl.scrollTop = progressEventsEl.scrollHeight;
+        } catch {}
+      };
+      evtSource.onerror = function() {
+        setTimeout(connectSSE, 5000);
+        evtSource.close();
+      };
     }
 
     async function loadRuns() {
@@ -195,22 +355,24 @@ function dashboardHtml(): string {
     async function loadDetail(id) {
       listEl.style.display = 'none';
       detailEl.style.display = 'block';
+      compEl.style.display = 'none';
       detailEl.innerHTML = '<div class="loading">Loading...</div>';
 
       try {
         const res = await fetch('/api/runs/' + id);
         const data = await res.json();
-        let html = '<div class="back" onclick="showList()">← Back to runs</div>';
+        let html = '<div class="back" onclick="showList()">\\u2190 Back to runs</div>';
+        html += ' <span class="back" onclick="loadComparison(\\'' + id + '\\')">Model Comparison</span>';
         html += '<h2>' + data.config + ' <span class="duration">(' + fmtTime(data.timestamp) + ')</span></h2>';
         html += '<p style="margin: 8px 0 20px; color: var(--text-muted);">' +
-          (data.passRate * 100).toFixed(1) + '% pass rate · ' + data.passed + '/' + data.total + ' tests · ' + fmtDuration(data.duration) +
-          (data.grade ? ' · Grade ' + data.grade : '') + '</p>';
+          (data.passRate * 100).toFixed(1) + '% pass rate \\u00B7 ' + data.passed + '/' + data.total + ' tests \\u00B7 ' + fmtDuration(data.duration) +
+          (data.grade ? ' \\u00B7 Grade ' + data.grade : '') + '</p>';
 
         for (const suite of data.suites) {
           html += '<div class="suite-card">';
           html += '<h3>' + suite.name + '<span class="layer-tag">' + suite.layer + '</span></h3>';
           html += '<div style="margin-bottom:8px;color:var(--text-muted);font-size:13px;">' +
-            (suite.passRate * 100).toFixed(1) + '% · ' + fmtDuration(suite.duration) + '</div>';
+            (suite.passRate * 100).toFixed(1) + '% \\u00B7 ' + fmtDuration(suite.duration) + '</div>';
 
           if (suite.tests && suite.tests.length) {
             for (const test of suite.tests) {
@@ -226,16 +388,109 @@ function dashboardHtml(): string {
         }
         detailEl.innerHTML = html;
       } catch (e) {
-        detailEl.innerHTML = '<div class="back" onclick="showList()">← Back</div><div class="empty">Failed to load run detail.</div>';
+        detailEl.innerHTML = '<div class="back" onclick="showList()">\\u2190 Back</div><div class="empty">Failed to load run detail.</div>';
+      }
+    }
+
+    async function loadComparison(id) {
+      compEl.style.display = 'block';
+      detailEl.style.display = 'none';
+      compEl.innerHTML = '<div class="loading">Loading comparison...</div>';
+
+      try {
+        const res = await fetch('/api/runs/' + id + '/comparison');
+        const data = await res.json();
+        if (!data.comparison || data.comparison.length === 0) {
+          compEl.innerHTML = '<div class="back" onclick="loadDetail(\\'' + id + '\\')">\\u2190 Back to detail</div><div class="empty">No model comparison data available.</div>';
+          return;
+        }
+
+        let html = '<div class="back" onclick="loadDetail(\\'' + id + '\\')">\\u2190 Back to detail</div>';
+        html += '<h3 style="margin: 12px 0">Model Comparison</h3>';
+        html += '<table class="comp-table"><thead><tr><th>Model</th><th>Pass Rate</th><th>Avg Score</th><th>Passed</th><th>Failed</th><th>Avg Latency</th></tr></thead><tbody>';
+        for (const m of data.comparison) {
+          html += '<tr>';
+          html += '<td>' + m.model + '</td>';
+          html += '<td class="pass-rate ' + passRateClass(m.passRate) + '">' + (m.passRate * 100).toFixed(1) + '%</td>';
+          html += '<td class="mono">' + (m.avgScore * 100).toFixed(1) + '%</td>';
+          html += '<td class="mono test-pass">' + m.passed + '</td>';
+          html += '<td class="mono test-fail">' + m.failed + '</td>';
+          html += '<td class="duration">' + fmtDuration(m.avgLatencyMs) + '</td>';
+          html += '</tr>';
+        }
+        html += '</tbody></table>';
+        compEl.innerHTML = html;
+      } catch (e) {
+        compEl.innerHTML = '<div class="back" onclick="loadDetail(\\'' + id + '\\')">\\u2190 Back</div><div class="empty">Failed to load comparison.</div>';
+      }
+    }
+
+    async function loadTrends() {
+      const el = document.getElementById('trend-chart');
+      try {
+        const res = await fetch('/api/trends');
+        const data = await res.json();
+        if (!data.trends || data.trends.length === 0) {
+          el.innerHTML = '<div class="empty">No trend data yet.</div>';
+          return;
+        }
+
+        const trends = data.trends;
+        const w = 800, h = 260, padL = 50, padR = 20, padT = 20, padB = 40;
+        const chartW = w - padL - padR;
+        const chartH = h - padT - padB;
+
+        let svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;max-width:800px;height:auto">';
+
+        // Grid lines
+        for (let i = 0; i <= 4; i++) {
+          const y = padT + (chartH / 4) * i;
+          const val = (100 - 25 * i);
+          svg += '<line x1="' + padL + '" y1="' + y + '" x2="' + (w - padR) + '" y2="' + y + '" stroke="#30363d" stroke-dasharray="4,4"/>';
+          svg += '<text x="' + (padL - 8) + '" y="' + (y + 4) + '" fill="#8b949e" font-size="11" text-anchor="end">' + val + '%</text>';
+        }
+
+        // Data line
+        if (trends.length > 1) {
+          const points = trends.map(function(t, i) {
+            const x = padL + (i / (trends.length - 1)) * chartW;
+            const y = padT + (1 - t.passRate) * chartH;
+            return x + ',' + y;
+          });
+          svg += '<polyline points="' + points.join(' ') + '" fill="none" stroke="#58a6ff" stroke-width="2"/>';
+
+          // Dots
+          trends.forEach(function(t, i) {
+            const x = padL + (i / (trends.length - 1)) * chartW;
+            const y = padT + (1 - t.passRate) * chartH;
+            const color = t.passRate >= 0.9 ? '#3fb950' : t.passRate >= 0.6 ? '#d29922' : '#f85149';
+            svg += '<circle cx="' + x + '" cy="' + y + '" r="4" fill="' + color + '"/>';
+          });
+
+          // X-axis labels (first, mid, last)
+          [0, Math.floor(trends.length / 2), trends.length - 1].forEach(function(i) {
+            if (i >= trends.length) return;
+            const x = padL + (i / (trends.length - 1)) * chartW;
+            const label = new Date(trends[i].timestamp).toLocaleDateString();
+            svg += '<text x="' + x + '" y="' + (h - 8) + '" fill="#8b949e" font-size="10" text-anchor="middle">' + label + '</text>';
+          });
+        }
+
+        svg += '</svg>';
+        el.innerHTML = '<h3 style="margin-bottom:12px">Pass Rate Over Time</h3>' + svg;
+      } catch (e) {
+        el.innerHTML = '<div class="empty">Failed to load trends.</div>';
       }
     }
 
     function showList() {
       detailEl.style.display = 'none';
+      compEl.style.display = 'none';
       listEl.style.display = 'block';
     }
 
     loadRuns();
+    connectSSE();
   </script>
 </body>
 </html>`;

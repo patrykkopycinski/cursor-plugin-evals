@@ -93,15 +93,24 @@ const DistractorConfigSchema = z
   })
   .optional();
 
+const ConversationTurnSchema = z.object({
+  prompt: z.string(),
+  system: z.string().optional(),
+  expected: ExpectedOutputSchema.optional(),
+  evaluators: z.array(z.string()).optional(),
+});
+
 const LlmTestSchema = z.object({
   name: z.string(),
   difficulty: DifficultySchema,
+  type: z.enum(['single', 'conversation']).optional(),
   prompt: z.string(),
   expected: ExpectedOutputSchema,
   evaluators: z.array(z.string()),
   max_turns: z.number().int().positive().optional(),
   models: z.array(z.string()).optional(),
   system: z.string().optional(),
+  turns: z.array(ConversationTurnSchema).optional(),
   distractors: DistractorConfigSchema,
 });
 
@@ -256,6 +265,13 @@ const PluginsConfigSchema = z
   })
   .optional();
 
+const GuardrailRuleSchema = z.object({
+  name: z.string(),
+  pattern: z.string(),
+  action: z.enum(['block', 'warn', 'log']),
+  message: z.string().optional(),
+});
+
 const EvalConfigSchema = z.object({
   plugin: PluginSchema,
   infrastructure: InfrastructureSchema,
@@ -263,6 +279,7 @@ const EvalConfigSchema = z.object({
   defaults: DefaultsConfigSchema,
   scoring: ScoringSchema,
   plugins: PluginsConfigSchema,
+  guardrails: z.array(GuardrailRuleSchema).optional(),
   suites: z.array(SuiteEntrySchema),
 });
 

@@ -19,6 +19,8 @@ export interface OAuth2AuthConfig {
   clientSecret: string;
   scopes?: string[];
   grantType?: 'client_credentials';
+  authorizationUrl?: string;
+  redirectPort?: number;
 }
 
 export type AuthConfig = ApiKeyAuthConfig | BearerAuthConfig | OAuth2AuthConfig;

@@ -1,0 +1,70 @@
+name: 'Cursor Plugin Evals'
+description: 'Run cursor-plugin-evals against your Cursor plugin'
+inputs:
+  config-path:
+    description: 'Path to plugin-eval.yaml'
+    required: false
+    default: 'plugin-eval.yaml'
+  layers:
+    description: 'Layers to run (space-separated: static unit integration llm)'
+    required: false
+    default: 'static unit integration'
+  node-version:
+    description: 'Node.js version'
+    required: false
+    default: '22'
+  working-directory:
+    description: 'Working directory'
+    required: false
+    default: '.'
+outputs:
+  score:
+    description: 'Overall quality score'
+    value: ${{ steps.run-evals.outputs.score }}
+  pass-rate:
+    description: 'Test pass rate'
+    value: ${{ steps.run-evals.outputs.pass-rate }}
+  report-path:
+    description: 'Path to generated report'
+    value: ${{ steps.run-evals.outputs.report-path }}
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: npm ci
+    - name: Run evaluations
+      id: run-evals
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        npx cursor-plugin-evals run \
+          --config "${{ inputs.config-path }}" \
+          --layer ${{ inputs.layers }} \
+          --format json --format junit --format html \
+          --ci 2>&1 | tee eval-output.txt
+
+        RESULTS_FILE=".cursor-plugin-evals/latest-run.json"
+
+        if [ -f "$RESULTS_FILE" ]; then
+          echo "score=$(node -e "const j=JSON.parse(require('fs').readFileSync('$RESULTS_FILE','utf8'));console.log(j.overall?.score ?? 'N/A')")" >> "$GITHUB_OUTPUT"
+          echo "pass-rate=$(node -e "const j=JSON.parse(require('fs').readFileSync('$RESULTS_FILE','utf8'));console.log(j.overall?.passRate ?? 'N/A')")" >> "$GITHUB_OUTPUT"
+        else
+          echo "score=N/A" >> "$GITHUB_OUTPUT"
+          echo "pass-rate=N/A" >> "$GITHUB_OUTPUT"
+        fi
+
+        echo "report-path=.cursor-plugin-evals/report.html" >> "$GITHUB_OUTPUT"
+    - name: Upload reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: eval-reports
+        path: |
+          ${{ inputs.working-directory }}/.cursor-plugin-evals/report.html
+          ${{ inputs.working-directory }}/.cursor-plugin-evals/report.xml
+          ${{ inputs.working-directory }}/.cursor-plugin-evals/latest-run.json

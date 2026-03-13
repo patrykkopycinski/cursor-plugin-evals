@@ -58,6 +58,8 @@ export type {
   SkillInfo,
   CollisionPair,
   CollisionReport,
+  ConversationTurn,
+  GuardrailRuleConfig,
 } from './core/types.js';
 
 export { loadConfig } from './core/config.js';
@@ -149,4 +151,48 @@ export {
   ConversationCoherenceEvaluator,
   CriteriaEvaluator,
   RagEvaluator,
+  PlanQualityEvaluator,
+  TaskCompletionEvaluator,
 } from './evaluators/index.js';
+
+export { runConversationTest } from './layers/llm/conversation.js';
+
+export {
+  buildFingerprint,
+  saveFingerprint,
+  loadFingerprint,
+  listFingerprints,
+} from './regression/fingerprint.js';
+export { detectRegressions, welchTTest } from './regression/detector.js';
+export { formatRegressionReport } from './regression/report.js';
+export type { Fingerprint } from './regression/fingerprint.js';
+export type { Verdict, RegressionResult } from './regression/detector.js';
+
+export {
+  checkGuardrails,
+  DEFAULT_GUARDRAILS,
+} from './guardrails/index.js';
+export type { GuardrailRule, GuardrailViolation } from './guardrails/index.js';
+
+export { generateTestsFromSchema } from './gen-tests/schema-walker.js';
+export { formatAsYaml } from './gen-tests/formatter.js';
+export type { GeneratedTest } from './gen-tests/schema-walker.js';
+
+export { parseOtelTrace } from './trace-import/parser.js';
+export { generateTestsFromTrace } from './trace-import/generator.js';
+export type { ParsedTrace, ParsedSpan } from './trace-import/parser.js';
+
+export { generateVariants } from './prompt-sensitivity/variants.js';
+export { analyzeSensitivity } from './prompt-sensitivity/analyzer.js';
+export { formatSensitivityReport } from './prompt-sensitivity/report.js';
+export type { SensitivityResult } from './prompt-sensitivity/analyzer.js';
+
+export { fetchRegistry, pullSuite, packageSuite } from './registry/index.js';
+export type { RegistryEntry } from './registry/index.js';
+
+export { EvalEventEmitter, globalEmitter } from './dashboard/events.js';
+export type { EvalEvent } from './dashboard/events.js';
+
+export { runOAuthPkceFlow, refreshAccessToken } from './auth/oauth2-flow.js';
+export { cacheTokens, loadCachedTokens, isTokenExpired } from './auth/token-cache.js';
+export type { OAuthFlowConfig, OAuthTokens } from './auth/oauth2-flow.js';

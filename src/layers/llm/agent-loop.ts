@@ -1,5 +1,7 @@
 import type { McpToolDefinition, ToolCallRecord, TokenUsage } from '../../core/types.js';
 import type { McpPluginClient } from '../../mcp/client.js';
+import type { GuardrailRule, GuardrailViolation } from '../../guardrails/index.js';
+import { checkGuardrails } from '../../guardrails/index.js';
 import { LlmClient } from './llm-client.js';
 import type { LlmMessage, LlmToolDefinition } from './llm-client.js';
 import { log } from '../../cli/logger.js';
@@ -12,6 +14,8 @@ export interface AgentLoopConfig {
   mcpClient: McpPluginClient;
   maxTurns: number;
   timeout: number;
+  priorMessages?: Array<{ role: string; content: string }>;
+  guardrails?: GuardrailRule[];
 }
 
 export interface AgentLoopResult {
@@ -20,6 +24,7 @@ export interface AgentLoopResult {
   tokenUsage: TokenUsage;
   turns: number;
   aborted: boolean;
+  guardrailViolations: GuardrailViolation[];
 }
 
 function mcpToLlmTools(tools: McpToolDefinition[]): LlmToolDefinition[] {
@@ -38,11 +43,16 @@ export async function runAgentLoop(config: AgentLoopConfig): Promise<AgentLoopRe
   const llmTools = mcpToLlmTools(config.tools);
   const allToolCalls: ToolCallRecord[] = [];
   const totalUsage: TokenUsage = { input: 0, output: 0 };
+  const guardrailViolations: GuardrailViolation[] = [];
   let turns = 0;
   let aborted = false;
 
   const messages: LlmMessage[] = [
     { role: 'system', content: config.systemPrompt },
+    ...(config.priorMessages ?? []).map((m) => ({
+      role: m.role as LlmMessage['role'],
+      content: m.content,
+    })),
     { role: 'user', content: config.userPrompt },
   ];
 
@@ -70,6 +80,7 @@ export async function runAgentLoop(config: AgentLoopConfig): Promise<AgentLoopRe
             tokenUsage: totalUsage,
             turns,
             aborted: false,
+            guardrailViolations,
           };
         }
         throw err;
@@ -91,6 +102,7 @@ export async function runAgentLoop(config: AgentLoopConfig): Promise<AgentLoopRe
           tokenUsage: totalUsage,
           turns,
           aborted: false,
+          guardrailViolations,
         };
       }
 
@@ -106,6 +118,36 @@ export async function runAgentLoop(config: AgentLoopConfig): Promise<AgentLoopRe
         }
 
         log.debug(`  Tool call: ${toolName}(${JSON.stringify(toolArgs).slice(0, 200)})`);
+
+        if (config.guardrails?.length) {
+          const violation = checkGuardrails(config.guardrails, toolName, toolArgs);
+          if (violation) {
+            guardrailViolations.push(violation);
+            if (violation.action === 'warn') {
+              log.warn(`Guardrail warning [${violation.rule}]: ${violation.message}`);
+            } else if (violation.action === 'log') {
+              log.debug(`Guardrail log [${violation.rule}]: ${violation.message}`);
+            }
+            if (violation.action === 'block') {
+              log.warn(`Guardrail blocked [${violation.rule}]: ${violation.message}`);
+              allToolCalls.push({
+                tool: toolName,
+                args: toolArgs,
+                result: {
+                  content: [{ type: 'text', text: `[BLOCKED] ${violation.message}` }],
+                  isError: true,
+                },
+                latencyMs: 0,
+              });
+              messages.push({
+                role: 'tool',
+                tool_call_id: toolCall.id,
+                content: `[BLOCKED] ${violation.message}`,
+              });
+              continue;
+            }
+          }
+        }
 
         const callStart = performance.now();
         let result;
@@ -149,6 +191,7 @@ export async function runAgentLoop(config: AgentLoopConfig): Promise<AgentLoopRe
       tokenUsage: totalUsage,
       turns,
       aborted,
+      guardrailViolations,
     };
   } finally {
     clearTimeout(timeoutId);

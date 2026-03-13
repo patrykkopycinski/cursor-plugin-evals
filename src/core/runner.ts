@@ -342,5 +342,13 @@ export async function runEvaluation(
     // Dashboard db is optional — silently skip if better-sqlite3 isn't available
   }
 
+  try {
+    const { buildFingerprint, saveFingerprint } = await import('../regression/fingerprint.js');
+    const fp = buildFingerprint(runId, allTests);
+    await saveFingerprint(fp);
+  } catch {
+    // Fingerprint save is best-effort
+  }
+
   return runResult;
 }
