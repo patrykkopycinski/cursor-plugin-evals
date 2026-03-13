@@ -2,5 +2,5 @@
 
 Integration tests for `@modelcontextprotocol/server-fetch`.
 
-Covers: GET requests, POST with body, custom headers, redirect following,
-JSON response parsing, and error handling for non-existent URLs.
+Covers: `fetch` with GET, POST, custom headers, JSON responses, redirects,
+HTML content, robots.txt, and error cases for 404, 500, and invalid URLs.

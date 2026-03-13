@@ -123,3 +123,15 @@ export function formatComparisonTable(comparison: ComparisonResult): string {
 
   return lines.join('\n');
 }
+
+export {
+  computeFairAggregates,
+  formatFairBenchmarkTable,
+  DEFAULT_FAIR_CONFIG,
+} from './fair-benchmark.js';
+export type {
+  FairBenchmarkConfig,
+  FairBenchmarkResult,
+  FairTaskResult,
+  FairAggregate,
+} from './fair-benchmark.js';

@@ -1,0 +1,101 @@
+name: chrome-devtools-server
+layer: integration
+
+tests:
+  - name: navigate-to-url
+    tool: navigate
+    args:
+      url: "https://example.com"
+    assert:
+      - field: content[0].text
+        op: exists
+      - field: content[0].type
+        op: eq
+        value: text
+
+  - name: navigate-check-title
+    tool: navigate
+    args:
+      url: "https://example.com"
+    assert:
+      - field: content[0].text
+        op: contains
+        value: Example
+
+  - name: take-screenshot
+    tool: screenshot
+    args: {}
+    assert:
+      - field: content[0].type
+        op: eq
+        value: image
+
+  - name: screenshot-full-page
+    tool: screenshot
+    args:
+      fullPage: true
+    assert:
+      - field: content[0].type
+        op: eq
+        value: image
+
+  - name: click-element
+    tool: click
+    args:
+      selector: "a"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: type-text
+    tool: type
+    args:
+      selector: "input"
+      text: "eval test input"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: evaluate-js-expression
+    tool: evaluate
+    args:
+      expression: "document.title"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: evaluate-js-math
+    tool: evaluate
+    args:
+      expression: "JSON.stringify({result: 2 + 2})"
+    assert:
+      - field: content[0].text
+        op: contains
+        value: "4"
+
+  - name: get-console-logs
+    tool: get_console_logs
+    args: {}
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: evaluate-dom-query
+    tool: evaluate
+    args:
+      expression: "document.querySelectorAll('*').length"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: click-nonexistent-error
+    tool: click
+    args:
+      selector: "#nonexistent-element-xyz-eval"
+    expect_error: true
+
+  - name: navigate-invalid-url
+    tool: navigate
+    args:
+      url: "not-a-valid-url"
+    expect_error: true

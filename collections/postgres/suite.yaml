@@ -1,0 +1,101 @@
+name: postgres-server
+layer: integration
+require_env:
+  - DATABASE_URL
+
+tests:
+  - name: select-one
+    tool: query
+    args:
+      sql: "SELECT 1 AS result"
+    assert:
+      - field: content[0].text
+        op: contains
+        value: "1"
+
+  - name: select-current-timestamp
+    tool: query
+    args:
+      sql: "SELECT CURRENT_TIMESTAMP AS now"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: select-version
+    tool: query
+    args:
+      sql: "SELECT version()"
+    assert:
+      - field: content[0].text
+        op: contains
+        value: PostgreSQL
+
+  - name: create-temp-table
+    tool: execute
+    args:
+      sql: "CREATE TABLE IF NOT EXISTS eval_test_table (id SERIAL PRIMARY KEY, name TEXT NOT NULL, value INTEGER)"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: insert-row
+    tool: execute
+    args:
+      sql: "INSERT INTO eval_test_table (name, value) VALUES ('test-entry', 42)"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: select-inserted-row
+    tool: query
+    args:
+      sql: "SELECT name, value FROM eval_test_table WHERE name = 'test-entry'"
+    assert:
+      - field: content[0].text
+        op: contains
+        value: test-entry
+
+  - name: update-row
+    tool: execute
+    args:
+      sql: "UPDATE eval_test_table SET value = 99 WHERE name = 'test-entry'"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: select-with-where
+    tool: query
+    args:
+      sql: "SELECT name, value FROM eval_test_table WHERE value = 99"
+    assert:
+      - field: content[0].text
+        op: contains
+        value: "99"
+
+  - name: delete-row
+    tool: execute
+    args:
+      sql: "DELETE FROM eval_test_table WHERE name = 'test-entry'"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: drop-table
+    tool: execute
+    args:
+      sql: "DROP TABLE IF EXISTS eval_test_table"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: invalid-sql-error
+    tool: query
+    args:
+      sql: "SELECTT invalid syntax here"
+    expect_error: true
+
+  - name: nonexistent-table-error
+    tool: query
+    args:
+      sql: "SELECT * FROM nonexistent_table_xyz_eval"
+    expect_error: true

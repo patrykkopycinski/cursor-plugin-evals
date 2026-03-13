@@ -184,7 +184,10 @@ export type AssertionOp =
   | 'length_gte'
   | 'length_lte'
   | 'type'
-  | 'matches';
+  | 'matches'
+  | 'one_of'
+  | 'starts_with'
+  | 'ends_with';
 
 export type Difficulty = 'simple' | 'moderate' | 'complex' | 'adversarial';
 

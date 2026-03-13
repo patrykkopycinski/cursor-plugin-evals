@@ -1,0 +1,70 @@
+name: google-drive-server
+layer: integration
+require_env:
+  - GOOGLE_DRIVE_CREDENTIALS
+
+tests:
+  - name: search-files-by-name
+    tool: search_files
+    args:
+      query: "document"
+    assert:
+      - field: content[0].text
+        op: exists
+      - field: content[0].type
+        op: eq
+        value: text
+
+  - name: search-files-by-type
+    tool: search_files
+    args:
+      query: "mimeType='application/vnd.google-apps.spreadsheet'"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: list-files
+    tool: list_files
+    args: {}
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: list-files-with-limit
+    tool: list_files
+    args:
+      pageSize: 5
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: read-file
+    tool: read_file
+    args:
+      fileId: "test-file-id"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: read-file-export
+    tool: read_file
+    args:
+      fileId: "test-file-id"
+      mimeType: "text/plain"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: search-in-folder
+    tool: search_files
+    args:
+      query: "'root' in parents"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: read-nonexistent-file
+    tool: read_file
+    args:
+      fileId: "nonexistent-file-id-xyz"
+    expect_error: true

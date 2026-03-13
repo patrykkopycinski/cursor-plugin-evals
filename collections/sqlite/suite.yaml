@@ -1,0 +1,85 @@
+name: sqlite-server
+layer: integration
+
+tests:
+  - name: list-tables
+    tool: list_tables
+    args: {}
+    assert:
+      - field: content[0].text
+        op: exists
+      - field: content[0].type
+        op: eq
+        value: text
+
+  - name: create-table
+    tool: write_query
+    args:
+      sql: "CREATE TABLE IF NOT EXISTS eval_test (id INTEGER PRIMARY KEY, name TEXT, score REAL)"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: insert-data
+    tool: write_query
+    args:
+      sql: "INSERT INTO eval_test (name, score) VALUES ('alice', 95.5)"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: insert-multiple
+    tool: write_query
+    args:
+      sql: "INSERT INTO eval_test (name, score) VALUES ('bob', 87.0), ('carol', 92.3)"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: read-query-select
+    tool: read_query
+    args:
+      sql: "SELECT name, score FROM eval_test ORDER BY score DESC"
+    assert:
+      - field: content[0].text
+        op: contains
+        value: alice
+
+  - name: read-query-with-where
+    tool: read_query
+    args:
+      sql: "SELECT name FROM eval_test WHERE score > 90"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: describe-table
+    tool: describe_table
+    args:
+      table_name: eval_test
+    assert:
+      - field: content[0].text
+        op: contains
+        value: name
+
+  - name: read-query-count
+    tool: read_query
+    args:
+      sql: "SELECT COUNT(*) AS total FROM eval_test"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: drop-table-cleanup
+    tool: write_query
+    args:
+      sql: "DROP TABLE IF EXISTS eval_test"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: invalid-sql-error
+    tool: read_query
+    args:
+      sql: "SELECTT broken sql here"
+    expect_error: true

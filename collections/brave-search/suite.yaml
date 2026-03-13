@@ -1,0 +1,91 @@
+name: brave-search-server
+layer: integration
+require_env:
+  - BRAVE_API_KEY
+
+tests:
+  - name: web-search-basic
+    tool: brave_web_search
+    args:
+      query: "latest news today"
+    assert:
+      - field: content[0].text
+        op: exists
+      - field: content[0].type
+        op: eq
+        value: text
+
+  - name: web-search-programming
+    tool: brave_web_search
+    args:
+      query: "rust programming language"
+    assert:
+      - field: content[0].text
+        op: contains
+        value: Rust
+
+  - name: web-search-with-count
+    tool: brave_web_search
+    args:
+      query: "machine learning"
+      count: 5
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: web-search-specific-site
+    tool: brave_web_search
+    args:
+      query: "site:github.com kubernetes"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: web-search-exact-phrase
+    tool: brave_web_search
+    args:
+      query: '"Model Context Protocol"'
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: local-search-basic
+    tool: brave_local_search
+    args:
+      query: "coffee shops in San Francisco"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: local-search-restaurant
+    tool: brave_local_search
+    args:
+      query: "pizza restaurants in New York"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: web-search-empty-query
+    tool: brave_web_search
+    args:
+      query: ""
+    expect_error: true
+
+  - name: web-search-result-structure
+    tool: brave_web_search
+    args:
+      query: "OpenAI GPT"
+    assert:
+      - field: content[0].text
+        op: exists
+      - field: content[0].type
+        op: eq
+        value: text
+
+  - name: web-search-unicode
+    tool: brave_web_search
+    args:
+      query: "日本語 テスト"
+    assert:
+      - field: content[0].text
+        op: exists

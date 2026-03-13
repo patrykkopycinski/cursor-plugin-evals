@@ -51,6 +51,23 @@ tests:
       - field: content[0].text
         op: exists
 
+  - name: html-content
+    tool: fetch
+    args:
+      url: "https://httpbin.org/html"
+    assert:
+      - field: content[0].text
+        op: contains
+        value: html
+
+  - name: robots-txt
+    tool: fetch
+    args:
+      url: "https://httpbin.org/robots.txt"
+    assert:
+      - field: content[0].text
+        op: exists
+
   - name: not-found-error
     tool: fetch
     args:
@@ -61,4 +78,10 @@ tests:
     tool: fetch
     args:
       url: "https://httpbin.org/status/500"
+    expect_error: true
+
+  - name: invalid-url-error
+    tool: fetch
+    args:
+      url: "not-a-valid-url"
     expect_error: true

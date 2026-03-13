@@ -208,4 +208,8 @@ export class McpPluginClient {
   get connected(): boolean {
     return this.state === 'connected';
   }
+
+  get rawClient(): Client {
+    return this.client;
+  }
 }

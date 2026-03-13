@@ -112,6 +112,17 @@ const OPERATORS: Record<AssertionOp, (actual: unknown, expected: unknown) => boo
       return false;
     }
   },
+
+  one_of: (actual, expected) => {
+    if (!Array.isArray(expected)) return false;
+    return expected.some((v) => JSON.stringify(v) === JSON.stringify(actual));
+  },
+
+  starts_with: (actual, expected) =>
+    typeof actual === 'string' && typeof expected === 'string' && actual.startsWith(expected),
+
+  ends_with: (actual, expected) =>
+    typeof actual === 'string' && typeof expected === 'string' && actual.endsWith(expected),
 };
 
 export function evaluateAssertions(

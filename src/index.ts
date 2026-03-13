@@ -84,6 +84,7 @@ export { createTracer } from './tracing/spans.js';
 export { printTerminalReport } from './reporting/terminal.js';
 export { generateMarkdownReport } from './reporting/markdown.js';
 export { generateJsonReport } from './reporting/json.js';
+export { generateTapReport } from './reporting/tap.js';
 export { exportToEsDatastream } from './reporting/es-export.js';
 export { checkDockerHealth } from './docker/health.js';
 export { setupTestCluster } from './docker/setup.js';
@@ -95,8 +96,14 @@ export {
   toolArgs,
   responseContains,
   responseNotContains,
+  run,
+  maxIterations,
+  noErrors,
+  latencyUnder,
 } from './expect/expect.js';
 export { FieldAssertion } from './expect/assertions.js';
+export { RunAssertion, evaluateRunChecks } from './expect/run-assertions.js';
+export type { RunCheck, RunCheckContext, RunCheckResult } from './expect/run-assertions.js';
 export { defineSuite } from './expect/suite-builder.js';
 export { loadTypeScriptSuites } from './expect/loader.js';
 export { buildSystemPrompt } from './layers/llm/system-prompt.js';
@@ -116,6 +123,14 @@ export {
   getCollectionsDir,
 } from './core/collections.js';
 export { generateMockServer } from './fixtures/mock-gen.js';
+export { McpFixtureProxy } from './fixtures/proxy.js';
+export type {
+  ProxyMode,
+  ProxyConfig,
+  ProxyResponse,
+  ResponseComparison,
+  ProxyStats,
+} from './fixtures/proxy.js';
 export { loadPlugins } from './plugins/loader.js';
 export type { LoadedPlugins } from './plugins/loader.js';
 
@@ -130,7 +145,38 @@ export {
   formatSecurityReport,
 } from './analyzers/security-lint.js';
 export type { SecurityCheckResult, SkillSecurityReport } from './analyzers/security-lint.js';
+export {
+  inferCapabilities,
+  buildCapabilityGraph,
+  formatCapabilityReport,
+} from './analyzers/capability-graph.js';
+export type {
+  ToolDefinition,
+  ToolCapability,
+  CapabilityEdge,
+  CapabilityFinding,
+  CapabilityGraph,
+} from './analyzers/capability-graph.js';
+export { auditPluginDependencies, formatDependencyAuditReport } from './analyzers/dependency-audit.js';
+export type {
+  DependencyNode,
+  DependencyRiskIndicator,
+  DependencyAuditResult,
+} from './analyzers/dependency-audit.js';
+export { runSecurityAudit, formatSecurityAuditReport } from './analyzers/security-audit.js';
+export type { SecurityAuditResult } from './analyzers/security-audit.js';
 export { buildComparisonFromRuns, formatComparisonTable } from './comparison/index.js';
+export {
+  computeFairAggregates,
+  formatFairBenchmarkTable,
+  DEFAULT_FAIR_CONFIG,
+} from './comparison/fair-benchmark.js';
+export type {
+  FairBenchmarkConfig,
+  FairBenchmarkResult,
+  FairTaskResult,
+  FairAggregate,
+} from './comparison/fair-benchmark.js';
 export { runSkillSuite } from './layers/skill/index.js';
 export { loadSkillDataset } from './layers/skill/loader.js';
 export { LlmCache } from './cache/index.js';
@@ -269,3 +315,46 @@ export { compareImages } from './multimodal/pixel-diff.js';
 export { saveBaseline, loadBaseline } from './multimodal/baselines.js';
 export type { ScreenshotOptions } from './multimodal/screenshot.js';
 export type { DiffResult } from './multimodal/pixel-diff.js';
+
+export {
+  aggregateByMajorityVote,
+  aggregateByBordaCount,
+  aggregateByWeightedAverage,
+  aggregateByMedian,
+  computeAgreement,
+  runMultiJudgeEvaluation,
+  DEFAULT_MULTI_JUDGE_CONFIG,
+} from './evaluators/multi-judge.js';
+export type {
+  AggregationMethod,
+  JudgeConfig,
+  JudgeVerdict,
+  MultiJudgeResult,
+  MultiJudgeConfig,
+} from './evaluators/multi-judge.js';
+
+export { runConformanceChecks } from './layers/conformance/index.js';
+export { formatConformanceReport } from './layers/conformance/report.js';
+export type {
+  ConformanceCategory,
+  ConformanceCheck,
+  ConformanceResult,
+  ConformanceReport,
+} from './layers/conformance/types.js';
+
+export { checkPlatformCompatibility, formatCompatibilityReport } from './analyzers/platform-compat.js';
+export type {
+  Platform,
+  PlatformRequirement,
+  CompatibilityResult,
+  PlatformCheckResult,
+  CompatibilityReport,
+} from './analyzers/platform-compat.js';
+
+export { buildLeaderboard } from './leaderboard/builder.js';
+export {
+  formatLeaderboardTerminal,
+  formatLeaderboardMarkdown,
+  formatLeaderboardHtml,
+} from './leaderboard/formatter.js';
+export type { Leaderboard, LeaderboardEntry } from './leaderboard/types.js';

@@ -3,18 +3,21 @@
 </p>
 
 <p align="center">
-  <a href="#six-testing-layers"><img src="https://img.shields.io/badge/layers-6-6C5CE7?style=flat-square" alt="6 Layers" /></a>
+  <a href="#seven-testing-layers"><img src="https://img.shields.io/badge/layers-7-6C5CE7?style=flat-square" alt="7 Layers" /></a>
   <a href="#evaluators"><img src="https://img.shields.io/badge/evaluators-23-A29BFE?style=flat-square" alt="23 Evaluators" /></a>
   <a href="#task-adapters"><img src="https://img.shields.io/badge/adapters-5-74B9FF?style=flat-square" alt="5 Adapters" /></a>
-  <a href="#cli-reference"><img src="https://img.shields.io/badge/CLI-cursor--plugin--evals-DFE6E9?style=flat-square" alt="CLI" /></a>
-  <a href="#red-teaming"><img src="https://img.shields.io/badge/red--team-10%20attack%20categories-E74C3C?style=flat-square" alt="Red Team" /></a>
+  <a href="#security--red-teaming"><img src="https://img.shields.io/badge/security--rules-20-E74C3C?style=flat-square" alt="20 Security Rules" /></a>
+  <a href="#community-collections"><img src="https://img.shields.io/badge/community--tests-154-FD79A8?style=flat-square" alt="154 Community Tests" /></a>
+  <a href="#reporting"><img src="https://img.shields.io/badge/reporters-6-55E6C1?style=flat-square" alt="6 Reporters" /></a>
+  <a href="#red-teaming"><img src="https://img.shields.io/badge/red--team-10%20attacks-FF6B6B?style=flat-square" alt="10 Attack Categories" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Elastic--2.0-00E676?style=flat-square" alt="Elastic License 2.0" /></a>
 </p>
 
 <p align="center">
-  End-to-end testing framework for Cursor plugins — validates structure, tests MCP tools,<br/>
-  benchmarks performance, evaluates LLM agent quality, detects regressions, protects with guardrails,<br/>
-  analyzes prompt sensitivity, and compares models, red-teams for security, optimizes prompts, monitors production quality, and generates synthetic test data.
+  The most comprehensive testing framework for Cursor &amp; MCP plugins.<br/>
+  7 testing layers · 23 evaluators · 20 OWASP-aligned security rules · 3-pass security audit<br/>
+  Multi-judge blind evaluation · Fair benchmarking · MCP conformance · Cross-platform compatibility<br/>
+  154 pre-built community tests · 12-page web dashboard · Production monitoring · Red-teaming
 </p>
 
 ---
@@ -92,22 +95,22 @@ npx cursor-plugin-evals dataset export my-tests -o tests.yaml
 │  run · init · setup · score · discover · doctor · dashboard · watch   │
 │  skill-eval · collision-check · compare · ci-init · mock-gen          │
 │  replay · history · env · security-lint · regression · gen-tests      │
-│  trace-import · prompt-sensitivity · registry                         │
+│  trace-import · prompt-sensitivity · registry · conformance           │
+│  red-team · optimize · gen-conversations · monitor · cost-report      │
+│  dataset · leaderboard · security-audit · compat-check                │
 ├──────────────────────────────────────────────────────────────────────┤
 │                          Test Runner                                  │
 │  Suite routing · Concurrency · Aggregation · Watch mode · CI gating   │
 │  Multi-turn conversations · Guardrails · Regression detection         │
-├────────┬────────┬──────────────┬────────────┬──────────┬─────────────┤
-│ Static │ Unit   │ Integration  │ Perf.      │ LLM Eval │ Skill Eval  │
-│ Layer  │ Layer  │ Layer        │ Layer      │ Layer    │ Layer        │
-│        │        │              │            │          │              │
-│ Mani-  │ Schema │ Tool exec    │ P50/P95/   │ Agent    │ eval.yaml   │
-│ fest   │ Regis- │ Assertions   │ P99        │ loop     │ datasets     │
-│ Front- │ trat-  │ Workflows    │ Through-   │ Tool     │ Per-example  │
-│ matter │ ion    │ Error paths  │ put        │ select   │ overrides    │
-│ Coher- │ Cond.  │ Auth flows   │ Memory     │ Multi-   │ Multi-       │
-│ ence   │ regis. │ OAuth 2.0    │            │ turn     │ adapter      │
-├────────┴────────┴──────────────┴────────────┴──────────┴─────────────┤
+├───────┬────────┬──────────┬──────────┬──────────┬──────────┬─────────┤
+│Static │ Unit   │ Integr.  │ Perf.    │ LLM Eval │ Skill    │Conform. │
+│Layer  │ Layer  │ Layer    │ Layer    │ Layer    │ Eval     │Layer    │
+│       │        │          │          │          │          │         │
+│Mani-  │Schema  │Tool exec │P50/P95/  │Agent     │eval.yaml │25 checks│
+│fest   │Regis-  │Assert.   │P99       │loop      │datasets  │9 categs │
+│Front- │trat-   │Workflows │Through-  │Multi-    │Per-ex.   │Tier 1/  │
+│matter │ion     │Auth/OAuth│put/mem   │turn/judge│overrides │2/3      │
+├───────┴────────┴──────────┴──────────┴──────────┴──────────┴─────────┤
 │                        Task Adapters                                  │
 │  mcp · plain-llm · headless-coder · gemini-cli · claude-sdk           │
 ├──────────────────────────────────────────────────────────────────────┤
@@ -116,45 +119,48 @@ npx cursor-plugin-evals dataset export my-tests -o tests.yaml
 ├──────────────────────────────────────────────────────────────────────┤
 │ Evaluators (23)    │ CI Thresholds  │ Fixtures      │ Tracing         │
 │ 13 CODE + 9 LLM   │ Score / Latency│ Record/Replay │ OTel spans      │
-│ LLM-as-judge       │ Cost / Per-eval│ Mock-gen      │ ES export       │
+│ LLM-as-judge       │ Cost / Per-eval│ Hybrid proxy  │ ES export       │
+│ Multi-judge blind  │                │ Mock-gen      │                 │
 ├────────────────────┼────────────────┼───────────────┼─────────────────┤
-│ Guardrails         │ Token Pricing  │ Skill Collis. │ Model A/B       │
-│ Block/warn/log     │ Per-model cost │ TF-IDF sim.   │ Comparison      │
-│ Pattern matching   │ 11+ models     │ Tool overlap  │ matrix          │
+│ Security (20 rules)│ Token Pricing  │ Skill Collis. │ Model A/B       │
+│ OWASP MCP Top 10  │ Per-model cost │ TF-IDF sim.   │ Fair benchmark  │
+│ 3-pass audit       │ 11+ models     │ Tool overlap  │ Borda Count     │
+│ Capability graph   │ Cost advisor   │               │ Medals          │
 ├────────────────────┼────────────────┼───────────────┼─────────────────┤
-│ Regression Detect. │ Prompt Sens.   │ Test Auto-Gen │ Trace Import    │
-│ Welch's t-test     │ Variant gen    │ Schema walker │ OTel → YAML     │
-│ Fingerprints       │ Fragility flag │ Boundary/neg  │ Prod → tests    │
+│ Guardrails         │ Regression     │ Test Auto-Gen │ Trace Import    │
+│ Block/warn/log     │ Welch's t-test │ Schema walker │ OTel → YAML     │
+│ Pattern matching   │ Fingerprints   │ Boundary/neg  │ Prod → tests    │
 ├────────────────────┼────────────────┼───────────────┼─────────────────┤
-│ Quality Score      │ Failure Clust. │ Security Lint │ Recordings      │
-│ A-F grading        │ Categorize +   │ 4 static      │ Store/replay    │
-│ Confidence CIs     │ recommend fix  │ skill checks  │ full eval runs  │
+│ Red Team           │ Prompt Opt.    │ Prompt Sens.  │ Conformance     │
+│ 10 attack cats     │ Hill-climbing  │ Variant gen   │ 25 checks       │
+│ Security scanning  │ Target scoring │ Fragility flag│ Tier scoring    │
 ├────────────────────┼────────────────┼───────────────┼─────────────────┤
-│ LLM Cache          │ Eval Registry  │ OAuth 2.0     │ GitHub Action   │
-│ Disk-persisted     │ Community      │ PKCE flow     │ CI/CD ready     │
-│ TTL + hit/miss     │ share/import   │ Token cache   │ Composite       │
+│ Quality Score      │ Failure Clust. │ Leaderboard   │ Recordings      │
+│ A-F grading        │ Categorize +   │ Terminal/MD/  │ Store/replay    │
+│ Confidence CIs     │ recommend fix  │ HTML output   │ full eval runs  │
 ├────────────────────┼────────────────┼───────────────┼─────────────────┤
-│ Red Team           │ Prompt Optimizer│ Cost Advisor  │ Monitor         │
-│ 10 attack cats     │ Hill-climbing  │ Model savings │ OTel scoring    │
-│ Security scanning  │ Variant generation│ recommendations│ Anomaly detect │
-├────────────────────┼────────────────┼───────────────┼─────────────────┤
-│ Smart Gen          │ Conversation Sim│ Dataset Mgmt  │ Visual Trace    │
-│ LLM-powered gen    │ User personas  │ Versioned JSON│ Agent loop viz  │
+│ Smart Gen          │ Conversation   │ Dataset Mgmt  │ Visual Trace    │
+│ LLM-powered gen    │ 4 personas     │ Versioned JSON│ Agent loop viz  │
 │ Persona variants   │ Multi-turn sim │ Annotations   │ Score overlay   │
 ├────────────────────┼────────────────┼───────────────┼─────────────────┤
-│ Notifications      │ Multimodal Eval│               │                 │
-│ Slack/GitHub/hook  │ Visual regression│              │                 │
-│ CI failure alerts  │ Pixel diff     │               │                 │
+│ Notifications      │ Multimodal     │ Platform      │ Dep. Audit      │
+│ Slack/GitHub/hook  │ Visual regress.│ Compat check  │ Supply chain    │
+│ CI failure alerts  │ Pixel diff     │ 4 platforms   │ Typosquat det.  │
+├────────────────────┼────────────────┼───────────────┼─────────────────┤
+│ Monitor            │ Expect API     │ Collections   │ LLM Cache       │
+│ OTel scoring       │ Field + Run    │ 15 servers    │ Disk-persisted  │
+│ Anomaly detect     │ assertions     │ 154 tests     │ TTL + hit/miss  │
 ├────────────────────┴────────────────┴───────────────┴─────────────────┤
-│ Reporting: Terminal · Markdown · JSON · HTML · JUnit XML               │
+│ Reporting: Terminal · Markdown · JSON · HTML · JUnit XML · TAP        │
 ├──────────────────────────────────────────────────────────────────────┤
-│                   Web Dashboard (Hono + SQLite)                        │
-│  Run history · Suite drill-down · Quality trends · Real-time SSE      │
-│  Model comparison · Regression trends · Live progress                  │
+│               Web Dashboard (Hono + SQLite) — 12 Pages                │
+│  Overview · Runs · Detail · Suites · Trends · Comparison · Security   │
+│  Conformance · Collections · Live SSE · Leaderboard · Settings        │
+│  Dark/Light mode · Responsive · Interactive charts · Keyboard nav     │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-## Six Testing Layers
+## Seven Testing Layers
 
 ### Static Layer
 Validates plugin structure without external dependencies — no MCP server, no cluster, no LLM needed.
@@ -230,6 +236,24 @@ examples:
     metadata:
       evaluators: [correctness, keywords]
 ```
+
+### Conformance Layer
+Validates MCP servers against the Model Context Protocol specification with 25 checks across 9 categories.
+
+- **Initialization**: Server responds, reports capabilities, provides serverInfo, handles re-initialization
+- **Tool listing/execution**: Returns arrays, valid schemas, handles unknown tools with errors
+- **Resource/prompt validation**: URI format, content access, error handling
+- **Error handling**: Invalid methods, malformed params, error response codes
+- **Capability negotiation**: Only declared capabilities exposed
+
+```bash
+npx cursor-plugin-evals conformance --server "node dist/index.js"
+```
+
+Tier scoring matches the official MCP SDK tiering:
+- **Tier 1**: 100% pass rate (fully compliant)
+- **Tier 2**: ≥ 80% pass rate (commitment to full support)
+- **Tier 3**: < 80% pass rate (experimental)
 
 ## Task Adapters
 
@@ -474,6 +498,199 @@ cursor-plugin-evals security-lint --dir .cursor-plugin/skills
 | `scope-declaration` | Skills that don't declare their tool/resource needs |
 | `clean-example-data` | Real emails, non-RFC1918 IPs, production domains in examples |
 | `tool-description-hygiene` | Prompt injection patterns in tool descriptions |
+| `env-var-exposure` | Unguarded process.env access that might leak variables |
+| `unsafe-url-construction` | String concatenation for URLs instead of URL constructor |
+| `missing-input-validation` | Tool handlers that don't validate inputs before use |
+| `excessive-permissions` | Skills requesting more permissions than they describe using |
+| `insecure-defaults` | Default passwords, ports, or configurations |
+| `missing-rate-limiting` | Tool descriptions missing rate limit or throttling information |
+
+## 20 Security Rules (OWASP MCP Top 10 Aligned)
+
+Runtime security scanning with 20 rules organized around the OWASP MCP Top 10:
+
+| # | OWASP Category | Rule | Severity |
+|---|---|---|---|
+| 1 | Token Mismanagement | `token-mismanagement` | Critical |
+| 2 | Privilege Escalation | `privilege-escalation` | Critical |
+| 3 | Supply Chain | `supply-chain` | Critical |
+| 4 | Command Injection | `command-injection` | Critical |
+| 5 | Prompt Injection | `prompt-injection` | Critical |
+| 6 | Insufficient Auth | `insufficient-auth` | High |
+| 7 | Missing Audit | `missing-audit` | Medium |
+| 8 | Shadow Server | `shadow-server` | High |
+| 9 | Context Oversharing | `context-oversharing` | High |
+| — | Credential Exposure | `credential-exposure` | Critical |
+| — | SSRF | `ssrf` | Critical |
+| — | Path Traversal | `path-traversal` | High |
+| — | Excessive Agency | `excessive-agency` | Critical |
+| — | Data Exfiltration | `data-exfiltration` | Critical |
+| — | Denial of Service | `denial-of-service` | High |
+| — | Sensitive Data | `sensitive-data-exposure` | High |
+| — | Insecure Deser. | `insecure-deserialization` | High |
+| — | Resource Exhaustion | `resource-exhaustion` | Medium |
+| — | Cross-Tool Contam. | `cross-tool-contamination` | Medium |
+| — | Unsafe Redirect | `unsafe-redirect` | Medium |
+
+## 3-Pass Security Audit
+
+Deep security analysis inspired by AgentAudit's multi-pass approach:
+
+```bash
+cursor-plugin-evals security-audit --plugin-dir .cursor-plugin
+```
+
+| Pass | What it analyzes |
+|---|---|
+| **Pass 1: Static** | Pattern-based scanning of tool outputs, args, and descriptions (20 rules) |
+| **Pass 2: Capability Graph** | Infers tool capabilities, maps data flows, detects dangerous combinations (exfiltration, injection, lateral movement, excessive agency) |
+| **Pass 3: Dependency Chain** | Audits package.json for supply chain risks, lifecycle scripts, native compilation, typosquatting |
+
+```typescript
+import { runSecurityAudit, formatSecurityAuditReport } from 'cursor-plugin-evals';
+
+const audit = await runSecurityAudit(tools, '.cursor-plugin');
+console.log(audit.overallGrade); // 'A' | 'B' | 'C' | 'D' | 'F'
+console.log(formatSecurityAuditReport(audit));
+```
+
+## Multi-Judge Blind Evaluation
+
+Reduce scoring bias with multiple LLM judges evaluating independently (inspired by Agent Clash):
+
+```typescript
+import { runMultiJudgeEvaluation, DEFAULT_MULTI_JUDGE_CONFIG } from 'cursor-plugin-evals';
+
+const result = await runMultiJudgeEvaluation(
+  async (model) => {
+    const response = await evaluateWith(model);
+    return { score: response.score, label: response.label, explanation: response.explanation, latencyMs: 0, costUsd: null };
+  },
+  {
+    judges: [
+      { model: 'gpt-4o', weight: 1.0 },
+      { model: 'claude-sonnet-4-20250514', weight: 1.0 },
+      { model: 'gemini-2.5-pro', weight: 1.0, isSupremeJudge: true },
+    ],
+    aggregation: 'borda_count',
+    blind: true,
+    supremeCourtEnabled: true,
+  },
+);
+
+console.log(result.aggregatedScore);  // Borda-count aggregated score
+console.log(result.agreement);        // 0-1 inter-judge agreement
+```
+
+Four aggregation methods: `majority_vote`, `borda_count`, `weighted_average`, `median`. Supreme judges receive 2x weight in Borda Count.
+
+## Fair Benchmarking
+
+Fair model comparison with sequential task execution and parallel provider racing (inspired by agent-duelist):
+
+```typescript
+import { computeFairAggregates, formatFairBenchmarkTable } from 'cursor-plugin-evals';
+
+const aggregates = computeFairAggregates(taskResults, ['gpt-4o', 'claude-sonnet-4-20250514', 'gemini-2.5-pro']);
+// Returns per-model: avgScore, medianLatency, p95Latency, passRate, wins, medal (gold/silver/bronze)
+```
+
+Features:
+- Sequential tasks, parallel providers — no queue-induced latency penalties
+- Configurable warmup runs (discarded from metrics)
+- Medal assignment: gold (most wins), silver, bronze
+- Formatted tables with sparklines and medal emojis
+
+## Hybrid Proxy Mock Mode
+
+Seamlessly switch between fixture-based and live testing (inspired by MockLoop MCP):
+
+```typescript
+import { McpFixtureProxy } from 'cursor-plugin-evals';
+
+const proxy = new McpFixtureProxy({
+  mode: 'hybrid',
+  fixtureDir: './fixtures',
+  fallbackClient: liveClient,
+  recordMisses: true,
+  compareResponses: true,
+});
+
+await proxy.init();
+const response = await proxy.handle('elasticsearch_api', { method: 'GET', path: '/_cluster/health' });
+// response.source: 'fixture' | 'live'
+// response.comparison: { match: boolean, differences: string[] }
+console.log(proxy.getStats()); // { fixtureHits: 42, fixtureMisses: 3, hitRate: 0.93 }
+```
+
+Three modes: `mock` (fixture-only), `passthrough` (live-only), `hybrid` (fixture with live fallback + optional comparison).
+
+## Cross-Platform Compatibility
+
+Validate your plugin works across Cursor, Claude Code, ChatGPT, and generic MCP clients:
+
+```bash
+cursor-plugin-evals compat-check --dir .cursor-plugin
+```
+
+| Platform | Checks |
+|---|---|
+| **Cursor** | Manifest, kebab-case names, MCP server entry, SKILL.md, .mdc rules |
+| **Claude Code** | Plugin manifest adaptability, CLAUDE.md/AGENTS.md, .mcp.json |
+| **ChatGPT** | HTTP/SSE transport, OAuth 2.0, tool description length, tool count |
+| **Generic MCP** | Initialize handshake, tools/list, valid JSON Schema, no platform assumptions |
+
+```typescript
+import { checkPlatformCompatibility, formatCompatibilityReport } from 'cursor-plugin-evals';
+
+const report = await checkPlatformCompatibility('.cursor-plugin', ['cursor', 'claude-code', 'chatgpt']);
+console.log(report.overallScore); // 0-100
+console.log(report.universallyCompatible); // true if all platforms pass
+```
+
+## Public Leaderboard
+
+Generate leaderboard pages ranking models by evaluation performance:
+
+```typescript
+import { buildLeaderboard, formatLeaderboardHtml } from 'cursor-plugin-evals';
+
+const leaderboard = buildLeaderboard(runs, 'My Plugin Leaderboard');
+const html = formatLeaderboardHtml(leaderboard);
+// Self-contained HTML with dark theme, sortable columns, bar charts
+// Host on GitHub Pages for a public leaderboard
+
+const md = formatLeaderboardMarkdown(leaderboard);
+// GitHub-compatible markdown table with badge syntax
+```
+
+## Community Collections
+
+154 pre-built tests for 15 popular MCP servers — run out of the box:
+
+```bash
+cursor-plugin-evals run --collection filesystem
+cursor-plugin-evals run --collection github
+cursor-plugin-evals collections  # list all available
+```
+
+| Collection | Tests | Server | Env Required |
+|---|---|---|---|
+| filesystem | 12 | @modelcontextprotocol/server-filesystem | — |
+| memory | 10 | @modelcontextprotocol/server-memory | — |
+| github | 14 | @modelcontextprotocol/server-github | `GITHUB_TOKEN` |
+| brave-search | 10 | @modelcontextprotocol/server-brave-search | `BRAVE_API_KEY` |
+| fetch | 10 | @modelcontextprotocol/server-fetch | — |
+| postgres | 12 | @modelcontextprotocol/server-postgres | `DATABASE_URL` |
+| sqlite | 10 | @modelcontextprotocol/server-sqlite | — |
+| slack | 10 | @modelcontextprotocol/server-slack | `SLACK_BOT_TOKEN` |
+| time | 8 | @modelcontextprotocol/server-time | — |
+| everything | 10 | @modelcontextprotocol/server-everything | — |
+| puppeteer | 10 | @modelcontextprotocol/server-puppeteer | — |
+| sequential-thinking | 8 | @modelcontextprotocol/server-sequential-thinking | — |
+| notion | 10 | @anthropic/notion-mcp | `NOTION_API_KEY` |
+| google-drive | 8 | @anthropic/google-drive-mcp | `GOOGLE_DRIVE_CREDENTIALS` |
+| chrome-devtools | 12 | chrome-devtools-mcp | — |
 
 ## Dataset Generator
 
@@ -864,18 +1081,30 @@ A VS Code/Cursor extension scaffold is provided in `extension/` with:
 
 See [docs/cursor-extension.md](docs/cursor-extension.md) for setup instructions.
 
-## Real-Time Dashboard
+## Web Dashboard (12 Pages)
 
-The web dashboard (powered by Hono + SQLite) now includes:
-
-- **SSE streaming**: Real-time progress during eval runs via `/api/events` endpoint
-- **Model comparison**: Side-by-side view when runs include multiple models
-- **Regression trends**: Quality score chart over time from stored run history
-- **Live progress**: Test-by-test results appearing as they complete
+A polished single-page application with dark/light mode, served from `cursor-plugin-evals dashboard`:
 
 ```bash
 npx cursor-plugin-evals dashboard --port 6280
 ```
+
+| Page | Route | Description |
+|---|---|---|
+| **Overview** | `#/` | Stat cards (total runs, avg pass rate, grade, trend sparkline) |
+| **Runs** | `#/runs` | Run history table with grade badges, pass rates, durations |
+| **Run Detail** | `#/runs/:id` | Suite cards, per-test pass/fail, evaluator score bars |
+| **Suites** | `#/suites` | All suites across runs with historical pass rates |
+| **Trends** | `#/trends` | SVG charts: pass rate + quality score over time |
+| **Comparison** | `#/comparison` | Side-by-side model scores with bar charts |
+| **Security** | `#/security` | Security findings by severity, rule breakdown |
+| **Conformance** | `#/conformance` | MCP conformance tier badge + category results |
+| **Collections** | `#/collections` | Browse community collections with test counts |
+| **Live** | `#/live` | Real-time SSE feed showing test execution |
+| **Leaderboard** | `#/leaderboard` | Model rankings from comparison runs |
+| **Settings** | `#/settings` | Dark/light theme, data management, API info |
+
+Features: Dark mode default with light mode toggle, responsive sidebar navigation, interactive SVG charts with tooltips, animated score bars, keyboard shortcuts, loading skeleton states, SSE real-time updates.
 
 ## CLI Reference
 
@@ -908,10 +1137,11 @@ cursor-plugin-evals run --ci
 # Quality score with badge
 cursor-plugin-evals score
 
-# Reports (terminal, markdown, JSON, HTML, JUnit XML)
+# Reports (terminal, markdown, JSON, HTML, JUnit XML, TAP)
 cursor-plugin-evals run --report markdown --output report.md
 cursor-plugin-evals run --report html --output report.html
 cursor-plugin-evals run --report junit-xml --output results.xml
+cursor-plugin-evals run --report tap --output results.tap
 
 # --- Skill & Model Commands ---
 
@@ -1031,6 +1261,30 @@ cursor-plugin-evals env
 # Static security checks on skill files
 cursor-plugin-evals security-lint --dir .cursor-plugin/skills
 cursor-plugin-evals security-lint --skill my-skill
+
+# --- New Commands ---
+
+# MCP protocol conformance testing
+cursor-plugin-evals conformance --server "node dist/index.js"
+cursor-plugin-evals conformance --category tool-listing --category tool-execution
+
+# 3-pass security audit
+cursor-plugin-evals security-audit --plugin-dir .cursor-plugin
+cursor-plugin-evals security-audit --plugin-dir .cursor-plugin --skip-deps
+
+# Cross-platform compatibility check
+cursor-plugin-evals compat-check --dir .cursor-plugin
+cursor-plugin-evals compat-check --dir .cursor-plugin --platforms cursor claude-code chatgpt
+
+# Fair benchmarking with medals
+cursor-plugin-evals compare --fair --model gpt-4o --model claude-sonnet-4-20250514
+
+# Public leaderboard generation
+cursor-plugin-evals leaderboard --format html --output leaderboard.html
+cursor-plugin-evals leaderboard --format markdown --output LEADERBOARD.md
+
+# TAP report format
+cursor-plugin-evals run --report tap --output results.tap
 ```
 
 ## Expect API (TypeScript)
@@ -1038,7 +1292,7 @@ cursor-plugin-evals security-lint --skill my-skill
 Define suites programmatically alongside or instead of YAML:
 
 ```typescript
-import { defineSuite, field } from 'cursor-plugin-evals';
+import { defineSuite, field, run, maxIterations, noErrors } from 'cursor-plugin-evals';
 
 export default defineSuite(
   { name: 'my-suite', layer: 'integration' },
@@ -1047,9 +1301,10 @@ export default defineSuite(
       tool: 'elasticsearch_api',
       args: { method: 'GET', path: '/_cluster/health' },
       assert: [
-        field('content.0.text').contains('cluster_name').compile(),
-        field('isError').eq(false).compile(),
-      ],
+        field('content.0.text').contains('cluster_name').toAssertions(),
+        field('status').oneOf(['green', 'yellow', 'red']).toAssertions(),
+        field('content.0.text').startsWith('{').toAssertions(),
+      ].flat(),
     });
 
     llm('tool-selection', {
@@ -1060,6 +1315,35 @@ export default defineSuite(
   },
 );
 ```
+
+### RunAssertion (Agent Loop Assertions)
+
+Assert properties of the entire agent loop execution:
+
+```typescript
+import { run, evaluateRunChecks, RunAssertion } from 'cursor-plugin-evals';
+
+const checks = run()
+  .maxIterations(5)
+  .callCount('elasticsearch_api', 1, 3)
+  .successRate(0.9)
+  .totalTools(2, 10)
+  .noErrors()
+  .outputMatches('cluster.*health')
+  .latencyUnder(10000)
+  .toChecks();
+
+const results = evaluateRunChecks(checks, {
+  toolCalls: [{ tool: 'elasticsearch_api', success: true, latencyMs: 500 }],
+  iterations: 3,
+  finalOutput: 'The cluster health is green.',
+  totalLatencyMs: 2500,
+});
+```
+
+### Field Assertion Operators (17)
+
+`eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `contains`, `notContains`, `exists`, `notExists`, `lengthGte`, `lengthLte`, `type`, `matches`, `oneOf`, `startsWith`, `endsWith`
 
 Save as `*.eval.ts` — the framework auto-discovers and merges with YAML suites.
 
@@ -1185,6 +1469,39 @@ import {
   // OAuth 2.0
   runOAuthPkceFlow, refreshAccessToken,
   cacheTokens, loadCachedTokens, isTokenExpired,
+
+  // Multi-judge blind evaluation
+  runMultiJudgeEvaluation, DEFAULT_MULTI_JUDGE_CONFIG,
+  aggregateByBordaCount, aggregateByMajorityVote,
+  aggregateByWeightedAverage, aggregateByMedian,
+  computeAgreement,
+
+  // Fair benchmarking
+  computeFairAggregates, formatFairBenchmarkTable,
+
+  // Conformance testing
+  runConformanceChecks, formatConformanceReport,
+
+  // Security audit (3-pass)
+  runSecurityAudit, formatSecurityAuditReport,
+  inferCapabilities, buildCapabilityGraph,
+  auditPluginDependencies,
+
+  // Cross-platform compatibility
+  checkPlatformCompatibility, formatCompatibilityReport,
+
+  // Hybrid proxy mock
+  McpFixtureProxy,
+
+  // Leaderboard
+  buildLeaderboard, formatLeaderboardHtml,
+  formatLeaderboardMarkdown, formatLeaderboardTerminal,
+
+  // Run assertions
+  RunAssertion, evaluateRunChecks,
+
+  // TAP reporting
+  generateTapReport,
 } from 'cursor-plugin-evals';
 
 // Run evaluation
@@ -1279,8 +1596,8 @@ This framework includes Cursor skills, commands, and rules:
 
 ```bash
 npm install
-npm run typecheck    # TypeScript check
-npm test             # Run framework tests (581 tests, 44 suites)
+npm run typecheck    # TypeScript check (clean build)
+npm test             # Run framework tests (984 tests, 66 suites)
 npm run build        # Build CLI binary
 npm run lint:fix     # Fix linting issues
 npm run format       # Format with prettier

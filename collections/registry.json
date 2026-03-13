@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "totalTests": 154,
+  "totalCollections": 15,
+  "collections": [
+    {
+      "name": "filesystem",
+      "description": "Integration tests for the Filesystem MCP server — file read/write, directory listing, search, and error handling",
+      "server": "@modelcontextprotocol/server-filesystem",
+      "testCount": 12,
+      "layers": ["integration"],
+      "requiresEnv": []
+    },
+    {
+      "name": "memory",
+      "description": "Integration tests for the Memory MCP server — store, retrieve, list, delete, search, and update operations",
+      "server": "@modelcontextprotocol/server-memory",
+      "testCount": 10,
+      "layers": ["integration"],
+      "requiresEnv": []
+    },
+    {
+      "name": "github",
+      "description": "Integration tests for the GitHub MCP server — repos, issues, PRs, branches, commits, code search, and error cases",
+      "server": "@modelcontextprotocol/server-github",
+      "testCount": 14,
+      "layers": ["integration"],
+      "requiresEnv": ["GITHUB_TOKEN"]
+    },
+    {
+      "name": "brave-search",
+      "description": "Integration tests for the Brave Search MCP server — web search, local search, unicode, and error handling",
+      "server": "@modelcontextprotocol/server-brave-search",
+      "testCount": 10,
+      "layers": ["integration"],
+      "requiresEnv": ["BRAVE_API_KEY"]
+    },
+    {
+      "name": "fetch",
+      "description": "Integration tests for the Fetch MCP server — GET, POST, headers, redirects, HTML, and HTTP error handling",
+      "server": "@modelcontextprotocol/server-fetch",
+      "testCount": 10,
+      "layers": ["integration"],
+      "requiresEnv": []
+    },
+    {
+      "name": "postgres",
+      "description": "Integration tests for the PostgreSQL MCP server — SELECT, INSERT, UPDATE, DELETE, CREATE/DROP TABLE, and SQL error handling",
+      "server": "@modelcontextprotocol/server-postgres",
+      "testCount": 12,
+      "layers": ["integration"],
+      "requiresEnv": ["DATABASE_URL"]
+    },
+    {
+      "name": "sqlite",
+      "description": "Integration tests for the SQLite MCP server — read/write queries, table operations, schema inspection, and SQL error handling",
+      "server": "@modelcontextprotocol/server-sqlite",
+      "testCount": 10,
+      "layers": ["integration"],
+      "requiresEnv": []
+    },
+    {
+      "name": "slack",
+      "description": "Integration tests for the Slack MCP server — channels, messages, threads, users, and error handling",
+      "server": "@modelcontextprotocol/server-slack",
+      "testCount": 10,
+      "layers": ["integration"],
+      "requiresEnv": ["SLACK_BOT_TOKEN"]
+    },
+    {
+      "name": "time",
+      "description": "Integration tests for the Time MCP server — timezone conversions, format validation, and invalid timezone handling",
+      "server": "@modelcontextprotocol/server-time",
+      "testCount": 8,
+      "layers": ["integration"],
+      "requiresEnv": []
+    },
+    {
+      "name": "everything",
+      "description": "Integration tests for the Everything MCP reference test server — echo, add, long-running operations, and LLM sampling",
+      "server": "@modelcontextprotocol/server-everything",
+      "testCount": 10,
+      "layers": ["integration"],
+      "requiresEnv": []
+    },
+    {
+      "name": "puppeteer",
+      "description": "Integration tests for the Puppeteer MCP server — navigation, screenshots, JS evaluation, clicks, form filling, and error handling",
+      "server": "@modelcontextprotocol/server-puppeteer",
+      "testCount": 10,
+      "layers": ["integration"],
+      "requiresEnv": []
+    },
+    {
+      "name": "sequential-thinking",
+      "description": "Integration tests for the Sequential Thinking MCP server — single/multi-step thinking, revisions, branches, and complex reasoning",
+      "server": "@modelcontextprotocol/server-sequential-thinking",
+      "testCount": 8,
+      "layers": ["integration"],
+      "requiresEnv": []
+    },
+    {
+      "name": "notion",
+      "description": "Integration tests for the Notion MCP server — search, pages, databases, blocks, and error handling for missing resources",
+      "server": "@modelcontextprotocol/server-notion",
+      "testCount": 10,
+      "layers": ["integration"],
+      "requiresEnv": ["NOTION_API_KEY"]
+    },
+    {
+      "name": "google-drive",
+      "description": "Integration tests for the Google Drive MCP server — file search, listing, reading, export, and error handling",
+      "server": "@modelcontextprotocol/server-google-drive",
+      "testCount": 8,
+      "layers": ["integration"],
+      "requiresEnv": ["GOOGLE_DRIVE_CREDENTIALS"]
+    },
+    {
+      "name": "chrome-devtools",
+      "description": "Integration tests for the Chrome DevTools MCP server — navigation, screenshots, clicks, typing, JS evaluation, console logs, and error handling",
+      "server": "@anthropics/chrome-devtools-mcp",
+      "testCount": 12,
+      "layers": ["integration"],
+      "requiresEnv": []
+    }
+  ]
+}

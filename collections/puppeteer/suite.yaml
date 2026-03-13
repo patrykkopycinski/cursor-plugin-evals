@@ -1,0 +1,85 @@
+name: puppeteer-server
+layer: integration
+
+tests:
+  - name: navigate-to-url
+    tool: puppeteer_navigate
+    args:
+      url: "https://example.com"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: navigate-and-check-title
+    tool: puppeteer_navigate
+    args:
+      url: "https://example.com"
+    assert:
+      - field: content[0].text
+        op: contains
+        value: Example
+
+  - name: screenshot-page
+    tool: puppeteer_screenshot
+    args: {}
+    assert:
+      - field: content[0].type
+        op: eq
+        value: image
+
+  - name: screenshot-with-selector
+    tool: puppeteer_screenshot
+    args:
+      selector: "body"
+    assert:
+      - field: content[0].type
+        op: eq
+        value: image
+
+  - name: evaluate-js
+    tool: puppeteer_evaluate
+    args:
+      script: "document.title"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: evaluate-js-math
+    tool: puppeteer_evaluate
+    args:
+      script: "2 + 2"
+    assert:
+      - field: content[0].text
+        op: contains
+        value: "4"
+
+  - name: click-element
+    tool: puppeteer_click
+    args:
+      selector: "a"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: fill-form-field
+    tool: puppeteer_fill
+    args:
+      selector: "input[type='text']"
+      value: "test input"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: hover-element
+    tool: puppeteer_hover
+    args:
+      selector: "a"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: click-nonexistent-selector
+    tool: puppeteer_click
+    args:
+      selector: "#nonexistent-element-xyz"
+    expect_error: true

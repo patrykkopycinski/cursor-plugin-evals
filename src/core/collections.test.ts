@@ -95,11 +95,11 @@ describe('listCollections', () => {
 
     const gh = collections.find((c) => c.name === 'github');
     expect(gh).toBeDefined();
-    expect(gh!.testCount).toBe(9);
+    expect(gh!.testCount).toBe(14);
 
     const fetch = collections.find((c) => c.name === 'fetch');
     expect(fetch).toBeDefined();
-    expect(fetch!.testCount).toBe(7);
+    expect(fetch!.testCount).toBe(10);
   });
 
   it('excludes _template directory', () => {

@@ -1,7 +1,20 @@
 name: github-server
 layer: integration
+require_env:
+  - GITHUB_TOKEN
 
 tests:
+  - name: search-repositories
+    tool: search_repositories
+    args:
+      query: "kubernetes language:go"
+    assert:
+      - field: content[0].text
+        op: exists
+      - field: content[0].type
+        op: eq
+        value: text
+
   - name: list-repos
     tool: list_repos
     args:
@@ -9,6 +22,27 @@ tests:
     assert:
       - field: content[0].text
         op: exists
+
+  - name: get-file-contents
+    tool: get_file_contents
+    args:
+      owner: octocat
+      repo: Hello-World
+      path: README
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: get-file-contents-readme
+    tool: get_file_contents
+    args:
+      owner: kubernetes
+      repo: kubernetes
+      path: README.md
+    assert:
+      - field: content[0].text
+        op: contains
+        value: Kubernetes
 
   - name: get-issue
     tool: get_issue
@@ -22,6 +56,16 @@ tests:
       - field: content[0].type
         op: eq
         value: text
+
+  - name: list-issues
+    tool: list_issues
+    args:
+      owner: octocat
+      repo: Hello-World
+      state: all
+    assert:
+      - field: content[0].text
+        op: exists
 
   - name: create-issue
     tool: create_issue
@@ -70,12 +114,15 @@ tests:
       - field: content[0].text
         op: exists
 
-  - name: get-file-contents
-    tool: get_file_contents
+  - name: create-pull-request
+    tool: create_pull_request
     args:
-      owner: octocat
-      repo: Hello-World
-      path: README
+      owner: test-owner
+      repo: test-repo
+      title: "Test PR from eval"
+      body: "Automated test PR"
+      head: feature-branch
+      base: main
     assert:
       - field: content[0].text
         op: exists
@@ -86,4 +133,12 @@ tests:
       owner: octocat
       repo: Hello-World
       issue_number: 999999999
+    expect_error: true
+
+  - name: get-nonexistent-repo-file
+    tool: get_file_contents
+    args:
+      owner: octocat
+      repo: Hello-World
+      path: this/file/does/not/exist.txt
     expect_error: true

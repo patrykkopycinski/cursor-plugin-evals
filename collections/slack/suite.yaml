@@ -1,0 +1,88 @@
+name: slack-server
+layer: integration
+require_env:
+  - SLACK_BOT_TOKEN
+
+tests:
+  - name: list-channels
+    tool: list_channels
+    args: {}
+    assert:
+      - field: content[0].text
+        op: exists
+      - field: content[0].type
+        op: eq
+        value: text
+
+  - name: list-channels-with-limit
+    tool: list_channels
+    args:
+      limit: 5
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: search-messages
+    tool: search_messages
+    args:
+      query: "hello"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: search-messages-from-user
+    tool: search_messages
+    args:
+      query: "from:slackbot"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: get-channel-history
+    tool: get_channel_history
+    args:
+      channel_id: "C01234567"
+      limit: 5
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: get-thread-replies
+    tool: get_thread
+    args:
+      channel_id: "C01234567"
+      thread_ts: "1234567890.123456"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: post-message
+    tool: post_message
+    args:
+      channel_id: "C01234567"
+      text: "Automated eval test message"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: get-users
+    tool: list_users
+    args: {}
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: get-user-profile
+    tool: get_user_profile
+    args:
+      user_id: "U01234567"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: invalid-channel-error
+    tool: get_channel_history
+    args:
+      channel_id: "INVALID_CHANNEL"
+      limit: 1
+    expect_error: true

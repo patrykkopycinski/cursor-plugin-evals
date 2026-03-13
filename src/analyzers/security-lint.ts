@@ -242,6 +242,230 @@ function checkToolDescriptionHygiene(files: FileContent[]): SecurityCheckResult[
   return results;
 }
 
+const ENV_VAR_EXPOSURE_PATTERNS = [
+  /process\.env\.[A-Z_]+/,
+  /process\.env\s*\[/,
+  /os\.environ/i,
+  /\$ENV\{/,
+];
+
+const URL_CONCATENATION_PATTERNS = [
+  /["'`]https?:\/\/[^"'`]*["'`]\s*\+/,
+  /\+\s*["'`]https?:\/\//,
+  /["'`]https?:\/\/[^"'`]*\$\{/,
+];
+
+const INSECURE_DEFAULT_PATTERNS = [
+  /(?:password|passwd|pwd)\s*[=:]\s*["'](?:admin|password|root|default|changeme|123456)["']/i,
+  /port\s*[=:]\s*["']?(?:22|23|3389|5900)["']?/,
+  /(?:debug|verbose)\s*[=:]\s*["']?true["']?/i,
+  /ssl[_-]?verify\s*[=:]\s*["']?false["']?/i,
+  /tls[_-]?reject[_-]?unauthorized\s*[=:]\s*["']?0["']?/i,
+];
+
+function checkEnvVarExposure(files: FileContent[]): SecurityCheckResult[] {
+  const results: SecurityCheckResult[] = [];
+
+  for (const file of files) {
+    for (let i = 0; i < file.lines.length; i++) {
+      for (const pattern of ENV_VAR_EXPOSURE_PATTERNS) {
+        if (pattern.test(file.lines[i])) {
+          results.push({
+            check: 'env-var-exposure',
+            passed: false,
+            severity: 'warning',
+            message: `Potential environment variable exposure: ${pattern.source}`,
+            line: i + 1,
+            file: file.path,
+          });
+          break;
+        }
+      }
+    }
+  }
+
+  if (results.length === 0) {
+    results.push({
+      check: 'env-var-exposure',
+      passed: true,
+      severity: 'info',
+      message: 'No environment variable exposure patterns found',
+    });
+  }
+
+  return results;
+}
+
+function checkUnsafeUrlConstruction(files: FileContent[]): SecurityCheckResult[] {
+  const results: SecurityCheckResult[] = [];
+
+  for (const file of files) {
+    if (!file.path.endsWith('.ts') && !file.path.endsWith('.js')) continue;
+    for (let i = 0; i < file.lines.length; i++) {
+      for (const pattern of URL_CONCATENATION_PATTERNS) {
+        if (pattern.test(file.lines[i])) {
+          results.push({
+            check: 'unsafe-url-construction',
+            passed: false,
+            severity: 'warning',
+            message: 'URL constructed via string concatenation instead of URL constructor',
+            line: i + 1,
+            file: file.path,
+          });
+          break;
+        }
+      }
+    }
+  }
+
+  if (results.length === 0) {
+    results.push({
+      check: 'unsafe-url-construction',
+      passed: true,
+      severity: 'info',
+      message: 'No unsafe URL construction patterns found',
+    });
+  }
+
+  return results;
+}
+
+function checkMissingInputValidation(files: FileContent[]): SecurityCheckResult[] {
+  const results: SecurityCheckResult[] = [];
+  const toolHandlerPattern = /(?:handler|execute|run)\s*(?::\s*\w+\s*)?\(/;
+  const validationPattern = /(?:validate|assert|check|schema|zod|joi|yup|\.parse\(|\.safeParse\()/i;
+
+  for (const file of files) {
+    if (!file.path.endsWith('.ts') && !file.path.endsWith('.js')) continue;
+    const hasHandler = file.lines.some((l) => toolHandlerPattern.test(l));
+    const hasValidation = file.lines.some((l) => validationPattern.test(l));
+
+    if (hasHandler && !hasValidation) {
+      results.push({
+        check: 'missing-input-validation',
+        passed: false,
+        severity: 'warning',
+        message: 'Tool handler detected without apparent input validation',
+        file: file.path,
+      });
+    }
+  }
+
+  if (results.length === 0) {
+    results.push({
+      check: 'missing-input-validation',
+      passed: true,
+      severity: 'info',
+      message: 'Input validation appears present where needed',
+    });
+  }
+
+  return results;
+}
+
+function checkExcessivePermissions(files: FileContent[]): SecurityCheckResult[] {
+  const results: SecurityCheckResult[] = [];
+  const skillMd = files.find((f) => f.path.endsWith('SKILL.md'));
+  if (!skillMd) return results;
+
+  const destructiveTools = /\b(?:delete|remove|drop|write|create|execute|admin)\b/i;
+  const scopeDeclaration = /\b(?:read[_-]?only|limited|scoped|restricted)\b/i;
+
+  if (destructiveTools.test(skillMd.content) && !scopeDeclaration.test(skillMd.content)) {
+    results.push({
+      check: 'excessive-permissions',
+      passed: false,
+      severity: 'warning',
+      message: 'Skill references destructive operations without declaring scope limitations',
+      file: skillMd.path,
+    });
+  }
+
+  if (results.length === 0) {
+    results.push({
+      check: 'excessive-permissions',
+      passed: true,
+      severity: 'info',
+      message: 'Permission scope appears appropriately declared',
+    });
+  }
+
+  return results;
+}
+
+function checkInsecureDefaults(files: FileContent[]): SecurityCheckResult[] {
+  const results: SecurityCheckResult[] = [];
+
+  for (const file of files) {
+    for (let i = 0; i < file.lines.length; i++) {
+      for (const pattern of INSECURE_DEFAULT_PATTERNS) {
+        if (pattern.test(file.lines[i])) {
+          results.push({
+            check: 'insecure-defaults',
+            passed: false,
+            severity: 'warning',
+            message: `Insecure default detected: ${pattern.source}`,
+            line: i + 1,
+            file: file.path,
+          });
+          break;
+        }
+      }
+    }
+  }
+
+  if (results.length === 0) {
+    results.push({
+      check: 'insecure-defaults',
+      passed: true,
+      severity: 'info',
+      message: 'No insecure default values found',
+    });
+  }
+
+  return results;
+}
+
+function checkMissingRateLimiting(files: FileContent[]): SecurityCheckResult[] {
+  const results: SecurityCheckResult[] = [];
+  const rateLimitPattern = /\b(?:rate[_\s-]?limit|throttl|debounce|cooldown|max[_\s-]?requests)\b/i;
+
+  const skillMd = files.find((f) => f.path.endsWith('SKILL.md'));
+  const codeFiles = files.filter(
+    (f) => f.path.endsWith('.ts') || f.path.endsWith('.js'),
+  );
+
+  const hasExternalCalls = codeFiles.some((f) =>
+    /\b(?:fetch|axios|http\.request|curl)\b/.test(f.content),
+  );
+
+  if (hasExternalCalls) {
+    const hasRateLimit =
+      codeFiles.some((f) => rateLimitPattern.test(f.content)) ||
+      (skillMd && rateLimitPattern.test(skillMd.content));
+
+    if (!hasRateLimit) {
+      results.push({
+        check: 'missing-rate-limiting',
+        passed: false,
+        severity: 'info',
+        message: 'Skill makes external calls but does not mention rate limiting or throttling',
+      });
+    }
+  }
+
+  if (results.length === 0) {
+    results.push({
+      check: 'missing-rate-limiting',
+      passed: true,
+      severity: 'info',
+      message: 'Rate limiting consideration appears present or not needed',
+    });
+  }
+
+  return results;
+}
+
 export async function runSkillSecurityChecks(skillDir: string): Promise<SkillSecurityReport> {
   const files = await loadFiles(skillDir);
   const skillName = skillDir.split('/').pop() ?? skillDir;
@@ -251,6 +475,12 @@ export async function runSkillSecurityChecks(skillDir: string): Promise<SkillSec
     ...checkScopeDeclaration(files),
     ...checkCleanExampleData(files),
     ...checkToolDescriptionHygiene(files),
+    ...checkEnvVarExposure(files),
+    ...checkUnsafeUrlConstruction(files),
+    ...checkMissingInputValidation(files),
+    ...checkExcessivePermissions(files),
+    ...checkInsecureDefaults(files),
+    ...checkMissingRateLimiting(files),
   ];
 
   return {

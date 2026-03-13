@@ -1,0 +1,93 @@
+name: notion-server
+layer: integration
+require_env:
+  - NOTION_API_KEY
+
+tests:
+  - name: search-by-title
+    tool: search
+    args:
+      query: "Meeting Notes"
+    assert:
+      - field: content[0].text
+        op: exists
+      - field: content[0].type
+        op: eq
+        value: text
+
+  - name: search-empty-query
+    tool: search
+    args:
+      query: ""
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: search-with-filter
+    tool: search
+    args:
+      query: "Project"
+      filter:
+        property: object
+        value: page
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: get-page
+    tool: get_page
+    args:
+      page_id: "test-page-id"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: create-page
+    tool: create_page
+    args:
+      parent_id: "test-parent-id"
+      title: "Eval Test Page"
+      content: "Created by automated evaluation"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: update-page
+    tool: update_page
+    args:
+      page_id: "test-page-id"
+      properties:
+        title: "Updated Eval Test Page"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: get-database
+    tool: get_database
+    args:
+      database_id: "test-database-id"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: query-database
+    tool: query_database
+    args:
+      database_id: "test-database-id"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: get-block-children
+    tool: get_block_children
+    args:
+      block_id: "test-block-id"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: get-nonexistent-page
+    tool: get_page
+    args:
+      page_id: "00000000-0000-0000-0000-000000000000"
+    expect_error: true

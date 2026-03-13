@@ -5,9 +5,11 @@ on:
     branches: [main]
     paths:
       - "showcase/elastic-cursor-plugin/**"
+      - "src/**"
   pull_request:
     paths:
       - "showcase/elastic-cursor-plugin/**"
+      - "src/**"
   workflow_dispatch:
 
 env:
@@ -17,7 +19,7 @@ env:
 
 jobs:
   static-unit:
-    name: Static + Unit
+    name: Static + Unit + Conformance
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,6 +43,22 @@ jobs:
 
       - name: Run unit layer
         run: npx cursor-plugin-evals run --config showcase/elastic-cursor-plugin/plugin-eval.yaml --layer unit --ci
+
+      - name: Run conformance layer
+        run: npx cursor-plugin-evals run --config showcase/elastic-cursor-plugin/plugin-eval.yaml --layer conformance --ci --report tap --output conformance.tap
+
+      - name: Cross-platform compatibility check
+        run: npx cursor-plugin-evals compat --dir ${{ env.ELASTIC_PLUGIN_DIR }}
+
+      - name: Security audit (3-pass)
+        run: npx cursor-plugin-evals audit --config showcase/elastic-cursor-plugin/plugin-eval.yaml --ci
+
+      - name: Upload conformance TAP
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-tap
+          path: conformance.tap
 
   integration-performance:
     name: Integration + Performance
@@ -91,6 +109,9 @@ jobs:
       - name: Run integration layer
         run: npx cursor-plugin-evals run --config showcase/elastic-cursor-plugin/plugin-eval.yaml --layer integration --ci --report junit-xml --output integration-results.xml
 
+      - name: Run integration (TAP format)
+        run: npx cursor-plugin-evals run --config showcase/elastic-cursor-plugin/plugin-eval.yaml --layer integration --ci --report tap --output integration.tap
+
       - name: Run performance layer
         run: npx cursor-plugin-evals run --config showcase/elastic-cursor-plugin/plugin-eval.yaml --layer performance --ci --report junit-xml --output performance-results.xml
 
@@ -99,7 +120,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: eval-results
-          path: "*.xml"
+          path: |
+            *.xml
+            *.tap
 
   llm-eval:
     name: LLM Evaluation
@@ -140,12 +163,21 @@ jobs:
       - name: Run LLM eval layer
         run: npx cursor-plugin-evals run --config showcase/elastic-cursor-plugin/plugin-eval.yaml --layer llm --ci --report markdown --output llm-report.md
 
+      - name: Run TypeScript eval suites
+        run: npx cursor-plugin-evals run --ts showcase/elastic-cursor-plugin/showcase.eval.ts --ci --report json --output ts-results.json
+
       - name: Quality score
         run: npx cursor-plugin-evals score --config showcase/elastic-cursor-plugin/plugin-eval.yaml
+
+      - name: Generate leaderboard
+        run: npx cursor-plugin-evals leaderboard --format markdown --output leaderboard.md
 
       - name: Upload LLM report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: llm-report
-          path: llm-report.md
+          path: |
+            llm-report.md
+            ts-results.json
+            leaderboard.md

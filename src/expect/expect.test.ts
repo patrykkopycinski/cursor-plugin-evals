@@ -6,7 +6,12 @@ import {
   toolArgs,
   responseContains,
   responseNotContains,
+  run,
+  maxIterations,
+  noErrors,
+  latencyUnder,
 } from './expect.js';
+import { RunAssertion } from './run-assertions.js';
 import { defineSuite } from './suite-builder.js';
 
 describe('FieldAssertion', () => {
@@ -23,7 +28,7 @@ describe('FieldAssertion', () => {
     ]);
   });
 
-  it('all 14 operators produce correct AssertionConfig', () => {
+  it('all 17 operators produce correct AssertionConfig', () => {
     const fa = new FieldAssertion('f')
       .eq('a')
       .neq('b')
@@ -38,10 +43,13 @@ describe('FieldAssertion', () => {
       .lengthGte(5)
       .lengthLte(6)
       .type('string')
-      .matches('^x$');
+      .matches('^x$')
+      .oneOf([1, 2, 3])
+      .startsWith('hello')
+      .endsWith('world');
 
     const assertions = fa.toAssertions();
-    expect(assertions).toHaveLength(14);
+    expect(assertions).toHaveLength(17);
 
     const ops = assertions.map((a) => a.op);
     expect(ops).toEqual([
@@ -59,12 +67,18 @@ describe('FieldAssertion', () => {
       'length_lte',
       'type',
       'matches',
+      'one_of',
+      'starts_with',
+      'ends_with',
     ]);
 
     expect(assertions[0]).toEqual({ field: 'f', op: 'eq', value: 'a' });
     expect(assertions[8]).toEqual({ field: 'f', op: 'exists', value: undefined });
     expect(assertions[9]).toEqual({ field: 'f', op: 'not_exists', value: undefined });
     expect(assertions[13]).toEqual({ field: 'f', op: 'matches', value: '^x$' });
+    expect(assertions[14]).toEqual({ field: 'f', op: 'one_of', value: [1, 2, 3] });
+    expect(assertions[15]).toEqual({ field: 'f', op: 'starts_with', value: 'hello' });
+    expect(assertions[16]).toEqual({ field: 'f', op: 'ends_with', value: 'world' });
   });
 
   it('toAssertions() returns a defensive copy', () => {
@@ -73,6 +87,21 @@ describe('FieldAssertion', () => {
     const b = fa.toAssertions();
     expect(a).toEqual(b);
     expect(a).not.toBe(b);
+  });
+
+  it('.oneOf() produces { field, op: "one_of", value }', () => {
+    const result = new FieldAssertion('color').oneOf(['red', 'green', 'blue']).toAssertions();
+    expect(result).toEqual([{ field: 'color', op: 'one_of', value: ['red', 'green', 'blue'] }]);
+  });
+
+  it('.startsWith() produces { field, op: "starts_with", value }', () => {
+    const result = new FieldAssertion('name').startsWith('elastic').toAssertions();
+    expect(result).toEqual([{ field: 'name', op: 'starts_with', value: 'elastic' }]);
+  });
+
+  it('.endsWith() produces { field, op: "ends_with", value }', () => {
+    const result = new FieldAssertion('file').endsWith('.json').toAssertions();
+    expect(result).toEqual([{ field: 'file', op: 'ends_with', value: '.json' }]);
   });
 });
 
@@ -111,6 +140,27 @@ describe('expect helpers', () => {
     expect(responseNotContains(['error', 'failed'])).toEqual({
       responseNotContains: ['error', 'failed'],
     });
+  });
+
+  it('run() returns a RunAssertion', () => {
+    const ra = run();
+    expect(ra).toBeInstanceOf(RunAssertion);
+    expect(ra.noErrors().toChecks()).toEqual([{ type: 'no_errors' }]);
+  });
+
+  it('maxIterations() returns a single RunCheck', () => {
+    const check = maxIterations(10);
+    expect(check).toEqual({ type: 'max_iterations', value: 10 });
+  });
+
+  it('noErrors() returns a single RunCheck', () => {
+    const check = noErrors();
+    expect(check).toEqual({ type: 'no_errors' });
+  });
+
+  it('latencyUnder() returns a single RunCheck', () => {
+    const check = latencyUnder(3000);
+    expect(check).toEqual({ type: 'latency_under', value: 3000 });
   });
 });
 

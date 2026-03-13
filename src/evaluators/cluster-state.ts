@@ -68,6 +68,14 @@ function checkAssertion(value: unknown, op: AssertionOp, expected?: unknown): bo
         typeof expected === 'string' &&
         new RegExp(expected).test(value)
       );
+    case 'one_of':
+      return Array.isArray(expected) && expected.some((e) => JSON.stringify(e) === JSON.stringify(value));
+    case 'starts_with':
+      return typeof value === 'string' && typeof expected === 'string' && value.startsWith(expected);
+    case 'ends_with':
+      return typeof value === 'string' && typeof expected === 'string' && value.endsWith(expected);
+    default:
+      return false;
   }
 }
 

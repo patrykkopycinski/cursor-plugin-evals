@@ -1,0 +1,69 @@
+name: time-server
+layer: integration
+
+tests:
+  - name: current-time-utc
+    tool: get_current_time
+    args:
+      timezone: "UTC"
+    assert:
+      - field: content[0].text
+        op: exists
+      - field: content[0].type
+        op: eq
+        value: text
+
+  - name: current-time-new-york
+    tool: get_current_time
+    args:
+      timezone: "America/New_York"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: current-time-tokyo
+    tool: get_current_time
+    args:
+      timezone: "Asia/Tokyo"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: current-time-london
+    tool: get_current_time
+    args:
+      timezone: "Europe/London"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: current-time-sydney
+    tool: get_current_time
+    args:
+      timezone: "Australia/Sydney"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: current-time-iso-format
+    tool: get_current_time
+    args:
+      timezone: "UTC"
+    assert:
+      - field: content[0].text
+        op: matches
+        value: "\\d{4}-\\d{2}-\\d{2}"
+
+  - name: current-time-los-angeles
+    tool: get_current_time
+    args:
+      timezone: "America/Los_Angeles"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: invalid-timezone-error
+    tool: get_current_time
+    args:
+      timezone: "Invalid/Timezone"
+    expect_error: true

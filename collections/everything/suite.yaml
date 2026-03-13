@@ -1,0 +1,95 @@
+name: everything-server
+layer: integration
+
+tests:
+  - name: echo-basic
+    tool: echo
+    args:
+      message: "hello world"
+    assert:
+      - field: content[0].text
+        op: contains
+        value: hello world
+
+  - name: echo-empty
+    tool: echo
+    args:
+      message: ""
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: echo-special-chars
+    tool: echo
+    args:
+      message: "special chars: <>&\"'\n\ttab"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: add-integers
+    tool: add
+    args:
+      a: 5
+      b: 3
+    assert:
+      - field: content[0].text
+        op: contains
+        value: "8"
+
+  - name: add-negative-numbers
+    tool: add
+    args:
+      a: -10
+      b: 7
+    assert:
+      - field: content[0].text
+        op: contains
+        value: "-3"
+
+  - name: add-decimals
+    tool: add
+    args:
+      a: 1.5
+      b: 2.5
+    assert:
+      - field: content[0].text
+        op: contains
+        value: "4"
+
+  - name: add-zeros
+    tool: add
+    args:
+      a: 0
+      b: 0
+    assert:
+      - field: content[0].text
+        op: contains
+        value: "0"
+
+  - name: long-running-operation
+    tool: longRunningOperation
+    args:
+      duration: 1
+      steps: 2
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: sample-llm
+    tool: sampleLLM
+    args:
+      prompt: "Say hello"
+      maxTokens: 50
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: echo-unicode
+    tool: echo
+    args:
+      message: "Unicode test: こんにちは 🌍"
+    assert:
+      - field: content[0].text
+        op: contains
+        value: "こんにちは"

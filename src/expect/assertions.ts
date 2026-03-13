@@ -69,6 +69,18 @@ export class FieldAssertion {
     return this.push('matches', value);
   }
 
+  oneOf(values: unknown[]): this {
+    return this.push('one_of', values);
+  }
+
+  startsWith(value: string): this {
+    return this.push('starts_with', value);
+  }
+
+  endsWith(value: string): this {
+    return this.push('ends_with', value);
+  }
+
   toAssertions(): AssertionConfig[] {
     return [...this.assertions];
   }

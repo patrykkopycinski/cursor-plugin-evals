@@ -1,0 +1,98 @@
+name: sequential-thinking-server
+layer: integration
+
+tests:
+  - name: single-step-thought
+    tool: sequentialthinking
+    args:
+      thought: "The problem is to determine 2+2."
+      thoughtNumber: 1
+      totalThoughts: 1
+      nextThoughtNeeded: false
+    assert:
+      - field: content[0].text
+        op: exists
+      - field: content[0].type
+        op: eq
+        value: text
+
+  - name: multi-step-first
+    tool: sequentialthinking
+    args:
+      thought: "Step 1: Identify the variables in the equation x + 5 = 12."
+      thoughtNumber: 1
+      totalThoughts: 3
+      nextThoughtNeeded: true
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: multi-step-middle
+    tool: sequentialthinking
+    args:
+      thought: "Step 2: Subtract 5 from both sides to isolate x."
+      thoughtNumber: 2
+      totalThoughts: 3
+      nextThoughtNeeded: true
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: multi-step-final
+    tool: sequentialthinking
+    args:
+      thought: "Step 3: Therefore x = 7."
+      thoughtNumber: 3
+      totalThoughts: 3
+      nextThoughtNeeded: false
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: revision-step
+    tool: sequentialthinking
+    args:
+      thought: "Revising step 1: Actually the equation should be rearranged differently."
+      thoughtNumber: 2
+      totalThoughts: 4
+      nextThoughtNeeded: true
+      isRevision: true
+      revisesThought: 1
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: branch-step
+    tool: sequentialthinking
+    args:
+      thought: "Alternative approach: Use factoring instead of substitution."
+      thoughtNumber: 2
+      totalThoughts: 3
+      nextThoughtNeeded: true
+      branchFromThought: 1
+      branchId: "alt-1"
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: extended-thinking
+    tool: sequentialthinking
+    args:
+      thought: "Need one more step to verify the result."
+      thoughtNumber: 4
+      totalThoughts: 5
+      nextThoughtNeeded: true
+    assert:
+      - field: content[0].text
+        op: exists
+
+  - name: complex-reasoning
+    tool: sequentialthinking
+    args:
+      thought: "Analyzing the time complexity: the outer loop runs n times, the inner loop runs log(n) times, so total complexity is O(n log n)."
+      thoughtNumber: 1
+      totalThoughts: 1
+      nextThoughtNeeded: false
+    assert:
+      - field: content[0].text
+        op: exists
