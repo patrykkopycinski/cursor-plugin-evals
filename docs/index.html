@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cursor-plugin-evals — Docs</title>
+  <meta name="description" content="Documentation for cursor-plugin-evals — the universal testing framework for Cursor plugins.">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple-dark.css">
+  <style>
+    :root {
+      --theme-color: #7c3aed;
+      --theme-accent: #22d3ee;
+      --sidebar-width: 260px;
+      --sidebar-background: #111827;
+      --sidebar-nav-link-color--active: #7c3aed;
+      --sidebar-nav-link-border-color--active: #7c3aed;
+      --sidebar-nav-link-color--hover: #22d3ee;
+      --base-background-color: #0a0e1a;
+      --base-color: #e2e8f0;
+      --heading-color: #f1f5f9;
+      --code-theme-background: #1e293b;
+      --code-inline-background: #1e293b;
+      --code-inline-color: #22d3ee;
+      --link-color: #22d3ee;
+      --link-color--hover: #7c3aed;
+      --blockquote-border-color: #7c3aed;
+      --table-row-even-background: #111827;
+      --notice-tip-border-color: #34d399;
+      --notice-important-border-color: #fbbf24;
+      --cover-background-color: #0a0e1a;
+    }
+    .sidebar-nav > ul > li > a { font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; color: #94a3b8 !important; }
+    .sidebar-nav > ul > li > ul > li > a { font-weight: 400; text-transform: none; font-size: 0.875rem; letter-spacing: 0; }
+    .app-nav { display: flex; align-items: center; }
+    .app-nav a { margin: 0 0.5rem; font-size: 0.875rem; }
+    .markdown-section h1 { border-bottom: 2px solid #1e293b; padding-bottom: 0.5rem; }
+    .markdown-section table { display: table; width: 100%; }
+    .markdown-section code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.$docsify = {
+      name: 'cursor-plugin-evals',
+      nameLink: '/',
+      repo: 'https://github.com/patrykkopycinski/cursor-plugin-evals',
+      loadSidebar: true,
+      subMaxLevel: 3,
+      auto2top: true,
+      search: {
+        placeholder: 'Search docs...',
+        noData: 'No results',
+        depth: 3
+      },
+      copyCode: {
+        buttonText: 'Copy',
+        successText: 'Copied!'
+      },
+      pagination: {
+        previousText: '← Previous',
+        nextText: 'Next →',
+        crossChapter: true
+      },
+      homepage: 'index.md'
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-copy-code@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-pagination@2/dist/docsify-pagination.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-yaml.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-typescript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
+</body>
+</html>
