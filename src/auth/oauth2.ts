@@ -95,7 +95,7 @@ export class OAuth2AuthProvider implements AuthProvider {
     if (!res.ok) {
       const errorBody = await res.text().catch(() => 'unknown');
       throw new Error(
-        `OAuth2 token request failed: ${res.status} ${res.statusText} — ${errorBody}`
+        `OAuth2 token request failed: ${res.status} ${res.statusText} — ${errorBody}`,
       );
     }
 

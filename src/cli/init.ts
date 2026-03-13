@@ -195,7 +195,9 @@ export async function initCommand(opts: InitOptions): Promise<void> {
   try {
     manifest = discoverPlugin(pluginDir, opts.pluginRoot);
     log.success(`Discovered plugin: ${manifest.name}`);
-    log.info(`  Skills: ${manifest.skills.length}, Rules: ${manifest.rules.length}, Agents: ${manifest.agents.length}`);
+    log.info(
+      `  Skills: ${manifest.skills.length}, Rules: ${manifest.rules.length}, Agents: ${manifest.agents.length}`,
+    );
     log.info(`  Commands: ${manifest.commands.length}, MCP Servers: ${manifest.mcpServers.length}`);
   } catch (err) {
     log.error('Failed to discover plugin', err);

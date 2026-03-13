@@ -33,7 +33,8 @@ const TTL_MULTIPLIERS: Record<string, number> = {
 
 function parseTtl(ttl: string): number {
   const match = ttl.match(/^(\d+)(s|m|h|d)$/);
-  if (!match) throw new Error(`Invalid TTL format "${ttl}". Use <number>(s|m|h|d), e.g. "7d", "1h", "30m".`);
+  if (!match)
+    throw new Error(`Invalid TTL format "${ttl}". Use <number>(s|m|h|d), e.g. "7d", "1h", "30m".`);
   return parseInt(match[1], 10) * TTL_MULTIPLIERS[match[2]];
 }
 
@@ -96,7 +97,12 @@ export class LlmCache {
     }
   }
 
-  async set(model: string, systemPrompt: string, userPrompt: string, response: string): Promise<void> {
+  async set(
+    model: string,
+    systemPrompt: string,
+    userPrompt: string,
+    response: string,
+  ): Promise<void> {
     if (!this.config.enabled) return;
 
     await this.ensureDir();

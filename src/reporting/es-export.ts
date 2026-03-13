@@ -62,9 +62,7 @@ export async function exportToEsDatastream(
   const tests = result.suites.flatMap((s) => s.tests);
   if (tests.length === 0) return;
 
-  const docs = tests.map((t) =>
-    testToDocument(t, result.runId, result.timestamp, result.config),
-  );
+  const docs = tests.map((t) => testToDocument(t, result.runId, result.timestamp, result.config));
 
   const index = 'kibana-evaluations';
   const bulkLines: string[] = [];
@@ -87,7 +85,10 @@ export async function exportToEsDatastream(
     throw new Error(`ES datastream bulk index failed (${res.status}): ${resBody}`);
   }
 
-  const bulkResult = (await res.json()) as { errors?: boolean; items?: Array<Record<string, { error?: unknown }>> };
+  const bulkResult = (await res.json()) as {
+    errors?: boolean;
+    items?: Array<Record<string, { error?: unknown }>>;
+  };
   if (bulkResult.errors) {
     const firstError = bulkResult.items?.find((item) => {
       const op = Object.values(item)[0];

@@ -16,7 +16,11 @@ export function computePercentile(sorted: number[], p: number): number {
   return sorted[lower] * (1 - weight) + sorted[upper] * weight;
 }
 
-function computeMetrics(latencies: number[], durationMs: number, memoryDelta: number): PerformanceMetrics {
+function computeMetrics(
+  latencies: number[],
+  durationMs: number,
+  memoryDelta: number,
+): PerformanceMetrics {
   const sorted = [...latencies].sort((a, b) => a - b);
   const sum = sorted.reduce((a, b) => a + b, 0);
 
@@ -156,7 +160,7 @@ export async function runPerformanceSuite(
       const m = result.performanceMetrics;
       log.debug(
         `  p50=${m.p50.toFixed(1)}ms p95=${m.p95.toFixed(1)}ms p99=${m.p99.toFixed(1)}ms ` +
-        `throughput=${m.throughput.toFixed(1)}/s samples=${m.samples}`,
+          `throughput=${m.throughput.toFixed(1)}/s samples=${m.samples}`,
       );
     }
 

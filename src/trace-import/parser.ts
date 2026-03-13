@@ -49,7 +49,8 @@ interface OtelExportRoot {
 function extractAttributeValue(attr: OtelAttribute): unknown {
   const v = attr.value;
   if (v.stringValue !== undefined) return v.stringValue;
-  if (v.intValue !== undefined) return typeof v.intValue === 'string' ? parseInt(v.intValue, 10) : v.intValue;
+  if (v.intValue !== undefined)
+    return typeof v.intValue === 'string' ? parseInt(v.intValue, 10) : v.intValue;
   if (v.doubleValue !== undefined) return v.doubleValue;
   if (v.boolValue !== undefined) return v.boolValue;
   if (v.arrayValue) return v.arrayValue.values.map((item) => item.stringValue ?? '');
@@ -85,16 +86,21 @@ function parseSingleSpan(span: OtelSpan): ParsedSpan {
     (attributes['mcp.tool.name'] as string | undefined);
 
   const rawArgs =
-    attributes['tool.args'] ??
-    attributes['gen_ai.tool.args'] ??
-    attributes['mcp.tool.args'];
-  const toolArgs = tryParseJson(rawArgs) ?? (typeof rawArgs === 'object' && rawArgs !== null ? rawArgs as Record<string, unknown> : undefined);
+    attributes['tool.args'] ?? attributes['gen_ai.tool.args'] ?? attributes['mcp.tool.args'];
+  const toolArgs =
+    tryParseJson(rawArgs) ??
+    (typeof rawArgs === 'object' && rawArgs !== null
+      ? (rawArgs as Record<string, unknown>)
+      : undefined);
 
   const rawResult =
-    attributes['tool.result'] ??
-    attributes['gen_ai.tool.result'] ??
-    attributes['mcp.tool.result'];
-  const toolResult = typeof rawResult === 'string' ? rawResult : rawResult !== undefined ? JSON.stringify(rawResult) : undefined;
+    attributes['tool.result'] ?? attributes['gen_ai.tool.result'] ?? attributes['mcp.tool.result'];
+  const toolResult =
+    typeof rawResult === 'string'
+      ? rawResult
+      : rawResult !== undefined
+        ? JSON.stringify(rawResult)
+        : undefined;
 
   const parentPrompt =
     (attributes['gen_ai.prompt'] as string | undefined) ??

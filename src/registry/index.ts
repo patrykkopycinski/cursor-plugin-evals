@@ -37,10 +37,7 @@ export async function fetchRegistry(registryUrl?: string): Promise<RegistryEntry
   return data.suites;
 }
 
-export async function pullSuite(
-  entry: RegistryEntry,
-  collectionsDir?: string,
-): Promise<string> {
+export async function pullSuite(entry: RegistryEntry, collectionsDir?: string): Promise<string> {
   const dir = collectionsDir ?? resolve(process.cwd(), 'collections');
   mkdirSync(dir, { recursive: true });
 

@@ -103,8 +103,8 @@ function printConfidenceIntervals(result: RunResult): void {
   if (ci.overall.sampleSize > 1) {
     log.info(
       `  Overall: ${ci.overall.mean.toFixed(3)} ` +
-      chalk.gray(`[${ci.overall.lowerBound.toFixed(3)}, ${ci.overall.upperBound.toFixed(3)}]`) +
-      chalk.gray(` (n=${ci.overall.sampleSize}, σ=${ci.overall.stddev.toFixed(3)})`),
+        chalk.gray(`[${ci.overall.lowerBound.toFixed(3)}, ${ci.overall.upperBound.toFixed(3)}]`) +
+        chalk.gray(` (n=${ci.overall.sampleSize}, σ=${ci.overall.stddev.toFixed(3)})`),
     );
   }
 

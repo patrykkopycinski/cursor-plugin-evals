@@ -413,29 +413,33 @@ program
 
 program
   .command('setup')
-  .description('Interactive setup wizard — checks prerequisites, fixes issues, and guides you to your first eval run')
+  .description(
+    'Interactive setup wizard — checks prerequisites, fixes issues, and guides you to your first eval run',
+  )
   .option('-d, --dir <path>', 'plugin directory', '.')
   .option('--skip-docker', 'skip Docker checks')
   .option('--no-interactive', 'skip auto-fix prompts')
   .option('--verbose', 'debug logging')
   .option('--no-color', 'disable colors')
-  .action(async (opts: {
-    dir: string;
-    skipDocker?: boolean;
-    interactive: boolean;
-    verbose?: boolean;
-    noColor?: boolean;
-  }) => {
-    if (opts.noColor) setNoColor(true);
-    if (opts.verbose) setLogLevel('debug');
-    const { setupCommand } = await import('./setup.js');
-    await setupCommand({
-      dir: opts.dir,
-      interactive: opts.interactive,
-      skipDocker: opts.skipDocker,
-      verbose: opts.verbose,
-    });
-  });
+  .action(
+    async (opts: {
+      dir: string;
+      skipDocker?: boolean;
+      interactive: boolean;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+      const { setupCommand } = await import('./setup.js');
+      await setupCommand({
+        dir: opts.dir,
+        interactive: opts.interactive,
+        skipDocker: opts.skipDocker,
+        verbose: opts.verbose,
+      });
+    },
+  );
 
 program
   .command('score')
@@ -869,7 +873,9 @@ program
 
 program
   .command('replay')
-  .description('Re-score recorded eval outputs against current evaluators (no LLM or cluster needed)')
+  .description(
+    'Re-score recorded eval outputs against current evaluators (no LLM or cluster needed)',
+  )
   .requiredOption('--skill <name>', 'skill name to replay')
   .option('--run-id <id>', 'specific recording run ID (defaults to latest)')
   .option('--recordings-dir <path>', 'recordings directory', '.cursor-plugin-evals/recordings')
@@ -1169,6 +1175,9 @@ program
   .description('Auto-generate integration tests from MCP tool schemas')
   .option('-c, --config <path>', 'config file path', './plugin-eval.yaml')
   .option('-t, --tool <name>', 'generate tests for a single tool')
+  .option('--smart', 'use LLM-powered generation with personas and edge cases')
+  .option('--personas <types...>', 'personas for smart mode (novice, expert, adversarial)')
+  .option('--multilingual <langs...>', 'languages for smart mode (e.g. es de ja)')
   .option('-o, --output <path>', 'write generated YAML to file')
   .option('--verbose', 'debug logging')
   .option('--no-color', 'disable colors')
@@ -1176,6 +1185,9 @@ program
     async (opts: {
       config: string;
       tool?: string;
+      smart?: boolean;
+      personas?: string[];
+      multilingual?: string[];
       output?: string;
       verbose?: boolean;
       noColor?: boolean;
@@ -1235,12 +1247,30 @@ program
             generateTestsFromSchema(tool.name, tool.inputSchema as Record<string, unknown>),
           );
 
-          const yaml = formatAsYaml(allTests, config.plugin.name);
+          let yaml: string;
+
+          if (opts.smart) {
+            log.info('Using LLM-powered smart generation...');
+            const { generateSmartTests, formatSmartTestsAsYaml } =
+              await import('../gen-tests/smart-gen.js');
+            const smartTests = await generateSmartTests({
+              tools: filtered as any,
+              count: 5,
+              personas: opts.personas as any,
+              multilingual: opts.multilingual,
+              edgeCases: true,
+            });
+            yaml = formatSmartTestsAsYaml(smartTests, config.plugin.name);
+            log.info(`Generated ${smartTests.length} smart test(s)`);
+          } else {
+            yaml = formatAsYaml(allTests, config.plugin.name);
+            log.info(`Generated ${allTests.length} schema-based test(s)`);
+          }
 
           if (opts.output) {
             const outPath = resolve(process.cwd(), opts.output);
             writeFileSync(outPath, yaml, 'utf-8');
-            log.success(`Generated ${allTests.length} test(s) → ${outPath}`);
+            log.success(`Tests written → ${outPath}`);
           } else {
             console.log(yaml);
           }
@@ -1344,12 +1374,7 @@ program
         log.info(`Suite: ${opts.suite}, Variants: ${opts.variants}, Threshold: ${opts.threshold}`);
         console.log();
 
-        const results = await analyzeSensitivity(
-          config,
-          opts.suite,
-          opts.variants,
-          opts.threshold,
-        );
+        const results = await analyzeSensitivity(config, opts.suite, opts.variants, opts.threshold);
 
         const report = formatSensitivityReport(results, opts.threshold);
         console.log(report);
@@ -1381,36 +1406,34 @@ registry
   .option('--url <registryUrl>', 'custom registry URL')
   .option('--verbose', 'debug logging')
   .option('--no-color', 'disable colors')
-  .action(
-    async (opts: { url?: string; verbose?: boolean; noColor?: boolean }) => {
-      if (opts.noColor) setNoColor(true);
-      if (opts.verbose) setLogLevel('debug');
+  .action(async (opts: { url?: string; verbose?: boolean; noColor?: boolean }) => {
+    if (opts.noColor) setNoColor(true);
+    if (opts.verbose) setLogLevel('debug');
 
-      log.header('Registry — Available Suites');
+    log.header('Registry — Available Suites');
 
-      try {
-        const { fetchRegistry } = await import('../registry/index.js');
-        const entries = await fetchRegistry(opts.url);
+    try {
+      const { fetchRegistry } = await import('../registry/index.js');
+      const entries = await fetchRegistry(opts.url);
 
-        if (entries.length === 0) {
-          log.info('No suites found in the registry.');
-          return;
-        }
-
-        for (const entry of entries) {
-          log.info(`  ${entry.name.padEnd(24)} v${entry.version.padEnd(8)} [${entry.layer}]`);
-          log.info(`    ${entry.description}`);
-          log.info(`    by ${entry.author}`);
-          console.log();
-        }
-
-        log.success(`${entries.length} suite(s) available`);
-      } catch (err) {
-        log.error('Failed to fetch registry', err);
-        process.exitCode = EXIT_FAIL;
+      if (entries.length === 0) {
+        log.info('No suites found in the registry.');
+        return;
       }
-    },
-  );
+
+      for (const entry of entries) {
+        log.info(`  ${entry.name.padEnd(24)} v${entry.version.padEnd(8)} [${entry.layer}]`);
+        log.info(`    ${entry.description}`);
+        log.info(`    by ${entry.author}`);
+        console.log();
+      }
+
+      log.success(`${entries.length} suite(s) available`);
+    } catch (err) {
+      log.error('Failed to fetch registry', err);
+      process.exitCode = EXIT_FAIL;
+    }
+  });
 
 registry
   .command('pull <name>')
@@ -1420,7 +1443,10 @@ registry
   .option('--verbose', 'debug logging')
   .option('--no-color', 'disable colors')
   .action(
-    async (name: string, opts: { url?: string; output: string; verbose?: boolean; noColor?: boolean }) => {
+    async (
+      name: string,
+      opts: { url?: string; output: string; verbose?: boolean; noColor?: boolean },
+    ) => {
       if (opts.noColor) setNoColor(true);
       if (opts.verbose) setLogLevel('debug');
 
@@ -1455,25 +1481,563 @@ registry
   .requiredOption('--suite <path>', 'path to suite YAML file')
   .option('--verbose', 'debug logging')
   .option('--no-color', 'disable colors')
+  .action(async (opts: { suite: string; verbose?: boolean; noColor?: boolean }) => {
+    if (opts.noColor) setNoColor(true);
+    if (opts.verbose) setLogLevel('debug');
+
+    try {
+      const { packageSuite } = await import('../registry/index.js');
+      const suitePath = resolve(process.cwd(), opts.suite);
+      const entry = packageSuite(suitePath);
+
+      log.header('Registry — Package Suite');
+      log.info('Add this entry to registry.json:\n');
+      console.log(JSON.stringify(entry, null, 2));
+    } catch (err) {
+      log.error('Failed to package suite', err);
+      process.exitCode = EXIT_FAIL;
+    }
+  });
+
+program
+  .command('red-team')
+  .description('Run automated adversarial security scanning against the plugin')
+  .option('-c, --config <path>', 'config file path', './plugin-eval.yaml')
+  .option(
+    '--categories <cats...>',
+    'attack categories (jailbreak, prompt-injection, pii-leakage, bias, toxicity, excessive-agency, hallucination-probe, data-exfiltration, privilege-escalation, denial-of-service)',
+  )
+  .option('--count <n>', 'prompts per category', parsePositiveInt, 5)
+  .option('-m, --model <model>', 'LLM model to use')
+  .option('--report <format>', 'output format: terminal, json', 'terminal')
+  .option('-o, --output <path>', 'write report to file')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
   .action(
-    async (opts: { suite: string; verbose?: boolean; noColor?: boolean }) => {
+    async (opts: {
+      config: string;
+      categories?: string[];
+      count: number;
+      model?: string;
+      report: string;
+      output?: string;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
       if (opts.noColor) setNoColor(true);
       if (opts.verbose) setLogLevel('debug');
 
-      try {
-        const { packageSuite } = await import('../registry/index.js');
-        const suitePath = resolve(process.cwd(), opts.suite);
-        const entry = packageSuite(suitePath);
+      log.header('Red Team — Adversarial Security Scan');
 
-        log.header('Registry — Package Suite');
-        log.info('Add this entry to registry.json:\n');
-        console.log(JSON.stringify(entry, null, 2));
+      let config;
+      try {
+        config = loadConfig(opts.config);
       } catch (err) {
-        log.error('Failed to package suite', err);
+        log.error('Configuration error', err);
+        process.exitCode = EXIT_CONFIG_ERROR;
+        return;
+      }
+
+      try {
+        const { runRedTeam, formatRedTeamReport: fmtReport } = await import('../red-team/index.js');
+
+        const report = await runRedTeam({
+          plugin: config.plugin,
+          categories: opts.categories as any,
+          countPerCategory: opts.count,
+          model: opts.model ?? config.defaults?.judgeModel,
+        });
+
+        if (opts.report === 'json') {
+          const json = JSON.stringify(report, null, 2);
+          console.log(json);
+          if (opts.output) writeFileSync(resolve(process.cwd(), opts.output), json, 'utf-8');
+        } else {
+          const formatted = fmtReport(report);
+          console.log(formatted);
+          if (opts.output) writeFileSync(resolve(process.cwd(), opts.output), formatted, 'utf-8');
+        }
+
+        if (report.failed > 0) process.exitCode = EXIT_FAIL;
+      } catch (err) {
+        log.error('Red team scan failed', err);
         process.exitCode = EXIT_FAIL;
       }
     },
   );
+
+program
+  .command('optimize')
+  .description('Optimize prompts and tool descriptions by iteratively evaluating variants')
+  .requiredOption('-s, --suite <name>', 'suite name to optimize against')
+  .option('-c, --config <path>', 'config file path', './plugin-eval.yaml')
+  .option('-e, --evaluator <name>', 'target evaluator to maximize', 'tool-selection')
+  .option('-i, --iterations <n>', 'max optimization iterations', parsePositiveInt, 5)
+  .option('-n, --variants <n>', 'variants per iteration', parsePositiveInt, 3)
+  .option('--target-score <n>', 'stop when this score is reached', parseFloat, 0.95)
+  .option('-o, --output <path>', 'write optimized prompts to file')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: {
+      suite: string;
+      config: string;
+      evaluator: string;
+      iterations: number;
+      variants: number;
+      targetScore: number;
+      output?: string;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+
+      log.header('Prompt Optimization');
+      log.info(
+        `Suite: ${opts.suite}, Evaluator: ${opts.evaluator}, Iterations: ${opts.iterations}`,
+      );
+      console.log();
+
+      try {
+        const { optimizePrompt } = await import('../prompt-optimization/optimizer.js');
+        const { formatOptimizationReport } = await import('../prompt-optimization/report.js');
+
+        let config;
+        try {
+          config = loadConfig(opts.config);
+        } catch (err) {
+          log.error('Configuration error', err);
+          process.exitCode = EXIT_CONFIG_ERROR;
+          return;
+        }
+
+        const result = await optimizePrompt(config, {
+          suite: opts.suite,
+          targetEvaluator: opts.evaluator,
+          maxIterations: opts.iterations,
+          variantsPerIteration: opts.variants,
+          targetScore: opts.targetScore,
+        });
+
+        const report = formatOptimizationReport(result);
+        console.log(report);
+
+        if (opts.output) {
+          const outPath = resolve(process.cwd(), opts.output);
+          writeFileSync(outPath, report, 'utf-8');
+          log.success(`Report written to ${outPath}`);
+        }
+      } catch (err) {
+        log.error('Optimization failed', err);
+        process.exitCode = EXIT_FAIL;
+      }
+    },
+  );
+
+program
+  .command('gen-conversations')
+  .description('Generate realistic multi-turn conversations with simulated users')
+  .option('-c, --config <path>', 'config file path', './plugin-eval.yaml')
+  .option('--persona <name>', 'user persona (novice, expert, adversarial, impatient)', 'novice')
+  .option('--goal <description>', 'conversation goal for the simulated user')
+  .option('--turns <n>', 'max turns per conversation', parsePositiveInt, 5)
+  .option('--count <n>', 'number of conversations to generate', parsePositiveInt, 1)
+  .option('-m, --model <model>', 'LLM model for user simulation')
+  .option('-o, --output <path>', 'write generated YAML to file')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: {
+      config: string;
+      persona: string;
+      goal?: string;
+      turns: number;
+      count: number;
+      model?: string;
+      output?: string;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+
+      log.header('Conversation Simulation');
+      log.info(`Persona: ${opts.persona}, Turns: ${opts.turns}, Count: ${opts.count}`);
+      console.log();
+
+      if (!opts.goal) {
+        log.error('--goal is required (e.g. --goal "Set up APM monitoring")');
+        process.exitCode = EXIT_CONFIG_ERROR;
+        return;
+      }
+
+      let config;
+      try {
+        config = loadConfig(opts.config);
+      } catch (err) {
+        log.error('Configuration error', err);
+        process.exitCode = EXIT_CONFIG_ERROR;
+        return;
+      }
+
+      try {
+        const { simulateConversation } = await import('../conversation-sim/simulator.js');
+        const { formatAsConversationYaml } = await import('../conversation-sim/formatter.js');
+        const { McpPluginClient } = await import('../mcp/client.js');
+        const { parseEntry } = await import('../core/utils.js');
+
+        const connectConfig: Parameters<typeof McpPluginClient.connect>[0] = {
+          buildCommand: config.plugin.buildCommand,
+          env: config.plugin.env,
+        };
+
+        if (config.plugin.transport && config.plugin.transport !== 'stdio') {
+          connectConfig.transport = {
+            type: config.plugin.transport,
+            url: config.plugin.url,
+            headers: config.plugin.headers,
+          };
+        } else if (config.plugin.entry) {
+          const { command, args } = parseEntry(config.plugin.entry);
+          connectConfig.command = command;
+          connectConfig.args = args;
+          connectConfig.cwd = config.plugin.dir;
+        }
+
+        const client = await McpPluginClient.connect(connectConfig);
+
+        try {
+          const mcpTools = await client.listTools();
+
+          const conversations = [];
+          for (let i = 0; i < opts.count; i++) {
+            log.info(`Generating conversation ${i + 1}/${opts.count}...`);
+            const conv = await simulateConversation({
+              persona: opts.persona,
+              goal: opts.goal,
+              maxTurns: opts.turns,
+              tools: mcpTools as any,
+            });
+            conversations.push(conv);
+          }
+
+          const yaml = formatAsConversationYaml(conversations, ['conversation-coherence']);
+          if (opts.output) {
+            const outPath = resolve(process.cwd(), opts.output);
+            writeFileSync(outPath, yaml, 'utf-8');
+            log.success(`Generated ${conversations.length} conversation(s) → ${outPath}`);
+          } else {
+            console.log(yaml);
+          }
+        } finally {
+          await client.disconnect();
+        }
+      } catch (err) {
+        log.error('Conversation simulation failed', err);
+        process.exitCode = EXIT_FAIL;
+      }
+    },
+  );
+
+program
+  .command('monitor')
+  .description('Continuously score OTel traces and detect quality anomalies')
+  .option('--port <n>', 'HTTP port for trace ingestion (if not using stdin)', parsePositiveInt)
+  .option('--stdin', 'read OTel JSON lines from stdin')
+  .option('-e, --evaluators <names...>', 'evaluators to run on each trace')
+  .option('--window <n>', 'sliding window size for anomaly detection', parsePositiveInt, 100)
+  .option('--z-threshold <n>', 'z-score threshold for anomaly alerts', parseFloat, 2.0)
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: {
+      port?: number;
+      stdin?: boolean;
+      evaluators?: string[];
+      window: number;
+      zThreshold: number;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+
+      log.header('Production Monitor');
+
+      try {
+        const { consumeStdin, parseOtelJsonLine } = await import('../monitoring/consumer.js');
+        const { createAnomalyDetector } = await import('../monitoring/anomaly.js');
+
+        const detector = createAnomalyDetector(opts.window, opts.zThreshold);
+
+        if (opts.stdin) {
+          log.info('Reading OTel JSON lines from stdin...');
+          let traceCount = 0;
+          let anomalyCount = 0;
+
+          for await (const event of consumeStdin()) {
+            traceCount++;
+            const latency = event.endTime - event.startTime;
+            detector.addScore('latency', latency);
+
+            if (detector.isAnomaly('latency', latency)) {
+              anomalyCount++;
+              log.warn(
+                `ANOMALY: trace ${event.traceId} latency ${latency}ms (span: ${event.name})`,
+              );
+            }
+
+            if (traceCount % 100 === 0) {
+              const stats = detector.getStats('latency');
+              log.info(
+                `Processed ${traceCount} traces, ${anomalyCount} anomalies, mean latency: ${stats?.mean.toFixed(1) ?? 'N/A'}ms`,
+              );
+            }
+          }
+
+          log.success(`Done. Processed ${traceCount} traces, ${anomalyCount} anomalies.`);
+        } else if (opts.port) {
+          log.info(`Starting HTTP trace ingestion on port ${opts.port}...`);
+          const { serve } = await import('@hono/node-server');
+          const hono = await import('hono');
+          const HonoApp = hono.Hono;
+
+          const app = new HonoApp();
+          let traceCount = 0;
+
+          app.post('/v1/traces', async (c) => {
+            const body = await c.req.text();
+            const lines = body.split('\n').filter(Boolean);
+            for (const line of lines) {
+              const event = parseOtelJsonLine(line);
+              if (event) {
+                traceCount++;
+                const latency = event.endTime - event.startTime;
+                detector.addScore('latency', latency);
+                if (detector.isAnomaly('latency', latency)) {
+                  log.warn(`ANOMALY: trace ${event.traceId} latency ${latency}ms`);
+                }
+              }
+            }
+            return c.json({ status: 'ok', processed: lines.length });
+          });
+
+          app.get('/stats', (c) => {
+            return c.json({
+              traceCount,
+              stats: detector.getStats('latency'),
+            });
+          });
+
+          serve({ fetch: app.fetch, port: opts.port }, () => {
+            log.success(
+              `Monitor running on http://localhost:${opts.port} (POST /v1/traces, GET /stats)`,
+            );
+          });
+        } else {
+          log.error('Specify --stdin or --port <n>');
+          process.exitCode = EXIT_CONFIG_ERROR;
+        }
+      } catch (err) {
+        log.error('Monitor failed', err);
+        process.exitCode = EXIT_FAIL;
+      }
+    },
+  );
+
+program
+  .command('cost-report')
+  .description('Analyze model comparison data and recommend cost optimizations')
+  .option('-c, --config <path>', 'config file path', './plugin-eval.yaml')
+  .option('-m, --model <models...>', 'models to compare (runs evals for each)')
+  .option('-l, --layer <layers...>', 'filter layers')
+  .option('-s, --suite <suites...>', 'filter suites')
+  .option('--threshold <n>', 'minimum quality score threshold', parseFloat, 0.8)
+  .option('-o, --output <path>', 'write report to file')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: {
+      config: string;
+      model?: string[];
+      layer?: string[];
+      suite?: string[];
+      threshold: number;
+      output?: string;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+
+      log.header('Cost Optimization Report');
+
+      const models = opts.model ?? [];
+      if (models.length < 2) {
+        log.error('Cost report requires at least 2 models (--model a --model b)');
+        process.exitCode = EXIT_CONFIG_ERROR;
+        return;
+      }
+
+      let config;
+      try {
+        config = loadConfig(opts.config);
+      } catch (err) {
+        log.error('Configuration error', err);
+        process.exitCode = EXIT_CONFIG_ERROR;
+        return;
+      }
+
+      try {
+        const { analyzeCosts, formatCostReport: fmtCost } =
+          await import('../cost-advisor/index.js');
+
+        const comparisonData: Array<{
+          testName: string;
+          model: string;
+          score: number;
+          tokenUsage?: { input: number; output: number };
+        }> = [];
+
+        for (const modelId of models) {
+          log.info(`Running evaluation with model: ${modelId}`);
+          const result = await runEvaluation(config, {
+            layers: opts.layer,
+            suites: opts.suite,
+            models: [modelId],
+          });
+
+          for (const suite of result.suites) {
+            for (const test of suite.tests) {
+              const avgScore =
+                test.evaluatorResults.length > 0
+                  ? test.evaluatorResults.reduce((s, e) => s + e.score, 0) /
+                    test.evaluatorResults.length
+                  : test.pass
+                    ? 1
+                    : 0;
+              comparisonData.push({
+                testName: `${suite.name}/${test.name}`,
+                model: modelId,
+                score: avgScore,
+                tokenUsage: test.tokenUsage,
+              });
+            }
+          }
+        }
+
+        const report = analyzeCosts(comparisonData, opts.threshold);
+        const formatted = fmtCost(report);
+        console.log(formatted);
+
+        if (opts.output) {
+          const outPath = resolve(process.cwd(), opts.output);
+          writeFileSync(outPath, formatted, 'utf-8');
+          log.success(`Report written to ${outPath}`);
+        }
+      } catch (err) {
+        log.error('Cost analysis failed', err);
+        process.exitCode = EXIT_FAIL;
+      }
+    },
+  );
+
+const datasetCmd = program.command('dataset').description('Manage versioned evaluation datasets');
+
+datasetCmd
+  .command('create <name>')
+  .description('Create a new dataset')
+  .option('--description <text>', 'dataset description', '')
+  .action(async (name: string, opts: { description: string }) => {
+    try {
+      const { createDataset } = await import('../dataset/manager.js');
+      const ds = await createDataset(name, opts.description);
+      log.success(`Created dataset "${ds.name}" v${ds.version}`);
+    } catch (err) {
+      log.error('Failed to create dataset', err);
+      process.exitCode = EXIT_FAIL;
+    }
+  });
+
+datasetCmd
+  .command('list')
+  .description('List all datasets')
+  .action(async () => {
+    try {
+      const { listDatasets } = await import('../dataset/manager.js');
+      const datasets = await listDatasets();
+      if (datasets.length === 0) {
+        log.info('No datasets found.');
+        return;
+      }
+      for (const ds of datasets) {
+        log.info(
+          `  ${ds.name.padEnd(24)} v${String(ds.version).padEnd(4)} ${ds.exampleCount} examples  ${ds.description}`,
+        );
+      }
+    } catch (err) {
+      log.error('Failed to list datasets', err);
+      process.exitCode = EXIT_FAIL;
+    }
+  });
+
+datasetCmd
+  .command('add <dataset-name>')
+  .description('Add an example to a dataset (reads JSON from stdin or --json)')
+  .option('--json <data>', 'example JSON data')
+  .action(async (datasetName: string, opts: { json?: string }) => {
+    try {
+      const { addExample } = await import('../dataset/manager.js');
+      let example;
+      if (opts.json) {
+        example = JSON.parse(opts.json);
+      } else {
+        const chunks: Buffer[] = [];
+        for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
+        example = JSON.parse(Buffer.concat(chunks).toString());
+      }
+      await addExample(datasetName, example);
+      log.success(`Added example to dataset "${datasetName}"`);
+    } catch (err) {
+      log.error('Failed to add example', err);
+      process.exitCode = EXIT_FAIL;
+    }
+  });
+
+datasetCmd
+  .command('export <dataset-name>')
+  .description('Export dataset as YAML suite format')
+  .option('-o, --output <path>', 'write YAML to file')
+  .action(async (datasetName: string, opts: { output?: string }) => {
+    try {
+      const { exportToYaml: dsExport } = await import('../dataset/manager.js');
+      const yaml = await dsExport(datasetName);
+      if (opts.output) {
+        writeFileSync(resolve(process.cwd(), opts.output), yaml, 'utf-8');
+        log.success(`Exported to ${opts.output}`);
+      } else {
+        console.log(yaml);
+      }
+    } catch (err) {
+      log.error('Failed to export dataset', err);
+      process.exitCode = EXIT_FAIL;
+    }
+  });
+
+datasetCmd
+  .command('version <dataset-name>')
+  .description('Create a new version snapshot of a dataset')
+  .action(async (datasetName: string) => {
+    try {
+      const { versionDataset } = await import('../dataset/manager.js');
+      const snapshot = await versionDataset(datasetName);
+      log.success(`Created version ${snapshot.version} of dataset "${datasetName}"`);
+    } catch (err) {
+      log.error('Failed to version dataset', err);
+      process.exitCode = EXIT_FAIL;
+    }
+  });
 
 async function main(): Promise<void> {
   try {

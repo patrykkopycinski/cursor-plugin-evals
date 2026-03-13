@@ -8,7 +8,10 @@ interface OtlpSpan {
   kind: number;
   startTimeUnixNano: string;
   endTimeUnixNano: string;
-  attributes: Array<{ key: string; value: { stringValue?: string; intValue?: string; boolValue?: boolean } }>;
+  attributes: Array<{
+    key: string;
+    value: { stringValue?: string; intValue?: string; boolValue?: boolean };
+  }>;
   status: { code: number };
 }
 

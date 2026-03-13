@@ -168,9 +168,7 @@ function discoverHooks(pluginDir: string, manifestHooks?: string): HookComponent
 }
 
 function discoverMcpServers(pluginDir: string, manifestMcp?: string): McpServerComponent[] {
-  const mcpPath = manifestMcp
-    ? resolve(pluginDir, manifestMcp)
-    : join(pluginDir, '.mcp.json');
+  const mcpPath = manifestMcp ? resolve(pluginDir, manifestMcp) : join(pluginDir, '.mcp.json');
 
   if (!existsSync(mcpPath)) return [];
 
@@ -187,11 +185,12 @@ function discoverMcpServers(pluginDir: string, manifestMcp?: string): McpServerC
       ...(cfg.command !== undefined && { command: String(cfg.command) }),
       ...(Array.isArray(cfg.args) && { args: cfg.args.map(String) }),
       ...(cfg.url !== undefined && { url: String(cfg.url) }),
-      ...(typeof cfg.env === 'object' && cfg.env !== null && {
-        env: Object.fromEntries(
-          Object.entries(cfg.env as Record<string, unknown>).map(([k, v]) => [k, String(v)]),
-        ),
-      }),
+      ...(typeof cfg.env === 'object' &&
+        cfg.env !== null && {
+          env: Object.fromEntries(
+            Object.entries(cfg.env as Record<string, unknown>).map(([k, v]) => [k, String(v)]),
+          ),
+        }),
     });
   }
   return components;
@@ -221,6 +220,9 @@ export function discoverPlugin(pluginDir: string, pluginRoot?: string): PluginMa
     agents: discoverMarkdown(root, 'agents', manifest.agents, MARKDOWN_EXTS, parseAgentFile),
     commands: discoverMarkdown(root, 'commands', manifest.commands, COMMAND_EXTS, parseCommandFile),
     hooks: discoverHooks(root, typeof manifest.hooks === 'string' ? manifest.hooks : undefined),
-    mcpServers: discoverMcpServers(root, typeof manifest.mcpServers === 'string' ? manifest.mcpServers : undefined),
+    mcpServers: discoverMcpServers(
+      root,
+      typeof manifest.mcpServers === 'string' ? manifest.mcpServers : undefined,
+    ),
   };
 }

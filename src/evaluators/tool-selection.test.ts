@@ -27,20 +27,14 @@ function makeContext(
 
 describe('ToolSelectionEvaluator', () => {
   it('scores 1.0 on perfect match', async () => {
-    const ctx = makeContext(
-      ['tool_a', 'tool_b'],
-      [makeToolCall('tool_a'), makeToolCall('tool_b')],
-    );
+    const ctx = makeContext(['tool_a', 'tool_b'], [makeToolCall('tool_a'), makeToolCall('tool_b')]);
     const result = await evaluator.evaluate(ctx);
     expect(result.score).toBe(1.0);
     expect(result.pass).toBe(true);
   });
 
   it('scores 0.0 when no tools match', async () => {
-    const ctx = makeContext(
-      ['tool_a', 'tool_b'],
-      [makeToolCall('tool_x'), makeToolCall('tool_y')],
-    );
+    const ctx = makeContext(['tool_a', 'tool_b'], [makeToolCall('tool_x'), makeToolCall('tool_y')]);
     const result = await evaluator.evaluate(ctx);
     expect(result.score).toBe(0.0);
     expect(result.pass).toBe(false);
@@ -79,11 +73,7 @@ describe('ToolSelectionEvaluator', () => {
   });
 
   it('reduces recall when expected tools are missing', async () => {
-    const ctx = makeContext(
-      ['tool_a', 'tool_b', 'tool_c'],
-      [makeToolCall('tool_a')],
-      0,
-    );
+    const ctx = makeContext(['tool_a', 'tool_b', 'tool_c'], [makeToolCall('tool_a')], 0);
     const result = await evaluator.evaluate(ctx);
 
     const precision = 1 / 1;

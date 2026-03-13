@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { parseFrontmatter, parseSkillFile, parseRuleFile, parseAgentFile, parseCommandFile } from '../plugin/frontmatter.js';
+import {
+  parseFrontmatter,
+  parseSkillFile,
+  parseRuleFile,
+  parseAgentFile,
+  parseCommandFile,
+} from '../plugin/frontmatter.js';
 
 describe('parseFrontmatter', () => {
   it('parses standard YAML frontmatter', () => {
@@ -57,7 +63,8 @@ describe('parseFrontmatter', () => {
 
 describe('parseSkillFile', () => {
   it('parses a well-formed skill', () => {
-    const content = '---\nname: api-designer\ndescription: Design RESTful APIs following OpenAPI spec.\n---\n# API Designer\n\nInstructions here.';
+    const content =
+      '---\nname: api-designer\ndescription: Design RESTful APIs following OpenAPI spec.\n---\n# API Designer\n\nInstructions here.';
     const skill = parseSkillFile(content, '/skills/api-designer/SKILL.md');
     expect(skill.name).toBe('api-designer');
     expect(skill.description).toBe('Design RESTful APIs following OpenAPI spec.');
@@ -87,7 +94,8 @@ describe('parseSkillFile', () => {
 
 describe('parseRuleFile', () => {
   it('parses a rule with alwaysApply', () => {
-    const content = '---\ndescription: Prefer const over let\nalwaysApply: true\n---\nAlways use const.';
+    const content =
+      '---\ndescription: Prefer const over let\nalwaysApply: true\n---\nAlways use const.';
     const rule = parseRuleFile(content, '/rules/prefer-const.mdc');
     expect(rule.description).toBe('Prefer const over let');
     expect(rule.alwaysApply).toBe(true);
@@ -101,7 +109,8 @@ describe('parseRuleFile', () => {
   });
 
   it('parses a rule with array globs', () => {
-    const content = '---\ndescription: Multi-glob\nglobs:\n  - "**/*.ts"\n  - "**/*.tsx"\n---\nBody';
+    const content =
+      '---\ndescription: Multi-glob\nglobs:\n  - "**/*.ts"\n  - "**/*.tsx"\n---\nBody';
     const rule = parseRuleFile(content, '/path');
     expect(rule.globs).toEqual(['**/*.ts', '**/*.tsx']);
   });
@@ -109,7 +118,8 @@ describe('parseRuleFile', () => {
 
 describe('parseAgentFile', () => {
   it('parses an agent with all fields', () => {
-    const content = '---\nname: ci-watcher\ndescription: Watch CI\nmodel: fast\nis_background: true\nreadonly: true\n---\n# CI Watcher';
+    const content =
+      '---\nname: ci-watcher\ndescription: Watch CI\nmodel: fast\nis_background: true\nreadonly: true\n---\n# CI Watcher';
     const agent = parseAgentFile(content, '/agents/ci-watcher.md');
     expect(agent.name).toBe('ci-watcher');
     expect(agent.description).toBe('Watch CI');
@@ -129,7 +139,8 @@ describe('parseAgentFile', () => {
 
 describe('parseCommandFile', () => {
   it('parses a command with all optional fields', () => {
-    const content = '---\nname: deploy\ndescription: Deploy to staging\nargument-hint: "[env]"\nallowed-tools: Skill(deploy-helper)\ndisable-model-invocation: true\n---\n# Deploy';
+    const content =
+      '---\nname: deploy\ndescription: Deploy to staging\nargument-hint: "[env]"\nallowed-tools: Skill(deploy-helper)\ndisable-model-invocation: true\n---\n# Deploy';
     const cmd = parseCommandFile(content, '/commands/deploy.md');
     expect(cmd.name).toBe('deploy');
     expect(cmd.description).toBe('Deploy to staging');

@@ -87,10 +87,10 @@ describe('refreshAccessToken', () => {
     const { refreshAccessToken } = await import('./oauth2-flow.js');
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({ access_token: 'tok', expires_in: 3600 }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } },
-      ),
+      new Response(JSON.stringify({ access_token: 'tok', expires_in: 3600 }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
     );
 
     const tokens = await refreshAccessToken(
@@ -145,7 +145,11 @@ describe('token cache', () => {
   it('caches and loads tokens', async () => {
     const { cacheTokens, loadCachedTokens } = await import('./token-cache.js');
 
-    const tokens = { accessToken: 'at-123', refreshToken: 'rt-456', expiresAt: Date.now() + 60_000 };
+    const tokens = {
+      accessToken: 'at-123',
+      refreshToken: 'rt-456',
+      expiresAt: Date.now() + 60_000,
+    };
     await cacheTokens('my-key', tokens, tmpDir);
 
     const loaded = await loadCachedTokens('my-key', tmpDir);

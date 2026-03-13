@@ -83,7 +83,15 @@ export function saveRun(db: Database.Database, result: RunResult): string {
         tests: suite.tests,
         evaluatorSummary: suite.evaluatorSummary,
       });
-      insertSuite.run(suiteId, id, suite.name, suite.layer, suite.passRate, suite.duration, suiteJson);
+      insertSuite.run(
+        suiteId,
+        id,
+        suite.name,
+        suite.layer,
+        suite.passRate,
+        suite.duration,
+        suiteJson,
+      );
     }
   });
 
@@ -110,7 +118,5 @@ export function getRun(
 }
 
 export function getLatestRuns(db: Database.Database, limit: number): StoredRun[] {
-  return db
-    .prepare('SELECT * FROM runs ORDER BY timestamp DESC LIMIT ?')
-    .all(limit) as StoredRun[];
+  return db.prepare('SELECT * FROM runs ORDER BY timestamp DESC LIMIT ?').all(limit) as StoredRun[];
 }

@@ -31,7 +31,12 @@ export async function generateVariants(prompt: string, count: number): Promise<s
 
   return raw
     .split('\n')
-    .map((line) => line.replace(/^\d+[.)]\s*/, '').replace(/^["']|["']$/g, '').trim())
+    .map((line) =>
+      line
+        .replace(/^\d+[.)]\s*/, '')
+        .replace(/^["']|["']$/g, '')
+        .trim(),
+    )
     .filter((line) => line.length > 0)
     .slice(0, count);
 }

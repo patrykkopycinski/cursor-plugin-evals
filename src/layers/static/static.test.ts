@@ -39,10 +39,26 @@ function setupFullPlugin(dir: string): PluginManifest {
     description: 'A test plugin',
     version: '1.0.0',
   });
-  writeText(dir, 'skills/helper/SKILL.md', '---\nname: helper\ndescription: A helpful assistant skill for daily automation tasks.\n---\n# Helper\n\n## Instructions\n- Do helpful things');
-  writeText(dir, 'rules/prefer-const.mdc', '---\ndescription: Prefer const over let\nalwaysApply: true\n---\nAlways use const for variables that are never reassigned.');
-  writeText(dir, 'agents/reviewer.md', '---\nname: reviewer\ndescription: Code reviewer agent\nmodel: fast\n---\n# Reviewer\nReview code.');
-  writeText(dir, 'commands/deploy.md', '---\nname: deploy\ndescription: Deploy to staging\n---\n# Deploy\nDeploy steps.');
+  writeText(
+    dir,
+    'skills/helper/SKILL.md',
+    '---\nname: helper\ndescription: A helpful assistant skill for daily automation tasks.\n---\n# Helper\n\n## Instructions\n- Do helpful things',
+  );
+  writeText(
+    dir,
+    'rules/prefer-const.mdc',
+    '---\ndescription: Prefer const over let\nalwaysApply: true\n---\nAlways use const for variables that are never reassigned.',
+  );
+  writeText(
+    dir,
+    'agents/reviewer.md',
+    '---\nname: reviewer\ndescription: Code reviewer agent\nmodel: fast\n---\n# Reviewer\nReview code.',
+  );
+  writeText(
+    dir,
+    'commands/deploy.md',
+    '---\nname: deploy\ndescription: Deploy to staging\n---\n# Deploy\nDeploy steps.',
+  );
   return discoverPlugin(dir);
 }
 
@@ -104,7 +120,11 @@ describe('Static Layer', () => {
 
     it('fails for missing name', async () => {
       writeJson(tmpDir, '.cursor-plugin/plugin.json', { name: 'test-plugin' });
-      writeText(tmpDir, 'skills/noname/SKILL.md', '---\ndescription: A reasonably long description for testing.\n---\nBody');
+      writeText(
+        tmpDir,
+        'skills/noname/SKILL.md',
+        '---\ndescription: A reasonably long description for testing.\n---\nBody',
+      );
       const manifest = discoverPlugin(tmpDir);
       const results = await runStaticSuite(
         makeSuite([{ name: 'skill-fm', check: 'skill_frontmatter' }]),
@@ -221,7 +241,9 @@ describe('Static Layer', () => {
 
     it('passes for valid MCP config', async () => {
       writeJson(tmpDir, '.cursor-plugin/plugin.json', { name: 'test-plugin' });
-      writeJson(tmpDir, '.mcp.json', { mcpServers: { pg: { command: 'npx', args: ['pg-server'] } } });
+      writeJson(tmpDir, '.mcp.json', {
+        mcpServers: { pg: { command: 'npx', args: ['pg-server'] } },
+      });
       const manifest = discoverPlugin(tmpDir);
       const results = await runStaticSuite(
         makeSuite([{ name: 'mcp', check: 'mcp_config' }]),
@@ -246,8 +268,16 @@ describe('Static Layer', () => {
   describe('component_references check', () => {
     it('passes when all references resolve', async () => {
       writeJson(tmpDir, '.cursor-plugin/plugin.json', { name: 'test-plugin' });
-      writeText(tmpDir, 'skills/deploy-helper/SKILL.md', '---\nname: deploy-helper\ndescription: Help with deployment tasks and automation.\n---\nBody');
-      writeText(tmpDir, 'commands/deploy.md', '---\ndescription: Deploy\nallowed-tools: Skill(deploy-helper)\n---\nBody');
+      writeText(
+        tmpDir,
+        'skills/deploy-helper/SKILL.md',
+        '---\nname: deploy-helper\ndescription: Help with deployment tasks and automation.\n---\nBody',
+      );
+      writeText(
+        tmpDir,
+        'commands/deploy.md',
+        '---\ndescription: Deploy\nallowed-tools: Skill(deploy-helper)\n---\nBody',
+      );
       const manifest = discoverPlugin(tmpDir);
       const results = await runStaticSuite(
         makeSuite([{ name: 'refs', check: 'component_references' }]),
@@ -258,7 +288,11 @@ describe('Static Layer', () => {
 
     it('fails when command references nonexistent skill', async () => {
       writeJson(tmpDir, '.cursor-plugin/plugin.json', { name: 'test-plugin' });
-      writeText(tmpDir, 'commands/deploy.md', '---\ndescription: Deploy\nallowed-tools: Skill(nonexistent)\n---\nBody');
+      writeText(
+        tmpDir,
+        'commands/deploy.md',
+        '---\ndescription: Deploy\nallowed-tools: Skill(nonexistent)\n---\nBody',
+      );
       const manifest = discoverPlugin(tmpDir);
       const results = await runStaticSuite(
         makeSuite([{ name: 'refs', check: 'component_references' }]),
@@ -281,8 +315,16 @@ describe('Static Layer', () => {
 
     it('fails when skill and agent share a name', async () => {
       writeJson(tmpDir, '.cursor-plugin/plugin.json', { name: 'test-plugin' });
-      writeText(tmpDir, 'skills/dupe/SKILL.md', '---\nname: dupe\ndescription: A duplicate name skill for testing conflicts.\n---\nBody');
-      writeText(tmpDir, 'agents/dupe.md', '---\nname: dupe\ndescription: Duplicate agent\n---\nBody');
+      writeText(
+        tmpDir,
+        'skills/dupe/SKILL.md',
+        '---\nname: dupe\ndescription: A duplicate name skill for testing conflicts.\n---\nBody',
+      );
+      writeText(
+        tmpDir,
+        'agents/dupe.md',
+        '---\nname: dupe\ndescription: Duplicate agent\n---\nBody',
+      );
       const manifest = discoverPlugin(tmpDir);
       const results = await runStaticSuite(
         makeSuite([{ name: 'coherence', check: 'cross_component_coherence' }]),
@@ -305,7 +347,11 @@ describe('Static Layer', () => {
 
     it('fails for non-kebab-case names', async () => {
       writeJson(tmpDir, '.cursor-plugin/plugin.json', { name: 'test-plugin' });
-      writeText(tmpDir, 'skills/badName/SKILL.md', '---\nname: badName\ndescription: A skill with bad camelCase naming convention.\n---\nBody');
+      writeText(
+        tmpDir,
+        'skills/badName/SKILL.md',
+        '---\nname: badName\ndescription: A skill with bad camelCase naming convention.\n---\nBody',
+      );
       const manifest = discoverPlugin(tmpDir);
       const results = await runStaticSuite(
         makeSuite([{ name: 'naming', check: 'naming_conventions' }]),

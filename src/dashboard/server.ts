@@ -33,7 +33,10 @@ export function createApp(dbPath: string): { app: Hono; db: Database.Database } 
     const data = getRun(db, c.req.param('id'));
     if (!data) return c.json({ error: 'Run not found' }, 404);
 
-    const models: Record<string, { passed: number; failed: number; totalScore: number; count: number; latencyMs: number }> = {};
+    const models: Record<
+      string,
+      { passed: number; failed: number; totalScore: number; count: number; latencyMs: number }
+    > = {};
 
     for (const suite of data.suites) {
       const details = JSON.parse(suite.results_json);
@@ -51,8 +54,11 @@ export function createApp(dbPath: string): { app: Hono; db: Database.Database } 
           entry.failed++;
         }
         const avgScore = test.evaluatorResults?.length
-          ? test.evaluatorResults.reduce((s: number, e: { score: number }) => s + e.score, 0) / test.evaluatorResults.length
-          : test.pass ? 1 : 0;
+          ? test.evaluatorResults.reduce((s: number, e: { score: number }) => s + e.score, 0) /
+            test.evaluatorResults.length
+          : test.pass
+            ? 1
+            : 0;
         entry.totalScore += avgScore;
       }
     }
@@ -112,14 +118,16 @@ export function createApp(dbPath: string): { app: Hono; db: Database.Database } 
     if (!existsSync(eventsPath)) {
       return c.json({ events: [] });
     }
-    const lines = readFileSync(eventsPath, 'utf-8')
-      .split('\n')
-      .filter(Boolean)
-      .slice(-100);
-    const events = lines.map((line) => {
-      try { return JSON.parse(line); }
-      catch { return null; }
-    }).filter(Boolean);
+    const lines = readFileSync(eventsPath, 'utf-8').split('\n').filter(Boolean).slice(-100);
+    const events = lines
+      .map((line) => {
+        try {
+          return JSON.parse(line);
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean);
     return c.json({ events });
   });
 

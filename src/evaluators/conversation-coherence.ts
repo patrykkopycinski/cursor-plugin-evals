@@ -104,7 +104,13 @@ export class ConversationCoherenceEvaluator implements Evaluator {
         pass: score >= threshold,
         label: result.label,
         explanation,
-        metadata: { turnRelevance, consistency, goalProgression, threshold, turnsEvaluated: recentTurns.length },
+        metadata: {
+          turnRelevance,
+          consistency,
+          goalProgression,
+          threshold,
+          turnsEvaluated: recentTurns.length,
+        },
       };
     } catch (err) {
       return {

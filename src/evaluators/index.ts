@@ -22,6 +22,7 @@ import { CriteriaEvaluator } from './criteria.js';
 import { RagEvaluator } from './rag.js';
 import { PlanQualityEvaluator } from './plan-quality.js';
 import { TaskCompletionEvaluator } from './task-completion.js';
+import { VisualRegressionEvaluator } from './visual-regression.js';
 
 export const EVALUATOR_NAMES = [
   'tool-selection',
@@ -46,6 +47,7 @@ export const EVALUATOR_NAMES = [
   'rag',
   'plan-quality',
   'task-completion',
+  'visual-regression',
 ] as const;
 
 export type EvaluatorName = (typeof EVALUATOR_NAMES)[number];
@@ -73,6 +75,7 @@ const EVALUATOR_MAP: Record<EvaluatorName, new () => Evaluator> = {
   rag: RagEvaluator,
   'plan-quality': PlanQualityEvaluator,
   'task-completion': TaskCompletionEvaluator,
+  'visual-regression': VisualRegressionEvaluator,
 };
 
 export function createEvaluator(name: string): Evaluator {
@@ -106,4 +109,5 @@ export {
   RagEvaluator,
   PlanQualityEvaluator,
   TaskCompletionEvaluator,
+  VisualRegressionEvaluator,
 };

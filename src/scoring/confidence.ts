@@ -1,7 +1,7 @@
 import type { ConfidenceInterval } from '../core/types.js';
 
 const Z_SCORES: Record<number, number> = {
-  0.90: 1.645,
+  0.9: 1.645,
   0.95: 1.96,
   0.99: 2.576,
 };
@@ -23,7 +23,13 @@ export function computeConfidenceInterval(
   }
 
   if (n === 1) {
-    return { mean: scores[0], stddev: 0, lowerBound: scores[0], upperBound: scores[0], sampleSize: 1 };
+    return {
+      mean: scores[0],
+      stddev: 0,
+      lowerBound: scores[0],
+      upperBound: scores[0],
+      sampleSize: 1,
+    };
   }
 
   const mean = scores.reduce((a, b) => a + b, 0) / n;
@@ -97,9 +103,6 @@ export function aggregateConfidence(
  * More conservative — ensures the score is likely above the threshold
  * even accounting for variance.
  */
-export function confidenceGatingPass(
-  ci: ConfidenceInterval,
-  threshold: number,
-): boolean {
+export function confidenceGatingPass(ci: ConfidenceInterval, threshold: number): boolean {
   return ci.lowerBound >= threshold;
 }

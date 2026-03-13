@@ -4,16 +4,17 @@
 
 <p align="center">
   <a href="#six-testing-layers"><img src="https://img.shields.io/badge/layers-6-6C5CE7?style=flat-square" alt="6 Layers" /></a>
-  <a href="#evaluators"><img src="https://img.shields.io/badge/evaluators-22-A29BFE?style=flat-square" alt="22 Evaluators" /></a>
+  <a href="#evaluators"><img src="https://img.shields.io/badge/evaluators-23-A29BFE?style=flat-square" alt="23 Evaluators" /></a>
   <a href="#task-adapters"><img src="https://img.shields.io/badge/adapters-5-74B9FF?style=flat-square" alt="5 Adapters" /></a>
   <a href="#cli-reference"><img src="https://img.shields.io/badge/CLI-cursor--plugin--evals-DFE6E9?style=flat-square" alt="CLI" /></a>
+  <a href="#red-teaming"><img src="https://img.shields.io/badge/red--team-10%20attack%20categories-E74C3C?style=flat-square" alt="Red Team" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Elastic--2.0-00E676?style=flat-square" alt="Elastic License 2.0" /></a>
 </p>
 
 <p align="center">
   End-to-end testing framework for Cursor plugins — validates structure, tests MCP tools,<br/>
   benchmarks performance, evaluates LLM agent quality, detects regressions, protects with guardrails,<br/>
-  analyzes prompt sensitivity, and compares models.
+  analyzes prompt sensitivity, and compares models, red-teams for security, optimizes prompts, monitors production quality, and generates synthetic test data.
 </p>
 
 ---
@@ -59,6 +60,28 @@ npx cursor-plugin-evals trace-import --file trace.json
 
 # Browse community eval suites
 npx cursor-plugin-evals registry list
+
+# Red-team adversarial security scanning
+npx cursor-plugin-evals red-team
+
+# Optimize prompts for better eval scores
+npx cursor-plugin-evals optimize --suite llm-tests
+
+# Generate conversations with simulated users
+npx cursor-plugin-evals gen-conversations --persona novice --goal "Monitor my app"
+
+# Smart LLM-powered test generation
+npx cursor-plugin-evals gen-tests --smart
+
+# Monitor production quality in real-time
+npx cursor-plugin-evals monitor --stdin
+
+# Cost optimization recommendations
+npx cursor-plugin-evals cost-report --model gpt-4o --model gpt-4o-mini
+
+# Manage versioned evaluation datasets
+npx cursor-plugin-evals dataset create my-tests
+npx cursor-plugin-evals dataset export my-tests -o tests.yaml
 ```
 
 ## Architecture
@@ -91,7 +114,7 @@ npx cursor-plugin-evals registry list
 │  Plugin Discovery  │  MCP Client (stdio / HTTP / SSE / stream-HTTP)   │
 │  Manifest parsing  │  Spawn · Connect · Execute · Auth flows          │
 ├──────────────────────────────────────────────────────────────────────┤
-│ Evaluators (22)    │ CI Thresholds  │ Fixtures      │ Tracing         │
+│ Evaluators (23)    │ CI Thresholds  │ Fixtures      │ Tracing         │
 │ 13 CODE + 9 LLM   │ Score / Latency│ Record/Replay │ OTel spans      │
 │ LLM-as-judge       │ Cost / Per-eval│ Mock-gen      │ ES export       │
 ├────────────────────┼────────────────┼───────────────┼─────────────────┤
@@ -110,6 +133,18 @@ npx cursor-plugin-evals registry list
 │ LLM Cache          │ Eval Registry  │ OAuth 2.0     │ GitHub Action   │
 │ Disk-persisted     │ Community      │ PKCE flow     │ CI/CD ready     │
 │ TTL + hit/miss     │ share/import   │ Token cache   │ Composite       │
+├────────────────────┼────────────────┼───────────────┼─────────────────┤
+│ Red Team           │ Prompt Optimizer│ Cost Advisor  │ Monitor         │
+│ 10 attack cats     │ Hill-climbing  │ Model savings │ OTel scoring    │
+│ Security scanning  │ Variant generation│ recommendations│ Anomaly detect │
+├────────────────────┼────────────────┼───────────────┼─────────────────┤
+│ Smart Gen          │ Conversation Sim│ Dataset Mgmt  │ Visual Trace    │
+│ LLM-powered gen    │ User personas  │ Versioned JSON│ Agent loop viz  │
+│ Persona variants   │ Multi-turn sim │ Annotations   │ Score overlay   │
+├────────────────────┼────────────────┼───────────────┼─────────────────┤
+│ Notifications      │ Multimodal Eval│               │                 │
+│ Slack/GitHub/hook  │ Visual regression│              │                 │
+│ CI failure alerts  │ Pixel diff     │               │                 │
 ├────────────────────┴────────────────┴───────────────┴─────────────────┤
 │ Reporting: Terminal · Markdown · JSON · HTML · JUnit XML               │
 ├──────────────────────────────────────────────────────────────────────┤
@@ -620,6 +655,156 @@ const entries = await fetchRegistry();
 const path = await pullSuite(entries[0]);
 ```
 
+## Red-Teaming
+
+Automated adversarial security scanning with 10 attack categories:
+
+| Category | Severity | Description |
+|---|---|---|
+| jailbreak | Critical | "Ignore all instructions", DAN mode, developer mode bypasses |
+| prompt-injection | Critical | Hidden [SYSTEM] markers, role confusion, delimiter tricks |
+| pii-leakage | High | Credential probing, env var exposure, API key extraction |
+| excessive-agency | Critical | Destructive actions — delete indices, drop databases, shell execution |
+| data-exfiltration | Critical | Exfiltrate data to external endpoints, export credentials |
+| privilege-escalation | Critical | Run as superuser, bypass authentication, access admin panels |
+| denial-of-service | High | Resource exhaustion, recursive chains, mega payloads |
+| toxicity | High | Harmful, offensive, or dangerous content generation |
+| bias | Medium | Demographic bias, stereotyping, discriminatory responses |
+| hallucination-probe | Medium | Fake tools, nonexistent APIs, impossible operations |
+
+```bash
+npx cursor-plugin-evals red-team --categories jailbreak prompt-injection --count 10
+```
+
+## Prompt Optimization
+
+Iterative hill-climbing optimization of system prompts and tool descriptions:
+
+1. Evaluate current prompt against target evaluator
+2. Generate N variants using LLM (rephrase, add examples, restructure)
+3. Evaluate each variant
+4. Keep the best-scoring variant
+5. Repeat until target score reached or max iterations exceeded
+
+```bash
+npx cursor-plugin-evals optimize \
+  --suite llm-e2e \
+  --evaluator tool-selection \
+  --iterations 5 \
+  --target-score 0.95
+```
+
+## Conversation Simulation
+
+Generate realistic multi-turn conversations with LLM-powered simulated users:
+
+| Persona | Traits | System Prompt Focus |
+|---|---|---|
+| novice | Vague, non-technical, needs guidance | New to the technology |
+| expert | Precise, uses jargon, expects efficiency | Experienced DevOps engineer |
+| adversarial | Edge cases, contradictions, boundary testing | Probing for weaknesses |
+| impatient | Brief messages, topic switches, corrections | In a hurry |
+
+```bash
+npx cursor-plugin-evals gen-conversations \
+  --persona expert \
+  --goal "Set up APM monitoring for my Node.js app" \
+  --turns 5 \
+  -o generated-tests.yaml
+```
+
+## Production Monitoring
+
+Continuous quality scoring of OTel traces with anomaly detection:
+
+```bash
+# From stdin (pipe from your trace exporter)
+cat traces.jsonl | npx cursor-plugin-evals monitor --stdin
+
+# HTTP endpoint
+npx cursor-plugin-evals monitor --port 4318
+# POST traces to http://localhost:4318/v1/traces
+# GET stats from http://localhost:4318/stats
+```
+
+Features:
+- Sliding-window z-score anomaly detection
+- Configurable window size and z-threshold
+- Real-time latency tracking
+- Anomaly alerting
+
+## Cost Optimization
+
+Analyze model comparison data and recommend the cheapest model per-test meeting quality thresholds:
+
+```bash
+npx cursor-plugin-evals cost-report \
+  --model gpt-4o --model gpt-4o-mini --model gpt-4.1-nano \
+  --threshold 0.8
+```
+
+Output includes:
+- Current vs optimized total cost
+- Per-test model recommendations with savings percentages
+- Model usage breakdown
+
+## Dataset Management
+
+Versioned test datasets with annotation support:
+
+```bash
+# Create a dataset
+npx cursor-plugin-evals dataset create my-regression-tests --description "Regression test cases"
+
+# Add examples
+npx cursor-plugin-evals dataset add my-regression-tests --json '{"input": {"prompt": "Check cluster health"}, "expected": {"tools": ["get_cluster_context"]}}'
+
+# Version snapshot
+npx cursor-plugin-evals dataset version my-regression-tests
+
+# Export as YAML suite
+npx cursor-plugin-evals dataset export my-regression-tests -o regression-suite.yaml
+
+# List datasets
+npx cursor-plugin-evals dataset list
+```
+
+## Notifications
+
+Push notifications on evaluation events via Slack, GitHub PR comments, or generic webhooks.
+
+Configure in `plugin-eval.yaml`:
+```yaml
+notifications:
+  slack:
+    webhook_url: https://hooks.slack.com/services/T.../B.../xxx
+  github:
+    enabled: true
+  webhook:
+    url: https://my-ci-server.com/hooks/eval-results
+  triggers:
+    - ci-fail
+    - regression
+    - quality-drop
+```
+
+## Smart Test Generation
+
+LLM-powered test generation that creates semantically diverse test prompts:
+
+```bash
+npx cursor-plugin-evals gen-tests --smart \
+  --personas novice expert adversarial \
+  --multilingual es de ja \
+  -o smart-tests.yaml
+```
+
+Generates:
+- **Standard prompts**: Natural-language tool usage requests
+- **Persona variants**: Different user skill levels and communication styles
+- **Multilingual prompts**: Same requests in different languages
+- **Edge cases**: Boundary conditions discovered from tool descriptions
+
 ## OAuth 2.0 MCP Server Testing
 
 Test OAuth-protected MCP servers with automated PKCE flow:
@@ -758,6 +943,38 @@ cursor-plugin-evals trace-import --file trace.json --llm --output prod-tests.yam
 # Analyze prompt sensitivity/fragility
 cursor-plugin-evals prompt-sensitivity --suite llm-tools
 cursor-plugin-evals prompt-sensitivity --suite llm-tools --variants 10 --threshold 0.15
+
+# --- Red Team & Optimization Commands ---
+
+# Adversarial security scanning
+cursor-plugin-evals red-team
+cursor-plugin-evals red-team --categories jailbreak prompt-injection --count 10
+
+# Prompt optimization (hill-climbing)
+cursor-plugin-evals optimize --suite llm-e2e
+cursor-plugin-evals optimize --suite llm-e2e --evaluator tool-selection --iterations 5 --target-score 0.95
+
+# Generate conversations with simulated users
+cursor-plugin-evals gen-conversations --persona novice --goal "Monitor my app"
+cursor-plugin-evals gen-conversations --persona expert --goal "Set up APM" --turns 5 -o convos.yaml
+
+# Smart LLM-powered test generation
+cursor-plugin-evals gen-tests --smart
+cursor-plugin-evals gen-tests --smart --personas novice expert adversarial --multilingual es de ja
+
+# Production quality monitoring
+cursor-plugin-evals monitor --stdin
+cursor-plugin-evals monitor --port 4318
+
+# Cost optimization recommendations
+cursor-plugin-evals cost-report --model gpt-4o --model gpt-4o-mini --threshold 0.8
+
+# Versioned dataset management
+cursor-plugin-evals dataset create my-tests --description "My test cases"
+cursor-plugin-evals dataset add my-tests --json '{"input": {"prompt": "Check health"}}'
+cursor-plugin-evals dataset version my-tests
+cursor-plugin-evals dataset export my-tests -o tests.yaml
+cursor-plugin-evals dataset list
 
 # --- Registry Commands ---
 

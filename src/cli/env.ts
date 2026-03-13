@@ -5,11 +5,23 @@ const SENSITIVE_PATTERN = /KEY|TOKEN|SECRET/i;
 const ENV_VARS = [
   { name: 'OPENAI_API_KEY', description: 'OpenAI API key for LLM evaluators', default: '' },
   { name: 'ANTHROPIC_API_KEY', description: 'Anthropic API key for Claude adapters', default: '' },
-  { name: 'AZURE_OPENAI_API_KEY', description: 'Azure OpenAI API key (alternative to OPENAI_API_KEY)', default: '' },
+  {
+    name: 'AZURE_OPENAI_API_KEY',
+    description: 'Azure OpenAI API key (alternative to OPENAI_API_KEY)',
+    default: '',
+  },
   { name: 'AZURE_OPENAI_ENDPOINT', description: 'Azure OpenAI resource endpoint URL', default: '' },
   { name: 'AZURE_OPENAI_DEPLOYMENT', description: 'Azure OpenAI deployment name', default: '' },
-  { name: 'AZURE_OPENAI_API_VERSION', description: 'Azure OpenAI API version', default: '2025-01-01-preview' },
-  { name: 'AZURE_JUDGE_DEPLOYMENT', description: 'Azure deployment for LLM judge (defaults to AZURE_OPENAI_DEPLOYMENT)', default: '' },
+  {
+    name: 'AZURE_OPENAI_API_VERSION',
+    description: 'Azure OpenAI API version',
+    default: '2025-01-01-preview',
+  },
+  {
+    name: 'AZURE_JUDGE_DEPLOYMENT',
+    description: 'Azure deployment for LLM judge (defaults to AZURE_OPENAI_DEPLOYMENT)',
+    default: '',
+  },
   { name: 'JUDGE_MODEL', description: 'LLM model for judge evaluators', default: 'gpt-4o' },
   {
     name: 'LITELLM_URL',

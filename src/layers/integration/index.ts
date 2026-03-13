@@ -44,7 +44,10 @@ function resolveVariableRefs(
   return resolved;
 }
 
-function parseToolResponse(result: { content: Array<{ type: string; text?: string }>; isError?: boolean }): unknown {
+function parseToolResponse(result: {
+  content: Array<{ type: string; text?: string }>;
+  isError?: boolean;
+}): unknown {
   const textParts = result.content.filter((c) => c.type === 'text' && c.text).map((c) => c.text!);
   const joined = textParts.join('');
 

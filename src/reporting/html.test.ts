@@ -89,10 +89,7 @@ describe('generateHtmlReport', () => {
   it('contains pass/fail counts', () => {
     const result = makeRunResult([
       makeSuite({
-        tests: [
-          makeTest({ pass: true }),
-          makeTest({ name: 'fail-test', pass: false }),
-        ],
+        tests: [makeTest({ pass: true }), makeTest({ name: 'fail-test', pass: false })],
         passRate: 0.5,
       }),
     ]);
@@ -117,8 +114,15 @@ describe('generateHtmlReport', () => {
           makeTest({
             layer: 'performance',
             performanceMetrics: {
-              p50: 50, p95: 95, p99: 120, mean: 60, min: 30, max: 150,
-              throughput: 10.5, memoryDelta: 0, samples: 100,
+              p50: 50,
+              p95: 95,
+              p99: 120,
+              mean: 60,
+              min: 30,
+              max: 150,
+              throughput: 10.5,
+              memoryDelta: 0,
+              samples: 100,
             },
           }),
         ],
@@ -134,7 +138,9 @@ describe('generateHtmlReport', () => {
       makeSuite({
         tests: [
           { ...makeTest(), difficulty: 'simple' } as TestResult & { difficulty: string },
-          { ...makeTest({ name: 'hard-test' }), difficulty: 'complex' } as TestResult & { difficulty: string },
+          { ...makeTest({ name: 'hard-test' }), difficulty: 'complex' } as TestResult & {
+            difficulty: string;
+          },
         ],
       }),
     ]);

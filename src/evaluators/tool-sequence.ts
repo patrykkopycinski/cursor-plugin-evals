@@ -30,8 +30,7 @@ export class ToolSequenceEvaluator implements Evaluator {
   readonly name = 'tool-sequence';
 
   async evaluate(context: EvaluatorContext): Promise<EvaluatorResult> {
-    const threshold =
-      (context.config?.['threshold'] as number | undefined) ?? 0.8;
+    const threshold = (context.config?.['threshold'] as number | undefined) ?? 0.8;
     const expectedSequence = context.expected?.toolSequence;
 
     if (!expectedSequence || expectedSequence.length === 0) {
@@ -46,8 +45,7 @@ export class ToolSequenceEvaluator implements Evaluator {
 
     const actualSequence = context.toolCalls.map((tc) => tc.tool);
     const lcs = lcsLength(expectedSequence, actualSequence);
-    const score =
-      Math.round((lcs / expectedSequence.length) * 1000) / 1000;
+    const score = Math.round((lcs / expectedSequence.length) * 1000) / 1000;
 
     return {
       evaluator: this.name,

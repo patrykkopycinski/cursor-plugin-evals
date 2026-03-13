@@ -88,12 +88,12 @@ export async function historyCommand(opts: {
     const runId = bucket.key.slice(0, 8);
     const skill = bucket.skill.buckets[0]?.key ?? '—';
     const model = bucket.model.buckets[0]?.key ?? '—';
-    const avgScore =
-      bucket.avg_score.value != null ? bucket.avg_score.value.toFixed(3) : '—';
-    const cost =
-      bucket.cost.value != null ? `$${bucket.cost.value.toFixed(4)}` : '—';
+    const avgScore = bucket.avg_score.value != null ? bucket.avg_score.value.toFixed(3) : '—';
+    const cost = bucket.cost.value != null ? `$${bucket.cost.value.toFixed(4)}` : '—';
 
-    const latestAgg = (bucket as unknown as Record<string, { value_as_string?: string; value?: number }>)['latest'];
+    const latestAgg = (
+      bucket as unknown as Record<string, { value_as_string?: string; value?: number }>
+    )['latest'];
     const timestamp = latestAgg?.value_as_string ?? '—';
 
     rows.push([runId, skill, model, avgScore, cost, timestamp]);

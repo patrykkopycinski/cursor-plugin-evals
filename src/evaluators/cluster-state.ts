@@ -43,11 +43,19 @@ function checkAssertion(value: unknown, op: AssertionOp, expected?: unknown): bo
     case 'not_exists':
       return value === undefined || value === null;
     case 'length_gte': {
-      const len = Array.isArray(value) ? value.length : typeof value === 'string' ? value.length : -1;
+      const len = Array.isArray(value)
+        ? value.length
+        : typeof value === 'string'
+          ? value.length
+          : -1;
       return typeof expected === 'number' && len >= expected;
     }
     case 'length_lte': {
-      const len = Array.isArray(value) ? value.length : typeof value === 'string' ? value.length : -1;
+      const len = Array.isArray(value)
+        ? value.length
+        : typeof value === 'string'
+          ? value.length
+          : -1;
       return typeof expected === 'number' && len <= expected;
     }
     case 'type':
@@ -55,7 +63,11 @@ function checkAssertion(value: unknown, op: AssertionOp, expected?: unknown): bo
       if (expected === 'null') return value === null;
       return typeof value === expected;
     case 'matches':
-      return typeof value === 'string' && typeof expected === 'string' && new RegExp(expected).test(value);
+      return (
+        typeof value === 'string' &&
+        typeof expected === 'string' &&
+        new RegExp(expected).test(value)
+      );
   }
 }
 
@@ -63,7 +75,7 @@ async function executeHttpRequest(
   esUrl: string,
   method: string,
   path: string,
-  headers: Record<string, string>
+  headers: Record<string, string>,
 ): Promise<unknown> {
   const url = `${esUrl.replace(/\/$/, '')}${path}`;
   const res = await fetch(url, { method: method.toUpperCase(), headers });

@@ -37,23 +37,25 @@ async function runSingleLlmTest(
     test.maxTurns ?? (defaults.thresholds?.['maxTurns'] as number | undefined) ?? DEFAULT_MAX_TURNS;
   const timeout = defaults.timeout ?? DEFAULT_TIMEOUT;
 
-    const systemPrompt = buildSystemPrompt(pluginConfig.name, tools, test.system);
+  const systemPrompt = buildSystemPrompt(pluginConfig.name, tools, test.system);
 
-    const distractorConfig = test.distractors;
-    let effectiveTools = tools;
-    if (distractorConfig && distractorConfig.mode !== 'none') {
-      const distractors = generateDistractors(
-        distractorConfig.mode,
-        distractorConfig.count ?? 5,
-        tools,
+  const distractorConfig = test.distractors;
+  let effectiveTools = tools;
+  if (distractorConfig && distractorConfig.mode !== 'none') {
+    const distractors = generateDistractors(
+      distractorConfig.mode,
+      distractorConfig.count ?? 5,
+      tools,
+    );
+    if (distractors.length > 0) {
+      effectiveTools = [...tools, ...distractors];
+      log.debug(
+        `  Injected ${distractors.length} distractor tools (mode: ${distractorConfig.mode})`,
       );
-      if (distractors.length > 0) {
-        effectiveTools = [...tools, ...distractors];
-        log.debug(`  Injected ${distractors.length} distractor tools (mode: ${distractorConfig.mode})`);
-      }
     }
+  }
 
-    try {
+  try {
     const result = await runAgentLoop({
       model,
       systemPrompt,

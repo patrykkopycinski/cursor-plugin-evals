@@ -28,11 +28,7 @@ describe('JSONL plain text', () => {
 
   it('handles records with multi-line string values', async () => {
     const filePath = join(TMP_DIR, 'multiline.jsonl');
-    const records = [
-      { text: 'line one' },
-      { text: 'line two' },
-      { nested: { deep: 'value' } },
-    ];
+    const records = [{ text: 'line one' }, { text: 'line two' }, { nested: { deep: 'value' } }];
 
     await writeJsonl(filePath, records);
     const result = await readJsonl(filePath);

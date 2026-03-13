@@ -79,10 +79,7 @@ describe('computeDimensions', () => {
     const result = makeRunResult([
       makeSuite({
         layer: 'unit',
-        tests: [
-          makeTest({ layer: 'unit', pass: true }),
-          makeTest({ layer: 'unit', pass: false }),
-        ],
+        tests: [makeTest({ layer: 'unit', pass: true }), makeTest({ layer: 'unit', pass: false })],
         passRate: 0.5,
       }),
     ]);
@@ -95,7 +92,7 @@ describe('computeDimensions', () => {
       makeSuite({
         layer: 'unit',
         evaluatorSummary: {
-          'security': { mean: 0.8, min: 0.5, max: 1.0, pass: 4, total: 5 },
+          security: { mean: 0.8, min: 0.5, max: 1.0, pass: 4, total: 5 },
           'tool-poisoning': { mean: 0.6, min: 0.3, max: 0.9, pass: 3, total: 5 },
         },
       }),
@@ -116,8 +113,13 @@ describe('computeDimensions', () => {
         name: 'llm-suite',
         layer: 'llm',
         tests: [
-          { ...makeTest({ layer: 'llm', pass: true }), difficulty: 'complex' } as TestResult & { difficulty: string },
-          { ...makeTest({ layer: 'llm', pass: false, name: 'fail' }), difficulty: 'simple' } as TestResult & { difficulty: string },
+          { ...makeTest({ layer: 'llm', pass: true }), difficulty: 'complex' } as TestResult & {
+            difficulty: string;
+          },
+          {
+            ...makeTest({ layer: 'llm', pass: false, name: 'fail' }),
+            difficulty: 'simple',
+          } as TestResult & { difficulty: string },
         ],
         passRate: 0.5,
         evaluatorSummary: {
@@ -173,7 +175,13 @@ describe('computeQualityScore', () => {
       performance: 1.0,
       agentReadiness: 1.0,
     };
-    const customWeights = { structure: 0, correctness: 1.0, security: 0, performance: 0, agentReadiness: 0 };
+    const customWeights = {
+      structure: 0,
+      correctness: 1.0,
+      security: 0,
+      performance: 0,
+      agentReadiness: 0,
+    };
     const qs = computeQualityScore(dims, customWeights);
     expect(qs.composite).toBe(50);
     expect(qs.grade).toBe('F');
@@ -289,7 +297,11 @@ describe('generateBadgeSvg', () => {
 
   it('uses correct color for grade A', () => {
     const qs = computeQualityScore({
-      structure: 1, correctness: 1, security: 1, performance: 1, agentReadiness: 1,
+      structure: 1,
+      correctness: 1,
+      security: 1,
+      performance: 1,
+      agentReadiness: 1,
     });
     const svg = generateBadgeSvg(qs);
     expect(svg).toContain('#4c1');
@@ -297,7 +309,11 @@ describe('generateBadgeSvg', () => {
 
   it('uses correct color for grade B', () => {
     const qs = computeQualityScore({
-      structure: 0.85, correctness: 0.85, security: 0.85, performance: 0.85, agentReadiness: 0.85,
+      structure: 0.85,
+      correctness: 0.85,
+      security: 0.85,
+      performance: 0.85,
+      agentReadiness: 0.85,
     });
     const svg = generateBadgeSvg(qs);
     expect(svg).toContain('#97CA00');
@@ -305,7 +321,11 @@ describe('generateBadgeSvg', () => {
 
   it('uses correct color for grade F', () => {
     const qs = computeQualityScore({
-      structure: 0.3, correctness: 0.3, security: 0.3, performance: 0.3, agentReadiness: 0.3,
+      structure: 0.3,
+      correctness: 0.3,
+      security: 0.3,
+      performance: 0.3,
+      agentReadiness: 0.3,
     });
     const svg = generateBadgeSvg(qs);
     expect(svg).toContain('#e05d44');

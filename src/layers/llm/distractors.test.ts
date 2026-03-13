@@ -6,7 +6,11 @@ const sampleTools: McpToolDefinition[] = [
   {
     name: 'elasticsearch_api',
     description: 'Execute Elasticsearch API requests',
-    inputSchema: { type: 'object', properties: { method: { type: 'string' }, path: { type: 'string' } }, required: ['method', 'path'] },
+    inputSchema: {
+      type: 'object',
+      properties: { method: { type: 'string' }, path: { type: 'string' } },
+      required: ['method', 'path'],
+    },
   },
   {
     name: 'esql_query',
@@ -75,7 +79,12 @@ describe('generateDistractors', () => {
       for (const tool of result) {
         const matchesSome = sampleTools.some(
           (existing) =>
-            tool.name.includes(existing.name) || existing.name.includes(tool.name.replace(/^(advanced_|legacy_|internal_|beta_|v2_)/, '').replace(/(_extended|_lite|_pro|_async|_batch)(_\d+)?$/, '')),
+            tool.name.includes(existing.name) ||
+            existing.name.includes(
+              tool.name
+                .replace(/^(advanced_|legacy_|internal_|beta_|v2_)/, '')
+                .replace(/(_extended|_lite|_pro|_async|_batch)(_\d+)?$/, ''),
+            ),
         );
         expect(matchesSome).toBe(true);
       }

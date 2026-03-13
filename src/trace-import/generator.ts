@@ -20,7 +20,10 @@ interface YamlSuite {
 }
 
 function sanitizeName(input: string): string {
-  return input.replace(/[^a-zA-Z0-9_-]/g, '-').replace(/-+/g, '-').slice(0, 80);
+  return input
+    .replace(/[^a-zA-Z0-9_-]/g, '-')
+    .replace(/-+/g, '-')
+    .slice(0, 80);
 }
 
 function buildIntegrationTest(span: ParsedSpan, index: number): YamlTest {
@@ -33,9 +36,7 @@ function buildIntegrationTest(span: ParsedSpan, index: number): YamlTest {
 
 function buildLlmTest(span: ParsedSpan, index: number, toolSpans: ParsedSpan[]): YamlTest {
   const prompt = span.parentPrompt ?? span.name;
-  const expectedTools = toolSpans
-    .filter((s) => s.toolName)
-    .map((s) => s.toolName!);
+  const expectedTools = toolSpans.filter((s) => s.toolName).map((s) => s.toolName!);
 
   const test: YamlTest = {
     name: `trace-llm-${index}`,

@@ -9,21 +9,14 @@ function cacheFilePath(key: string, dir: string): string {
   return resolve(dir, `${safeKey}.json`);
 }
 
-export async function cacheTokens(
-  key: string,
-  tokens: OAuthTokens,
-  dir?: string,
-): Promise<void> {
+export async function cacheTokens(key: string, tokens: OAuthTokens, dir?: string): Promise<void> {
   const cacheDir = dir ?? DEFAULT_CACHE_DIR;
   mkdirSync(cacheDir, { recursive: true });
   const filePath = cacheFilePath(key, cacheDir);
   writeFileSync(filePath, JSON.stringify(tokens, null, 2), 'utf-8');
 }
 
-export async function loadCachedTokens(
-  key: string,
-  dir?: string,
-): Promise<OAuthTokens | null> {
+export async function loadCachedTokens(key: string, dir?: string): Promise<OAuthTokens | null> {
   const cacheDir = dir ?? DEFAULT_CACHE_DIR;
   const filePath = cacheFilePath(key, cacheDir);
 

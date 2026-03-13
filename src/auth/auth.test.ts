@@ -56,10 +56,13 @@ describe('OAuth2AuthProvider', () => {
 
   it('fetches a token and returns Authorization header', async () => {
     const mockFetch = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      new Response(JSON.stringify({ access_token: 'oauth-tok', expires_in: 3600, token_type: 'bearer' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      })
+      new Response(
+        JSON.stringify({ access_token: 'oauth-tok', expires_in: 3600, token_type: 'bearer' }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ),
     );
 
     const provider = new OAuth2AuthProvider(baseConfig);
@@ -78,10 +81,13 @@ describe('OAuth2AuthProvider', () => {
 
   it('includes scopes in token request', async () => {
     const mockFetch = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      new Response(JSON.stringify({ access_token: 'scoped-tok', expires_in: 3600, token_type: 'bearer' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      })
+      new Response(
+        JSON.stringify({ access_token: 'scoped-tok', expires_in: 3600, token_type: 'bearer' }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ),
     );
 
     const provider = new OAuth2AuthProvider({ ...baseConfig, scopes: ['read', 'write'] });
@@ -93,10 +99,13 @@ describe('OAuth2AuthProvider', () => {
 
   it('caches token on subsequent calls', async () => {
     const mockFetch = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      new Response(JSON.stringify({ access_token: 'cached-tok', expires_in: 3600, token_type: 'bearer' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      })
+      new Response(
+        JSON.stringify({ access_token: 'cached-tok', expires_in: 3600, token_type: 'bearer' }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ),
     );
 
     const provider = new OAuth2AuthProvider(baseConfig);
@@ -114,16 +123,22 @@ describe('OAuth2AuthProvider', () => {
     const mockFetch = vi
       .spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ access_token: 'first-tok', expires_in: 120, token_type: 'bearer' }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        })
+        new Response(
+          JSON.stringify({ access_token: 'first-tok', expires_in: 120, token_type: 'bearer' }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        ),
       )
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ access_token: 'second-tok', expires_in: 3600, token_type: 'bearer' }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        })
+        new Response(
+          JSON.stringify({ access_token: 'second-tok', expires_in: 3600, token_type: 'bearer' }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        ),
       );
 
     const provider = new OAuth2AuthProvider(baseConfig);
@@ -141,11 +156,13 @@ describe('OAuth2AuthProvider', () => {
 
   it('throws on token endpoint failure', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      new Response('Unauthorized', { status: 401, statusText: 'Unauthorized' })
+      new Response('Unauthorized', { status: 401, statusText: 'Unauthorized' }),
     );
 
     const provider = new OAuth2AuthProvider(baseConfig);
-    await expect(provider.getHeaders()).rejects.toThrow('OAuth2 token request failed: 401 Unauthorized');
+    await expect(provider.getHeaders()).rejects.toThrow(
+      'OAuth2 token request failed: 401 Unauthorized',
+    );
   });
 });
 

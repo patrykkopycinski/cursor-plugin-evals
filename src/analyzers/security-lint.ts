@@ -31,10 +31,12 @@ const CREDENTIAL_PATTERNS = [
   /eyJ[A-Za-z0-9-_]{20,}\.[A-Za-z0-9-_]{20,}/,
 ];
 
-const REAL_EMAIL_PATTERN = /[a-zA-Z0-9._%+-]+@(?!example\.com|test\.com|localhost)[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+const REAL_EMAIL_PATTERN =
+  /[a-zA-Z0-9._%+-]+@(?!example\.com|test\.com|localhost)[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
 
 // Matches non-RFC1918 IPs (not 10.x.x.x, 172.16-31.x.x, 192.168.x.x, 127.x.x.x)
-const PUBLIC_IP_PATTERN = /\b(?!10\.)(?!172\.(?:1[6-9]|2\d|3[01])\.)(?!192\.168\.)(?!127\.)\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/;
+const PUBLIC_IP_PATTERN =
+  /\b(?!10\.)(?!172\.(?:1[6-9]|2\d|3[01])\.)(?!192\.168\.)(?!127\.)\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/;
 
 const PRODUCTION_DOMAIN_PATTERN = /(?:https?:\/\/)?(?:www\.)?[a-z0-9-]+\.(?:com|org|net|io|co)\b/i;
 const SAFE_DOMAINS = /(?:example\.com|test\.com|localhost|127\.0\.0\.1|0\.0\.0\.0)/i;
@@ -121,7 +123,8 @@ function checkScopeDeclaration(files: FileContent[]): SecurityCheckResult[] {
     ];
   }
 
-  const hasToolsSection = /^#+\s*tools/im.test(skillMd.content) || /tools\s*:/im.test(skillMd.content);
+  const hasToolsSection =
+    /^#+\s*tools/im.test(skillMd.content) || /tools\s*:/im.test(skillMd.content);
   const hasToolReferences = /`\w+(?:_\w+)+`/.test(skillMd.content);
 
   if (hasToolsSection || hasToolReferences) {
@@ -302,7 +305,9 @@ export function formatSecurityReport(reports: SkillSecurityReport[]): string {
     for (const check of failures) {
       const loc = check.line ? `:${check.line}` : '';
       const fileRef = check.file ? ` (${check.file}${loc})` : '';
-      lines.push(`- **[${check.severity.toUpperCase()}]** \`${check.check}\`: ${check.message}${fileRef}`);
+      lines.push(
+        `- **[${check.severity.toUpperCase()}]** \`${check.check}\`: ${check.message}${fileRef}`,
+      );
     }
     lines.push('');
   }

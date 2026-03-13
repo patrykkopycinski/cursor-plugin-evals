@@ -170,9 +170,7 @@ describe('buildTestGenerationPrompt', () => {
   });
 
   it('handles tools without descriptions', () => {
-    const tools = [
-      { name: 'my_tool', inputSchema: { type: 'object' } },
-    ];
+    const tools = [{ name: 'my_tool', inputSchema: { type: 'object' } }];
 
     const prompt = buildTestGenerationPrompt(tools);
     expect(prompt).toContain('my_tool');

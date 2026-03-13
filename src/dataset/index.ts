@@ -41,17 +41,13 @@ export async function loadFromGenerator(
   const results = await (generator as GeneratorFn)(config);
 
   if (!Array.isArray(results)) {
-    throw new Error(
-      `Generator at "${absolutePath}" must return an array, got ${typeof results}`,
-    );
+    throw new Error(`Generator at "${absolutePath}" must return an array, got ${typeof results}`);
   }
 
   for (let i = 0; i < results.length; i++) {
     const item = results[i];
     if (!item.prompt && !item.input) {
-      throw new Error(
-        `Generator result[${i}] must have either "prompt" or "input" property`,
-      );
+      throw new Error(`Generator result[${i}] must have either "prompt" or "input" property`);
     }
   }
 

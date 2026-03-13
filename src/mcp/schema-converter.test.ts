@@ -205,19 +205,14 @@ describe('convertTools', () => {
   });
 
   it('includes all tools when allowlist is empty', () => {
-    const tools: McpToolDefinition[] = [
-      makeTool({ name: 'a' }),
-      makeTool({ name: 'b' }),
-    ];
+    const tools: McpToolDefinition[] = [makeTool({ name: 'a' }), makeTool({ name: 'b' })];
 
     const result = convertTools(tools, []);
     expect(Object.keys(result)).toHaveLength(2);
   });
 
   it('ignores unknown entries in allowlist', () => {
-    const tools: McpToolDefinition[] = [
-      makeTool({ name: 'exists' }),
-    ];
+    const tools: McpToolDefinition[] = [makeTool({ name: 'exists' })];
 
     const result = convertTools(tools, ['exists', 'ghost']);
     expect(Object.keys(result)).toEqual(['exists']);

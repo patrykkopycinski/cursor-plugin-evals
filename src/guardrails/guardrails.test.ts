@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  checkGuardrails,
-  DEFAULT_GUARDRAILS,
-  type GuardrailRule,
-} from './index.js';
+import { checkGuardrails, DEFAULT_GUARDRAILS, type GuardrailRule } from './index.js';
 
 describe('checkGuardrails', () => {
   it('returns null when no rules match', () => {
@@ -93,9 +89,7 @@ describe('checkGuardrails', () => {
   });
 
   it('supports log action', () => {
-    const rules: GuardrailRule[] = [
-      { name: 'log-rule', pattern: /audit/i, action: 'log' },
-    ];
+    const rules: GuardrailRule[] = [{ name: 'log-rule', pattern: /audit/i, action: 'log' }];
 
     const result = checkGuardrails(rules, 'audit_tool', { action: 'read' });
     expect(result).not.toBeNull();
@@ -119,9 +113,7 @@ describe('checkGuardrails', () => {
   });
 
   it('provides default message when none specified', () => {
-    const rules: GuardrailRule[] = [
-      { name: 'test-rule', pattern: /trigger/, action: 'block' },
-    ];
+    const rules: GuardrailRule[] = [{ name: 'test-rule', pattern: /trigger/, action: 'block' }];
 
     const result = checkGuardrails(rules, 'my_tool', { val: 'trigger' });
     expect(result).not.toBeNull();
@@ -132,10 +124,7 @@ describe('checkGuardrails', () => {
 describe('DEFAULT_GUARDRAILS', () => {
   it('contains expected default rules', () => {
     expect(DEFAULT_GUARDRAILS).toHaveLength(2);
-    expect(DEFAULT_GUARDRAILS.map((r) => r.name)).toEqual([
-      'block-delete-all',
-      'block-drop',
-    ]);
+    expect(DEFAULT_GUARDRAILS.map((r) => r.name)).toEqual(['block-delete-all', 'block-drop']);
   });
 
   it('all defaults use block action', () => {

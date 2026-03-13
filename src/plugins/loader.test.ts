@@ -41,10 +41,7 @@ describe('loadPlugins', () => {
     });
 
     it('rejects evaluator without name', async () => {
-      const path = writePlugin(
-        'bad-eval.mjs',
-        `export default { evaluate: async () => ({}) };`,
-      );
+      const path = writePlugin('bad-eval.mjs', `export default { evaluate: async () => ({}) };`);
 
       const config: PluginsConfig = {
         evaluators: [{ name: 'bad', module: path }],
@@ -56,10 +53,7 @@ describe('loadPlugins', () => {
     });
 
     it('rejects evaluator without evaluate function', async () => {
-      const path = writePlugin(
-        'no-eval-fn.mjs',
-        `export default { name: 'broken' };`,
-      );
+      const path = writePlugin('no-eval-fn.mjs', `export default { name: 'broken' };`);
 
       const config: PluginsConfig = {
         evaluators: [{ name: 'broken', module: path }],
@@ -102,18 +96,13 @@ describe('loadPlugins', () => {
     });
 
     it('rejects non-function reporter', async () => {
-      const path = writePlugin(
-        'bad-reporter.mjs',
-        `export default { not: 'a function' };`,
-      );
+      const path = writePlugin('bad-reporter.mjs', `export default { not: 'a function' };`);
 
       const config: PluginsConfig = {
         reporters: [{ name: 'bad', module: path }],
       };
 
-      await expect(loadPlugins(config, TMP_DIR)).rejects.toThrow(
-        'must export a function',
-      );
+      await expect(loadPlugins(config, TMP_DIR)).rejects.toThrow('must export a function');
     });
   });
 
@@ -143,9 +132,7 @@ describe('loadPlugins', () => {
         transports: [{ name: 'bad', module: path }],
       };
 
-      await expect(loadPlugins(config, TMP_DIR)).rejects.toThrow(
-        'must implement send, close()',
-      );
+      await expect(loadPlugins(config, TMP_DIR)).rejects.toThrow('must implement send, close()');
     });
   });
 
@@ -155,9 +142,7 @@ describe('loadPlugins', () => {
         evaluators: [{ name: 'missing', module: '/nonexistent/path/plugin.mjs' }],
       };
 
-      await expect(loadPlugins(config, TMP_DIR)).rejects.toThrow(
-        'Failed to import plugin module',
-      );
+      await expect(loadPlugins(config, TMP_DIR)).rejects.toThrow('Failed to import plugin module');
     });
 
     it('handles empty plugins config', async () => {

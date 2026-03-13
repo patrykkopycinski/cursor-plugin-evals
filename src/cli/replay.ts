@@ -1,7 +1,12 @@
 import { log } from './logger.js';
 import { loadRecording } from '../recordings/index.js';
 import { createEvaluator } from '../evaluators/index.js';
-import type { EvaluatorContext, EvaluatorResult, ToolCallRecord, TokenUsage } from '../core/types.js';
+import type {
+  EvaluatorContext,
+  EvaluatorResult,
+  ToolCallRecord,
+  TokenUsage,
+} from '../core/types.js';
 
 const DEFAULT_CODE_EVALUATORS = [
   'tool-selection',
@@ -61,7 +66,8 @@ export async function replayCommand(opts: {
       testName: example.name,
       prompt: (example.input as { prompt?: string }).prompt,
       toolCalls,
-      finalOutput: typeof example.output === 'string' ? example.output : JSON.stringify(example.output),
+      finalOutput:
+        typeof example.output === 'string' ? example.output : JSON.stringify(example.output),
     };
 
     const results: EvaluatorResult[] = [];
@@ -70,7 +76,9 @@ export async function replayCommand(opts: {
         const result = await evaluator.evaluate(ctx);
         results.push(result);
       } catch (err) {
-        log.warn(`Evaluator "${evaluator.name}" threw on "${example.name}": ${err instanceof Error ? err.message : String(err)}`);
+        log.warn(
+          `Evaluator "${evaluator.name}" threw on "${example.name}": ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
     }
 

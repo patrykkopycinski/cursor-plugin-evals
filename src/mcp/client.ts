@@ -30,11 +30,7 @@ export class McpPluginClient {
   private callTimeout: number;
   private disconnecting = false;
 
-  private constructor(
-    client: Client,
-    transport: Transport,
-    callTimeout: number,
-  ) {
+  private constructor(client: Client, transport: Transport, callTimeout: number) {
     this.client = client;
     this.transport = transport;
     this.callTimeout = callTimeout;
@@ -78,9 +74,7 @@ export class McpPluginClient {
 
     const transport = createTransport(transportConfig);
 
-    const client = new Client(
-      { name: 'cursor-plugin-evals', version: '0.1.0' },
-    );
+    const client = new Client({ name: 'cursor-plugin-evals', version: '0.1.0' });
 
     try {
       await client.connect(transport, { timeout });
@@ -113,17 +107,12 @@ export class McpPluginClient {
     }));
   }
 
-  async callTool(
-    name: string,
-    args: Record<string, unknown> = {},
-  ): Promise<ToolResult> {
+  async callTool(name: string, args: Record<string, unknown> = {}): Promise<ToolResult> {
     this.assertConnected();
 
-    const response = await this.client.callTool(
-      { name, arguments: args },
-      undefined,
-      { timeout: this.callTimeout },
-    );
+    const response = await this.client.callTool({ name, arguments: args }, undefined, {
+      timeout: this.callTimeout,
+    });
 
     if ('toolResult' in response) {
       return {
@@ -142,9 +131,7 @@ export class McpPluginClient {
         }
         if (item.type === 'resource') {
           const r = item.resource;
-          return 'text' in r
-            ? { type: 'text', text: r.text }
-            : { type: 'resource', blob: r.blob };
+          return 'text' in r ? { type: 'text', text: r.text } : { type: 'resource', blob: r.blob };
         }
         return { type: item.type, text: JSON.stringify(item) };
       }),
@@ -169,13 +156,12 @@ export class McpPluginClient {
 
   async readResource(
     uri: string,
-  ): Promise<{ contents: Array<{ uri: string; text?: string; blob?: string; mimeType?: string }> }> {
+  ): Promise<{
+    contents: Array<{ uri: string; text?: string; blob?: string; mimeType?: string }>;
+  }> {
     this.assertConnected();
 
-    const response = await this.client.readResource(
-      { uri },
-      { timeout: this.callTimeout },
-    );
+    const response = await this.client.readResource({ uri }, { timeout: this.callTimeout });
 
     return {
       contents: response.contents.map((c) => ({

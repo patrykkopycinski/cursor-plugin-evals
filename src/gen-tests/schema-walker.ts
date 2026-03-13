@@ -30,7 +30,9 @@ function generateValidValue(schema: JsonSchema, propName: string): unknown {
       if (schema.format === 'date-time') return '2025-01-15T10:00:00Z';
       if (schema.format === 'uuid') return '550e8400-e29b-41d4-a716-446655440000';
       if (typeof schema.minLength === 'number' && schema.minLength > 0) {
-        return propName.repeat(Math.ceil(schema.minLength / propName.length)).slice(0, Math.max(schema.minLength, propName.length));
+        return propName
+          .repeat(Math.ceil(schema.minLength / propName.length))
+          .slice(0, Math.max(schema.minLength, propName.length));
       }
       return `example-${propName}`;
     }

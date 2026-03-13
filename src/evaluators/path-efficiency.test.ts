@@ -75,10 +75,7 @@ describe('PathEfficiencyEvaluator', () => {
 
   it('scores 1.0 on exact match (coverage=1, efficiency=1)', async () => {
     const golden = ['tool_a', 'tool_b', 'tool_c'];
-    const ctx = makeContext(
-      golden,
-      golden.map(makeToolCall),
-    );
+    const ctx = makeContext(golden, golden.map(makeToolCall));
     const result = await evaluator.evaluate(ctx);
     expect(result.score).toBe(1.0);
     expect(result.pass).toBe(true);
@@ -86,10 +83,7 @@ describe('PathEfficiencyEvaluator', () => {
 
   it('penalizes extra unnecessary calls (efficiency < 1)', async () => {
     const golden = ['tool_a', 'tool_b'];
-    const ctx = makeContext(
-      golden,
-      ['tool_a', 'tool_x', 'tool_b', 'tool_y'].map(makeToolCall),
-    );
+    const ctx = makeContext(golden, ['tool_a', 'tool_x', 'tool_b', 'tool_y'].map(makeToolCall));
     const result = await evaluator.evaluate(ctx);
 
     // coverage = LCS(actual, golden)/len(golden) = 2/2 = 1.0
@@ -102,10 +96,7 @@ describe('PathEfficiencyEvaluator', () => {
 
   it('penalizes missing golden steps (coverage < 1)', async () => {
     const golden = ['tool_a', 'tool_b', 'tool_c'];
-    const ctx = makeContext(
-      golden,
-      [makeToolCall('tool_a')],
-    );
+    const ctx = makeContext(golden, [makeToolCall('tool_a')]);
     const result = await evaluator.evaluate(ctx);
 
     // coverage = 1/3 ≈ 0.333
@@ -120,11 +111,9 @@ describe('PathEfficiencyEvaluator', () => {
 
   it('uses configurable threshold', async () => {
     const golden = ['a', 'b'];
-    const ctx = makeContext(
-      golden,
-      ['a', 'b', 'c', 'd', 'e', 'f'].map(makeToolCall),
-      { threshold: 0.9 },
-    );
+    const ctx = makeContext(golden, ['a', 'b', 'c', 'd', 'e', 'f'].map(makeToolCall), {
+      threshold: 0.9,
+    });
     const result = await evaluator.evaluate(ctx);
     // efficiency = 2/6 ≈ 0.333
     // composite = 0.6*1.0 + 0.4*0.333 = 0.733
@@ -133,11 +122,11 @@ describe('PathEfficiencyEvaluator', () => {
 
   it('uses configurable weights', async () => {
     const golden = ['a', 'b'];
-    const ctx = makeContext(
-      golden,
-      ['a', 'b', 'c', 'd'].map(makeToolCall),
-      { coverageWeight: 0.5, efficiencyWeight: 0.5, threshold: 0 },
-    );
+    const ctx = makeContext(golden, ['a', 'b', 'c', 'd'].map(makeToolCall), {
+      coverageWeight: 0.5,
+      efficiencyWeight: 0.5,
+      threshold: 0,
+    });
     const result = await evaluator.evaluate(ctx);
     // coverage=1.0, efficiency=0.5
     // composite with 50/50 = 0.5*1.0 + 0.5*0.5 = 0.75
@@ -146,10 +135,7 @@ describe('PathEfficiencyEvaluator', () => {
 
   it('handles superset actual path matching all golden steps', async () => {
     const golden = ['a', 'b'];
-    const ctx = makeContext(
-      golden,
-      ['x', 'a', 'y', 'b', 'z'].map(makeToolCall),
-    );
+    const ctx = makeContext(golden, ['x', 'a', 'y', 'b', 'z'].map(makeToolCall));
     const result = await evaluator.evaluate(ctx);
     expect(result.metadata?.coverage).toBe(1.0);
     expect(result.metadata?.efficiency).toBeCloseTo(2 / 5, 3);

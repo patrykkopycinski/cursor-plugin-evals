@@ -8,10 +8,7 @@ function padLeft(str: string, len: number): string {
   return str.length >= len ? str.slice(0, len) : ' '.repeat(len - str.length) + str;
 }
 
-export function formatSensitivityReport(
-  results: SensitivityResult[],
-  threshold: number,
-): string {
+export function formatSensitivityReport(results: SensitivityResult[], threshold: number): string {
   if (results.length === 0) {
     return 'No prompt sensitivity results to display.';
   }
@@ -61,9 +58,13 @@ export function formatSensitivityReport(
       for (const variant of result.variants) {
         const avgScore =
           Object.values(variant.scores).length > 0
-            ? (Object.values(variant.scores).reduce((a, b) => a + b, 0) / Object.values(variant.scores).length).toFixed(3)
+            ? (
+                Object.values(variant.scores).reduce((a, b) => a + b, 0) /
+                Object.values(variant.scores).length
+              ).toFixed(3)
             : 'N/A';
-        const promptPreview = variant.prompt.length > 50 ? variant.prompt.slice(0, 47) + '...' : variant.prompt;
+        const promptPreview =
+          variant.prompt.length > 50 ? variant.prompt.slice(0, 47) + '...' : variant.prompt;
         lines.push(`      "${promptPreview}" → avg: ${avgScore}`);
       }
     }

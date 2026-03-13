@@ -95,9 +95,7 @@ describe('ExcessiveAgencyRule', () => {
   const rule = new ExcessiveAgencyRule();
 
   it('flags tool with DELETE and no confirmation', () => {
-    const toolDescriptions = new Map([
-      ['dangerous_tool', 'DELETE all records from the database'],
-    ]);
+    const toolDescriptions = new Map([['dangerous_tool', 'DELETE all records from the database']]);
     const findings = rule.scan('', '', { toolDescriptions });
     expect(findings.length).toBeGreaterThanOrEqual(1);
     expect(findings[0].severity).toBe('high');
@@ -112,9 +110,7 @@ describe('ExcessiveAgencyRule', () => {
   });
 
   it('passes tool with dry-run safeguard', () => {
-    const toolDescriptions = new Map([
-      ['safe_tool', 'DROP table - supports dry-run mode'],
-    ]);
+    const toolDescriptions = new Map([['safe_tool', 'DROP table - supports dry-run mode']]);
     const findings = rule.scan('', '', { toolDescriptions });
     expect(findings).toHaveLength(0);
   });
@@ -135,7 +131,8 @@ describe('CredentialExposureRule', () => {
   });
 
   it('detects JWT token', () => {
-    const jwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U';
+    const jwt =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U';
     const findings = rule.scan(jwt, 'output');
     expect(findings.some((f) => f.description.includes('JWT Token'))).toBe(true);
   });
@@ -170,26 +167,44 @@ describe('CredentialExposureRule', () => {
 
 describe('Severity scoring', () => {
   it('returns 0.0 for critical findings', () => {
-    const findings: SecurityFinding[] = [{
-      rule: 'test', category: 'test', severity: 'critical',
-      location: 'test', snippet: 'test', description: 'test',
-    }];
+    const findings: SecurityFinding[] = [
+      {
+        rule: 'test',
+        category: 'test',
+        severity: 'critical',
+        location: 'test',
+        snippet: 'test',
+        description: 'test',
+      },
+    ];
     expect(computeScoreFromFindings(findings)).toBe(0.0);
   });
 
   it('returns 0.3 for high findings', () => {
-    const findings: SecurityFinding[] = [{
-      rule: 'test', category: 'test', severity: 'high',
-      location: 'test', snippet: 'test', description: 'test',
-    }];
+    const findings: SecurityFinding[] = [
+      {
+        rule: 'test',
+        category: 'test',
+        severity: 'high',
+        location: 'test',
+        snippet: 'test',
+        description: 'test',
+      },
+    ];
     expect(computeScoreFromFindings(findings)).toBe(0.3);
   });
 
   it('returns 0.7 for medium findings', () => {
-    const findings: SecurityFinding[] = [{
-      rule: 'test', category: 'test', severity: 'medium',
-      location: 'test', snippet: 'test', description: 'test',
-    }];
+    const findings: SecurityFinding[] = [
+      {
+        rule: 'test',
+        category: 'test',
+        severity: 'medium',
+        location: 'test',
+        snippet: 'test',
+        description: 'test',
+      },
+    ];
     expect(computeScoreFromFindings(findings)).toBe(0.7);
   });
 
@@ -200,7 +215,14 @@ describe('Severity scoring', () => {
   it('uses worst severity when mixed', () => {
     const findings: SecurityFinding[] = [
       { rule: 'a', category: 'a', severity: 'medium', location: '', snippet: '', description: '' },
-      { rule: 'b', category: 'b', severity: 'critical', location: '', snippet: '', description: '' },
+      {
+        rule: 'b',
+        category: 'b',
+        severity: 'critical',
+        location: '',
+        snippet: '',
+        description: '',
+      },
     ];
     expect(computeScoreFromFindings(findings)).toBe(0.0);
   });

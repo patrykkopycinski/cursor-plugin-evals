@@ -30,12 +30,9 @@ export class PathEfficiencyEvaluator implements Evaluator {
   readonly name = 'path-efficiency';
 
   async evaluate(context: EvaluatorContext): Promise<EvaluatorResult> {
-    const threshold =
-      (context.config?.['threshold'] as number | undefined) ?? 0.7;
-    const coverageWeight =
-      (context.config?.['coverageWeight'] as number | undefined) ?? 0.6;
-    const efficiencyWeight =
-      (context.config?.['efficiencyWeight'] as number | undefined) ?? 0.4;
+    const threshold = (context.config?.['threshold'] as number | undefined) ?? 0.7;
+    const coverageWeight = (context.config?.['coverageWeight'] as number | undefined) ?? 0.6;
+    const efficiencyWeight = (context.config?.['efficiencyWeight'] as number | undefined) ?? 0.4;
 
     const goldenPath = context.expected?.goldenPath;
 
@@ -70,8 +67,7 @@ export class PathEfficiencyEvaluator implements Evaluator {
 
     const lcs = lcsLength(actual, goldenPath);
     const coverage = Math.round((lcs / goldenPath.length) * 1000) / 1000;
-    const efficiency =
-      Math.round((goldenPath.length / Math.max(actual.length, 1)) * 1000) / 1000;
+    const efficiency = Math.round((goldenPath.length / Math.max(actual.length, 1)) * 1000) / 1000;
     const composite =
       Math.round((coverageWeight * coverage + efficiencyWeight * efficiency) * 1000) / 1000;
 

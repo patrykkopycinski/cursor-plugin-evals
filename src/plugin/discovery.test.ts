@@ -61,17 +61,27 @@ describe('discoverPlugin', () => {
 
   it('discovers skills in default directory', () => {
     writeJson(tmpDir, '.cursor-plugin/plugin.json', { name: 'test-plugin' });
-    writeText(tmpDir, 'skills/code-review/SKILL.md', '---\nname: code-review\ndescription: Review code for quality issues and suggest improvements.\n---\n# Code Review\n\n## Instructions\n1. Check for bugs');
+    writeText(
+      tmpDir,
+      'skills/code-review/SKILL.md',
+      '---\nname: code-review\ndescription: Review code for quality issues and suggest improvements.\n---\n# Code Review\n\n## Instructions\n1. Check for bugs',
+    );
 
     const manifest = discoverPlugin(tmpDir);
     expect(manifest.skills).toHaveLength(1);
     expect(manifest.skills[0].name).toBe('code-review');
-    expect(manifest.skills[0].description).toBe('Review code for quality issues and suggest improvements.');
+    expect(manifest.skills[0].description).toBe(
+      'Review code for quality issues and suggest improvements.',
+    );
   });
 
   it('discovers root-level SKILL.md when no skills dir exists', () => {
     writeJson(tmpDir, '.cursor-plugin/plugin.json', { name: 'single-skill' });
-    writeText(tmpDir, 'SKILL.md', '---\nname: root-skill\ndescription: A root-level skill for testing purposes.\n---\n# Root');
+    writeText(
+      tmpDir,
+      'SKILL.md',
+      '---\nname: root-skill\ndescription: A root-level skill for testing purposes.\n---\n# Root',
+    );
 
     const manifest = discoverPlugin(tmpDir);
     expect(manifest.skills).toHaveLength(1);
@@ -79,8 +89,15 @@ describe('discoverPlugin', () => {
   });
 
   it('discovers skills in custom path from manifest', () => {
-    writeJson(tmpDir, '.cursor-plugin/plugin.json', { name: 'test-plugin', skills: './my-skills/' });
-    writeText(tmpDir, 'my-skills/helper/SKILL.md', '---\nname: helper\ndescription: A helpful assistant skill for automation.\n---\n# Helper');
+    writeJson(tmpDir, '.cursor-plugin/plugin.json', {
+      name: 'test-plugin',
+      skills: './my-skills/',
+    });
+    writeText(
+      tmpDir,
+      'my-skills/helper/SKILL.md',
+      '---\nname: helper\ndescription: A helpful assistant skill for automation.\n---\n# Helper',
+    );
 
     const manifest = discoverPlugin(tmpDir);
     expect(manifest.skills).toHaveLength(1);
@@ -89,7 +106,11 @@ describe('discoverPlugin', () => {
 
   it('discovers rules in default directory', () => {
     writeJson(tmpDir, '.cursor-plugin/plugin.json', { name: 'test-plugin' });
-    writeText(tmpDir, 'rules/prefer-const.mdc', '---\ndescription: Prefer const\nalwaysApply: true\n---\nUse const.');
+    writeText(
+      tmpDir,
+      'rules/prefer-const.mdc',
+      '---\ndescription: Prefer const\nalwaysApply: true\n---\nUse const.',
+    );
 
     const manifest = discoverPlugin(tmpDir);
     expect(manifest.rules).toHaveLength(1);
@@ -99,7 +120,11 @@ describe('discoverPlugin', () => {
 
   it('discovers agents', () => {
     writeJson(tmpDir, '.cursor-plugin/plugin.json', { name: 'test-plugin' });
-    writeText(tmpDir, 'agents/reviewer.md', '---\nname: reviewer\ndescription: Code reviewer agent\nmodel: fast\n---\n# Reviewer');
+    writeText(
+      tmpDir,
+      'agents/reviewer.md',
+      '---\nname: reviewer\ndescription: Code reviewer agent\nmodel: fast\n---\n# Reviewer',
+    );
 
     const manifest = discoverPlugin(tmpDir);
     expect(manifest.agents).toHaveLength(1);
@@ -109,7 +134,11 @@ describe('discoverPlugin', () => {
 
   it('discovers commands', () => {
     writeJson(tmpDir, '.cursor-plugin/plugin.json', { name: 'test-plugin' });
-    writeText(tmpDir, 'commands/deploy.md', '---\nname: deploy\ndescription: Deploy to staging\nargument-hint: "[env]"\n---\n# Deploy');
+    writeText(
+      tmpDir,
+      'commands/deploy.md',
+      '---\nname: deploy\ndescription: Deploy to staging\nargument-hint: "[env]"\n---\n# Deploy',
+    );
 
     const manifest = discoverPlugin(tmpDir);
     expect(manifest.commands).toHaveLength(1);
@@ -157,7 +186,11 @@ describe('discoverPlugin', () => {
       description: 'A complete plugin',
       version: '1.0.0',
     });
-    writeText(tmpDir, 'skills/s1/SKILL.md', '---\nname: s1\ndescription: Skill one does important validation work.\n---\nBody');
+    writeText(
+      tmpDir,
+      'skills/s1/SKILL.md',
+      '---\nname: s1\ndescription: Skill one does important validation work.\n---\nBody',
+    );
     writeText(tmpDir, 'rules/r1.mdc', '---\ndescription: Rule one\n---\nBody');
     writeText(tmpDir, 'agents/a1.md', '---\nname: a1\ndescription: Agent one\n---\nBody');
     writeText(tmpDir, 'commands/c1.md', '---\ndescription: Command one\n---\nBody');

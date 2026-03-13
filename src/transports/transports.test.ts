@@ -5,7 +5,9 @@ import { createTransport } from './index.js';
 vi.mock('@modelcontextprotocol/sdk/client/stdio.js', () => ({
   StdioClientTransport: class MockStdioTransport {
     config: unknown;
-    constructor(config: unknown) { this.config = config; }
+    constructor(config: unknown) {
+      this.config = config;
+    }
     async start() {}
     async close() {}
     async send() {}
@@ -16,7 +18,10 @@ vi.mock('@modelcontextprotocol/sdk/client/streamableHttp.js', () => ({
   StreamableHTTPClientTransport: class MockStreamableTransport {
     url: URL;
     opts: unknown;
-    constructor(url: URL, opts?: unknown) { this.url = url; this.opts = opts; }
+    constructor(url: URL, opts?: unknown) {
+      this.url = url;
+      this.opts = opts;
+    }
     async start() {}
     async close() {}
     async send() {}
@@ -27,7 +32,10 @@ vi.mock('@modelcontextprotocol/sdk/client/sse.js', () => ({
   SSEClientTransport: class MockSseTransport {
     url: URL;
     opts: unknown;
-    constructor(url: URL, opts?: unknown) { this.url = url; this.opts = opts; }
+    constructor(url: URL, opts?: unknown) {
+      this.url = url;
+      this.opts = opts;
+    }
     async start() {}
     async close() {}
     async send() {}
@@ -61,9 +69,7 @@ describe('createTransport factory', () => {
 
     const transport = createTransport(config);
     expect(transport).toBeDefined();
-    expect((transport as unknown as { url: URL }).url.toString()).toBe(
-      'http://localhost:3000/mcp',
-    );
+    expect((transport as unknown as { url: URL }).url.toString()).toBe('http://localhost:3000/mcp');
   });
 
   it('creates sse transport for type "sse"', () => {
@@ -74,9 +80,7 @@ describe('createTransport factory', () => {
 
     const transport = createTransport(config);
     expect(transport).toBeDefined();
-    expect((transport as unknown as { url: URL }).url.toString()).toBe(
-      'http://localhost:3000/sse',
-    );
+    expect((transport as unknown as { url: URL }).url.toString()).toBe('http://localhost:3000/sse');
   });
 
   it('creates streamable-http transport for type "streamable-http"', () => {
@@ -87,9 +91,7 @@ describe('createTransport factory', () => {
 
     const transport = createTransport(config);
     expect(transport).toBeDefined();
-    expect((transport as unknown as { url: URL }).url.toString()).toBe(
-      'http://localhost:3000/mcp',
-    );
+    expect((transport as unknown as { url: URL }).url.toString()).toBe('http://localhost:3000/mcp');
   });
 
   it('throws for unsupported transport type', () => {
@@ -104,9 +106,7 @@ describe('createTransport factory', () => {
 describe('stdio transport', () => {
   it('throws when command is missing', () => {
     const config: TransportConfig = { type: 'stdio' };
-    expect(() => createTransport(config)).toThrow(
-      'stdio transport requires a "command" field',
-    );
+    expect(() => createTransport(config)).toThrow('stdio transport requires a "command" field');
   });
 
   it('merges process env with config env', () => {
@@ -119,7 +119,8 @@ describe('stdio transport', () => {
     };
 
     const transport = createTransport(config);
-    const envField = (transport as unknown as { config: { env: Record<string, string> } }).config.env;
+    const envField = (transport as unknown as { config: { env: Record<string, string> } }).config
+      .env;
     expect(envField.CUSTOM_VAR).toBe('custom');
     expect(envField.__TEST_TRANSPORT_VAR__).toBe('existing');
 
@@ -130,9 +131,7 @@ describe('stdio transport', () => {
 describe('http transport', () => {
   it('throws when url is missing', () => {
     const config: TransportConfig = { type: 'http' };
-    expect(() => createTransport(config)).toThrow(
-      'http transport requires a "url" field',
-    );
+    expect(() => createTransport(config)).toThrow('http transport requires a "url" field');
   });
 
   it('passes headers via requestInit', () => {
@@ -153,9 +152,7 @@ describe('http transport', () => {
 describe('sse transport', () => {
   it('throws when url is missing', () => {
     const config: TransportConfig = { type: 'sse' };
-    expect(() => createTransport(config)).toThrow(
-      'sse transport requires a "url" field',
-    );
+    expect(() => createTransport(config)).toThrow('sse transport requires a "url" field');
   });
 });
 

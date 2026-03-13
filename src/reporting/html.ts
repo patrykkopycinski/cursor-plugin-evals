@@ -1,12 +1,28 @@
-import type { RunResult, SuiteResult, TestResult, Difficulty, PerformanceMetrics } from '../core/types.js';
+import type {
+  RunResult,
+  SuiteResult,
+  TestResult,
+  Difficulty,
+  PerformanceMetrics,
+} from '../core/types.js';
 import { formatDuration } from '../core/utils.js';
 
 function esc(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 function gradeColor(grade: string): string {
-  const map: Record<string, string> = { A: '#22c55e', B: '#84cc16', C: '#eab308', D: '#f97316', F: '#ef4444' };
+  const map: Record<string, string> = {
+    A: '#22c55e',
+    B: '#84cc16',
+    C: '#eab308',
+    D: '#f97316',
+    F: '#ef4444',
+  };
   return map[grade] ?? '#6b7280';
 }
 
@@ -19,12 +35,14 @@ function buildQualityScoreSection(result: RunResult): string {
   if (!qs) return '';
   const color = gradeColor(qs.grade);
   const dimEntries = Object.entries(qs.dimensions)
-    .map(([dim, score]) => `
+    .map(
+      ([dim, score]) => `
       <div class="dim-item">
         <span class="dim-label">${esc(dim)}</span>
         <div class="dim-bar-track"><div class="dim-bar-fill" style="width:${(score * 100).toFixed(1)}%;background:${color}"></div></div>
         <span class="dim-val">${(score * 100).toFixed(0)}%</span>
-      </div>`)
+      </div>`,
+    )
     .join('');
 
   return `
@@ -47,11 +65,13 @@ function buildSummaryCards(result: RunResult): string {
   }
 
   const layerCards = Array.from(layerCounts.entries())
-    .map(([layer, { total, passed }]) => `
+    .map(
+      ([layer, { total, passed }]) => `
       <div class="stat-card">
         <div class="stat-label">${esc(layer)}</div>
         <div class="stat-value">${passed}/${total}</div>
-      </div>`)
+      </div>`,
+    )
     .join('');
 
   return `
@@ -112,18 +132,26 @@ function buildTestRow(test: TestResult): string {
       </div>
       <div class="test-details">
         ${test.error ? `<div class="test-error"><pre>${esc(test.error)}</pre></div>` : ''}
-        ${hasEvals ? `
+        ${
+          hasEvals
+            ? `
         <h4>Evaluators</h4>
         <table class="detail-table">
           <thead><tr><th>Evaluator</th><th>Score</th><th>Explanation</th></tr></thead>
           <tbody>${evalRows}</tbody>
-        </table>` : ''}
-        ${hasToolCalls ? `
+        </table>`
+            : ''
+        }
+        ${
+          hasToolCalls
+            ? `
         <h4>Tool Calls</h4>
         <table class="detail-table">
           <thead><tr><th>Tool</th><th>Latency</th><th>Status</th></tr></thead>
           <tbody>${toolCallRows}</tbody>
-        </table>` : ''}
+        </table>`
+            : ''
+        }
       </div>
     </div>`;
 }
@@ -165,7 +193,9 @@ function buildPerfBarChart(label: string, value: number, max: number): string {
 function buildPerformanceSection(result: RunResult): string {
   const perfTests = result.suites
     .flatMap((s) => s.tests)
-    .filter((t): t is TestResult & { performanceMetrics: PerformanceMetrics } => !!t.performanceMetrics);
+    .filter(
+      (t): t is TestResult & { performanceMetrics: PerformanceMetrics } => !!t.performanceMetrics,
+    );
 
   if (perfTests.length === 0) return '';
 

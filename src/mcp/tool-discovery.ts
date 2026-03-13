@@ -7,9 +7,7 @@ export type McpPluginClient = Pick<Client, 'listTools' | 'listResources'>;
  * Discover all tools registered on the MCP server and return them as a
  * typed catalog conforming to the project's `McpToolDefinition` shape.
  */
-export async function discoverTools(
-  client: McpPluginClient,
-): Promise<McpToolDefinition[]> {
+export async function discoverTools(client: McpPluginClient): Promise<McpToolDefinition[]> {
   const response = await client.listTools();
 
   return response.tools.map((tool) => ({
@@ -23,9 +21,7 @@ export async function discoverTools(
  * Discover all resources exposed by the MCP server and return them as a
  * typed array conforming to the project's `McpResource` shape.
  */
-export async function discoverResources(
-  client: McpPluginClient,
-): Promise<McpResource[]> {
+export async function discoverResources(client: McpPluginClient): Promise<McpResource[]> {
   const response = await client.listResources();
 
   return response.resources.map((resource) => ({

@@ -16,8 +16,7 @@ export class ToolSelectionEvaluator implements Evaluator {
   readonly name = 'tool-selection';
 
   async evaluate(context: EvaluatorContext): Promise<EvaluatorResult> {
-    const threshold =
-      (context.config?.['threshold'] as number | undefined) ?? 0.8;
+    const threshold = (context.config?.['threshold'] as number | undefined) ?? 0.8;
     const expectedTools = context.expected?.tools;
 
     if (!expectedTools || expectedTools.length === 0) {
@@ -51,17 +50,10 @@ export class ToolSelectionEvaluator implements Evaluator {
     const falsePositives = uniqueActual.length - matchedActual.size;
 
     const precision =
-      truePositives + falsePositives > 0
-        ? truePositives / (truePositives + falsePositives)
-        : 0;
+      truePositives + falsePositives > 0 ? truePositives / (truePositives + falsePositives) : 0;
     const recall =
-      truePositives + falseNegatives > 0
-        ? truePositives / (truePositives + falseNegatives)
-        : 0;
-    const f1 =
-      precision + recall > 0
-        ? (2 * precision * recall) / (precision + recall)
-        : 0;
+      truePositives + falseNegatives > 0 ? truePositives / (truePositives + falseNegatives) : 0;
+    const f1 = precision + recall > 0 ? (2 * precision * recall) / (precision + recall) : 0;
 
     const score = Math.round(f1 * 1000) / 1000;
     const missing = expectedTools.filter((t) => !matched.has(t));

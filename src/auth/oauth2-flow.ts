@@ -64,7 +64,9 @@ function waitForCallback(
       const error = url.searchParams.get('error');
       if (error) {
         res.writeHead(400, { 'Content-Type': 'text/html' });
-        res.end('<html><body><h1>Authorization failed</h1><p>You can close this window.</p></body></html>');
+        res.end(
+          '<html><body><h1>Authorization failed</h1><p>You can close this window.</p></body></html>',
+        );
         clearTimeout(timer);
         server.close();
         reject(new Error(`OAuth authorization error: ${error}`));
@@ -81,7 +83,9 @@ function waitForCallback(
       }
 
       res.writeHead(200, { 'Content-Type': 'text/html' });
-      res.end('<html><body><h1>Authorization successful</h1><p>You can close this window.</p></body></html>');
+      res.end(
+        '<html><body><h1>Authorization successful</h1><p>You can close this window.</p></body></html>',
+      );
       clearTimeout(timer);
       server.close();
       resolve(code);
@@ -138,7 +142,7 @@ export async function runOAuthPkceFlow(config: OAuthFlowConfig): Promise<OAuthTo
   });
 
   const address = server.address();
-  const port = typeof address === 'object' && address ? address.port : config.redirectPort ?? 0;
+  const port = typeof address === 'object' && address ? address.port : (config.redirectPort ?? 0);
   const redirectUri = `http://127.0.0.1:${port}/callback`;
 
   const authUrl = buildAuthorizationUrl(config, redirectUri, codeChallenge, state);

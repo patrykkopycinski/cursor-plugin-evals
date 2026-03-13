@@ -7,15 +7,24 @@ interface InjectionPattern {
 }
 
 const INJECTION_PATTERNS: InjectionPattern[] = [
-  { name: 'Ignore instructions', pattern: /ignore\s+(?:all\s+)?(?:previous|above|prior)\s+instructions/i },
+  {
+    name: 'Ignore instructions',
+    pattern: /ignore\s+(?:all\s+)?(?:previous|above|prior)\s+instructions/i,
+  },
   { name: 'Override system prompt', pattern: /override\s+(?:the\s+)?system\s+prompt/i },
   { name: 'New instructions', pattern: /your\s+new\s+instructions\s+are/i },
-  { name: 'Disregard', pattern: /disregard\s+(?:all\s+)?(?:previous|above|prior)\s+(?:instructions|rules)/i },
+  {
+    name: 'Disregard',
+    pattern: /disregard\s+(?:all\s+)?(?:previous|above|prior)\s+(?:instructions|rules)/i,
+  },
   { name: 'Forget instructions', pattern: /forget\s+(?:all\s+)?(?:previous|your)\s+instructions/i },
   { name: 'Role override', pattern: /you\s+are\s+now\s+(?:a|an)\s+/i },
   { name: 'Hidden instruction', pattern: /\[SYSTEM\]|<\|system\|>|<\|im_start\|>/i },
   { name: 'Base64 payload', pattern: /(?:execute|run|eval)\s+(?:the\s+)?(?:following\s+)?base64/i },
-  { name: 'Prompt leak request', pattern: /(?:show|print|output|reveal)\s+(?:your|the)\s+(?:system\s+)?prompt/i },
+  {
+    name: 'Prompt leak request',
+    pattern: /(?:show|print|output|reveal)\s+(?:your|the)\s+(?:system\s+)?prompt/i,
+  },
   { name: 'Jailbreak marker', pattern: /DAN\s+mode|developer\s+mode\s+enabled|jailbreak/i },
 ];
 

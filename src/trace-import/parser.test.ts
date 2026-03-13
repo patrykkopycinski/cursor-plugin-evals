@@ -119,10 +119,7 @@ describe('parseOtelTrace', () => {
     const json = {
       resourceSpans: [
         {
-          scopeSpans: [
-            { spans: [makeSpan({ name: 'a' })] },
-            { spans: [makeSpan({ name: 'b' })] },
-          ],
+          scopeSpans: [{ spans: [makeSpan({ name: 'a' })] }, { spans: [makeSpan({ name: 'b' })] }],
         },
         {
           scopeSpans: [{ spans: [makeSpan({ name: 'c' })] }],

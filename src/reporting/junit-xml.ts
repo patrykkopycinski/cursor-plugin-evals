@@ -22,12 +22,15 @@ function buildFailureElement(test: TestResult): string {
   }
 
   for (const ev of failedEvals) {
-    parts.push(`[${ev.evaluator}] score=${ev.score.toFixed(2)}${ev.explanation ? `: ${ev.explanation}` : ''}`);
+    parts.push(
+      `[${ev.evaluator}] score=${ev.score.toFixed(2)}${ev.explanation ? `: ${ev.explanation}` : ''}`,
+    );
   }
 
-  const message = failedEvals.length > 0
-    ? failedEvals.map((e) => `${e.evaluator}=${e.score.toFixed(2)}`).join(', ')
-    : test.error ?? 'Test failed';
+  const message =
+    failedEvals.length > 0
+      ? failedEvals.map((e) => `${e.evaluator}=${e.score.toFixed(2)}`).join(', ')
+      : (test.error ?? 'Test failed');
 
   const type = failedEvals.length > 0 ? 'evaluator' : 'error';
 

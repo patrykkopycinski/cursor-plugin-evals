@@ -44,13 +44,9 @@ async function setKibanaSystemPassword(
   esUrl: string,
   auth: { user: string; password: string },
 ): Promise<void> {
-  const res = await esRequest(
-    esUrl,
-    auth,
-    'POST',
-    '/_security/user/kibana_system/_password',
-    { password: auth.password },
-  );
+  const res = await esRequest(esUrl, auth, 'POST', '/_security/user/kibana_system/_password', {
+    password: auth.password,
+  });
   if (!res.ok) {
     throw new Error(
       `Failed to set kibana_system password: ${res.status} ${JSON.stringify(res.data)}`,
@@ -73,9 +69,7 @@ async function createApiKey(
   });
 
   if (!res.ok) {
-    throw new Error(
-      `Failed to create API key: ${res.status} ${JSON.stringify(res.data)}`,
-    );
+    throw new Error(`Failed to create API key: ${res.status} ${JSON.stringify(res.data)}`);
   }
 
   const raw = res.data as ApiKeyResponse;
@@ -147,9 +141,7 @@ async function seedDetectionRules(
     if (res.ok) {
       created++;
     } else {
-      errors.push(
-        `Rule "${rule.name}": ${res.status} ${JSON.stringify(res.data)}`,
-      );
+      errors.push(`Rule "${rule.name}": ${res.status} ${JSON.stringify(res.data)}`);
     }
   }
 
@@ -210,9 +202,7 @@ async function seedAlerts(
     if (res.ok) {
       created++;
     } else {
-      errors.push(
-        `Alert ${i}: ${res.status} ${JSON.stringify(res.data)}`,
-      );
+      errors.push(`Alert ${i}: ${res.status} ${JSON.stringify(res.data)}`);
     }
   }
 
@@ -228,9 +218,7 @@ export async function setupTestCluster(
   try {
     await setKibanaSystemPassword(esUrl, auth);
   } catch (err) {
-    errors.push(
-      `kibana_system password: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    errors.push(`kibana_system password: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   let apiKey: SetupResult['apiKey'];

@@ -13,7 +13,8 @@ async function loadFixtures(fixtureDir: string): Promise<ToolFixtures[]> {
   try {
     files = await readdir(fixtureDir);
   } catch (err: unknown) {
-    const isNotFound = err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT';
+    const isNotFound =
+      err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT';
     if (isNotFound) throw new Error(`Fixture directory not found: ${fixtureDir}`);
     throw err;
   }
@@ -29,7 +30,10 @@ async function loadFixtures(fixtureDir: string): Promise<ToolFixtures[]> {
     const filePath = join(fixtureDir, file);
     const compressed = await readFile(filePath);
     const decompressed = gunzipSync(compressed);
-    const lines = decompressed.toString('utf-8').split('\n').filter((l) => l.trim().length > 0);
+    const lines = decompressed
+      .toString('utf-8')
+      .split('\n')
+      .filter((l) => l.trim().length > 0);
     const entries = lines.map((line) => JSON.parse(line) as FixtureEntry);
     const toolName = file.replace(/\.jsonl\.gz$/, '');
     results.push({ toolName, entries });

@@ -62,7 +62,11 @@ describe('generateJunitXmlReport', () => {
 
   it('maps suites to <testsuite> elements with attributes', () => {
     const result = makeRunResult([
-      makeSuite({ name: 'my-suite', tests: [makeTest(), makeTest({ name: 'test-2' })], duration: 3000 }),
+      makeSuite({
+        name: 'my-suite',
+        tests: [makeTest(), makeTest({ name: 'test-2' })],
+        duration: 3000,
+      }),
     ]);
     const xml = generateJunitXmlReport(result);
     expect(xml).toContain('<testsuite name="my-suite"');
@@ -84,7 +88,12 @@ describe('generateJunitXmlReport', () => {
           makeTest({
             pass: false,
             evaluatorResults: [
-              { evaluator: 'tool-selection', score: 0.3, pass: false, explanation: 'wrong tool selected' },
+              {
+                evaluator: 'tool-selection',
+                score: 0.3,
+                pass: false,
+                explanation: 'wrong tool selected',
+              },
             ],
           }),
         ],
@@ -108,9 +117,7 @@ describe('generateJunitXmlReport', () => {
   });
 
   it('includes classname with suite name and layer', () => {
-    const result = makeRunResult([
-      makeSuite({ name: 'integration-smoke', layer: 'integration' }),
-    ]);
+    const result = makeRunResult([makeSuite({ name: 'integration-smoke', layer: 'integration' })]);
     const xml = generateJunitXmlReport(result);
     expect(xml).toContain('classname="integration-smoke.integration"');
   });

@@ -44,9 +44,7 @@ const FULL_SERVICES: ServiceDef[] = [
   },
 ];
 
-const LITE_SERVICES: ServiceDef[] = FULL_SERVICES.filter(
-  (s) => !s.name.startsWith('test-'),
-);
+const LITE_SERVICES: ServiceDef[] = FULL_SERVICES.filter((s) => !s.name.startsWith('test-'));
 
 async function checkService(svc: ServiceDef): Promise<ServiceHealth> {
   try {
@@ -77,9 +75,7 @@ function resolveServices(composeFile?: string): ServiceDef[] {
   return FULL_SERVICES;
 }
 
-export async function checkDockerHealth(
-  composeFile?: string,
-): Promise<HealthReport> {
+export async function checkDockerHealth(composeFile?: string): Promise<HealthReport> {
   const services = resolveServices(composeFile);
   const results = await Promise.all(services.map(checkService));
 

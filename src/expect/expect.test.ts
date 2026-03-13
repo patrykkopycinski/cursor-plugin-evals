@@ -1,5 +1,12 @@
 import { FieldAssertion } from './assertions.js';
-import { field, tools, toolSequence, toolArgs, responseContains, responseNotContains } from './expect.js';
+import {
+  field,
+  tools,
+  toolSequence,
+  toolArgs,
+  responseContains,
+  responseNotContains,
+} from './expect.js';
 import { defineSuite } from './suite-builder.js';
 
 describe('FieldAssertion', () => {
@@ -38,9 +45,20 @@ describe('FieldAssertion', () => {
 
     const ops = assertions.map((a) => a.op);
     expect(ops).toEqual([
-      'eq', 'neq', 'gt', 'gte', 'lt', 'lte',
-      'contains', 'not_contains', 'exists', 'not_exists',
-      'length_gte', 'length_lte', 'type', 'matches',
+      'eq',
+      'neq',
+      'gt',
+      'gte',
+      'lt',
+      'lte',
+      'contains',
+      'not_contains',
+      'exists',
+      'not_exists',
+      'length_gte',
+      'length_lte',
+      'type',
+      'matches',
     ]);
 
     expect(assertions[0]).toEqual({ field: 'f', op: 'eq', value: 'a' });
@@ -62,9 +80,7 @@ describe('expect helpers', () => {
   it('field() returns a FieldAssertion', () => {
     const fa = field('response.status');
     expect(fa).toBeInstanceOf(FieldAssertion);
-    expect(fa.eq(200).toAssertions()).toEqual([
-      { field: 'response.status', op: 'eq', value: 200 },
-    ]);
+    expect(fa.eq(200).toAssertions()).toEqual([{ field: 'response.status', op: 'eq', value: 200 }]);
   });
 
   it('tools() produces { tools: [...] }', () => {
@@ -133,35 +149,40 @@ describe('defineSuite', () => {
     expect(suite.setup).toBe('docker-compose up');
     expect(suite.tests).toHaveLength(2);
 
-    const first = suite.tests[0] as { name: string; tool: string; args: Record<string, unknown>; assert?: unknown[] };
+    const first = suite.tests[0] as {
+      name: string;
+      tool: string;
+      args: Record<string, unknown>;
+      assert?: unknown[];
+    };
     expect(first.name).toBe('GET cluster health');
     expect(first.tool).toBe('elasticsearch_api');
     expect(first.args).toEqual({ method: 'GET', path: '/_cluster/health' });
-    expect(first.assert).toEqual([
-      { field: 'content.0.text', op: 'contains', value: 'green' },
-    ]);
+    expect(first.assert).toEqual([{ field: 'content.0.text', op: 'contains', value: 'green' }]);
   });
 
   it('with llm tests compiles correctly', () => {
-    const suite = defineSuite(
-      { name: 'llm-tests', layer: 'llm' },
-      ({ llm }) => {
-        llm('tool selection test', {
-          prompt: 'What indices are in the cluster?',
-          expected: {
-            ...tools(['elasticsearch_api']),
-            ...responseContains(['indices']),
-          },
-          evaluators: ['tool-selection', 'response-quality'],
-        });
-      },
-    );
+    const suite = defineSuite({ name: 'llm-tests', layer: 'llm' }, ({ llm }) => {
+      llm('tool selection test', {
+        prompt: 'What indices are in the cluster?',
+        expected: {
+          ...tools(['elasticsearch_api']),
+          ...responseContains(['indices']),
+        },
+        evaluators: ['tool-selection', 'response-quality'],
+      });
+    });
 
     expect(suite.name).toBe('llm-tests');
     expect(suite.layer).toBe('llm');
     expect(suite.tests).toHaveLength(1);
 
-    const test = suite.tests[0] as { name: string; prompt: string; expected: Record<string, unknown>; evaluators: string[] };
+    const test = suite.tests[0] as {
+      name: string;
+      prompt: string;
+      expected: Record<string, unknown>;
+      evaluators: string[];
+    };
     expect(test.name).toBe('tool selection test');
     expect(test.prompt).toBe('What indices are in the cluster?');
     expect(test.expected.tools).toEqual(['elasticsearch_api']);

@@ -66,7 +66,10 @@ export interface SuiteResult {
   tests: TestResult[];
   passRate: number;
   duration: number;
-  evaluatorSummary: Record<string, { mean: number; min: number; max: number; pass: number; total: number }>;
+  evaluatorSummary: Record<
+    string,
+    { mean: number; min: number; max: number; pass: number; total: number }
+  >;
 }
 
 export interface RunResult {
@@ -254,7 +257,12 @@ export interface PerformanceTestConfig {
   requireEnv?: string[];
 }
 
-export type TestConfig = UnitTestConfig | StaticTestConfig | IntegrationTestConfig | LlmTestConfig | PerformanceTestConfig;
+export type TestConfig =
+  | UnitTestConfig
+  | StaticTestConfig
+  | IntegrationTestConfig
+  | LlmTestConfig
+  | PerformanceTestConfig;
 
 export type StaticCheck =
   | 'manifest'
@@ -517,7 +525,10 @@ export interface CiThresholds {
   score?: { avg?: number; min?: number; max?: number; p50?: number; p95?: number; p99?: number };
   latency?: { avg?: number; p95?: number };
   cost?: { max?: number };
-  evaluators?: Record<string, { avg?: number; min?: number; max?: number; p50?: number; p95?: number; p99?: number }>;
+  evaluators?: Record<
+    string,
+    { avg?: number; min?: number; max?: number; p50?: number; p95?: number; p99?: number }
+  >;
   requiredPass?: string[];
 }
 

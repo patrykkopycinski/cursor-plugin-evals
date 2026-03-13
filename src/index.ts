@@ -138,7 +138,11 @@ export type { CacheConfig, CacheStats } from './cache/index.js';
 export { loadFromGenerator } from './dataset/index.js';
 export type { GeneratorConfig, GeneratedExample } from './dataset/index.js';
 export { clusterFailures } from './reporting/failure-clustering.js';
-export type { FailureCategory, FailureCluster, TestResultForClustering } from './reporting/failure-clustering.js';
+export type {
+  FailureCategory,
+  FailureCluster,
+  TestResultForClustering,
+} from './reporting/failure-clustering.js';
 export { saveRecording, loadRecording, listRecordings } from './recordings/index.js';
 export type { RecordedRun, RecordedExample } from './recordings/index.js';
 export {
@@ -153,6 +157,7 @@ export {
   RagEvaluator,
   PlanQualityEvaluator,
   TaskCompletionEvaluator,
+  VisualRegressionEvaluator,
 } from './evaluators/index.js';
 
 export { runConversationTest } from './layers/llm/conversation.js';
@@ -168,10 +173,7 @@ export { formatRegressionReport } from './regression/report.js';
 export type { Fingerprint } from './regression/fingerprint.js';
 export type { Verdict, RegressionResult } from './regression/detector.js';
 
-export {
-  checkGuardrails,
-  DEFAULT_GUARDRAILS,
-} from './guardrails/index.js';
+export { checkGuardrails, DEFAULT_GUARDRAILS } from './guardrails/index.js';
 export type { GuardrailRule, GuardrailViolation } from './guardrails/index.js';
 
 export { generateTestsFromSchema } from './gen-tests/schema-walker.js';
@@ -196,3 +198,74 @@ export type { EvalEvent } from './dashboard/events.js';
 export { runOAuthPkceFlow, refreshAccessToken } from './auth/oauth2-flow.js';
 export { cacheTokens, loadCachedTokens, isTokenExpired } from './auth/token-cache.js';
 export type { OAuthFlowConfig, OAuthTokens } from './auth/oauth2-flow.js';
+
+export { optimizePrompt, generatePromptVariants } from './prompt-optimization/optimizer.js';
+export { formatOptimizationReport } from './prompt-optimization/report.js';
+export type { OptimizationConfig, OptimizationResult } from './prompt-optimization/optimizer.js';
+
+export { simulateConversation } from './conversation-sim/simulator.js';
+export { resolvePersona, BUILT_IN_PERSONAS } from './conversation-sim/personas.js';
+export { formatAsConversationYaml } from './conversation-sim/formatter.js';
+export type {
+  SimulationConfig,
+  SimulatedConversation,
+  SimulatedTurn,
+} from './conversation-sim/simulator.js';
+export type { UserPersona } from './conversation-sim/personas.js';
+
+export { runRedTeam, formatRedTeamReport, ALL_ATTACK_MODULES } from './red-team/index.js';
+export type {
+  AttackCategory,
+  Severity,
+  AttackResult,
+  RedTeamReport,
+  AttackModule,
+  RedTeamConfig,
+} from './red-team/index.js';
+
+export { generateSmartTests, formatSmartTestsAsYaml } from './gen-tests/smart-gen.js';
+export type { SmartGenConfig, GeneratedTestCase } from './gen-tests/smart-gen.js';
+
+export { analyzeCosts, formatCostReport } from './cost-advisor/index.js';
+export type { CostRecommendation, CostReport } from './cost-advisor/index.js';
+
+export {
+  createNotifiers,
+  sendNotifications,
+  SlackNotifier,
+  GitHubNotifier,
+  WebhookNotifier,
+} from './notifications/index.js';
+export type { NotificationConfig, NotificationPayload, Notifier } from './notifications/index.js';
+
+export {
+  createDataset,
+  listDatasets,
+  addExample,
+  versionDataset,
+  exportToYaml,
+  annotateExample,
+} from './dataset/manager.js';
+export type {
+  DatasetFile,
+  DatasetExample,
+  DatasetVersion,
+  DatasetMeta,
+} from './dataset/manager.js';
+
+export { parseOtelJsonLine, consumeStdin } from './monitoring/consumer.js';
+export { scoreTrace } from './monitoring/scorer.js';
+export { createAnomalyDetector } from './monitoring/anomaly.js';
+export type { TraceEvent } from './monitoring/consumer.js';
+export type { ScoredTrace } from './monitoring/scorer.js';
+export type { AnomalyDetector } from './monitoring/anomaly.js';
+
+export { extractTraceViewData } from './dashboard/trace-viewer.js';
+export { renderTraceHtml } from './dashboard/trace-page.js';
+export type { TraceViewData } from './dashboard/trace-viewer.js';
+
+export { captureScreenshot } from './multimodal/screenshot.js';
+export { compareImages } from './multimodal/pixel-diff.js';
+export { saveBaseline, loadBaseline } from './multimodal/baselines.js';
+export type { ScreenshotOptions } from './multimodal/screenshot.js';
+export type { DiffResult } from './multimodal/pixel-diff.js';

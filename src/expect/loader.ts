@@ -20,7 +20,12 @@ export async function loadTypeScriptSuites(patterns: string[]): Promise<SuiteCon
         for (const suite of exported) {
           suites.push(suite as SuiteConfig);
         }
-      } else if (exported && typeof exported === 'object' && 'name' in exported && 'layer' in exported) {
+      } else if (
+        exported &&
+        typeof exported === 'object' &&
+        'name' in exported &&
+        'layer' in exported
+      ) {
         suites.push(exported as SuiteConfig);
       }
     }

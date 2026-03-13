@@ -49,7 +49,12 @@ export async function runConversationTest(
   const timeout = defaults.timeout ?? DEFAULT_TIMEOUT;
 
   const allTurns: ConversationTurn[] = [
-    { prompt: test.prompt, system: test.system, expected: test.expected, evaluators: test.evaluators },
+    {
+      prompt: test.prompt,
+      system: test.system,
+      expected: test.expected,
+      evaluators: test.evaluators,
+    },
     ...(test.turns ?? []),
   ];
 
@@ -63,7 +68,9 @@ export async function runConversationTest(
     );
     if (distractors.length > 0) {
       effectiveTools = [...tools, ...distractors];
-      log.debug(`  Injected ${distractors.length} distractor tools (mode: ${distractorConfig.mode})`);
+      log.debug(
+        `  Injected ${distractors.length} distractor tools (mode: ${distractorConfig.mode})`,
+      );
     }
   }
 

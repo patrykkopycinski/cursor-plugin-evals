@@ -65,7 +65,9 @@ export class McpFixtureRecorder {
             existing = await readJsonlGz(filePath);
           } catch (err: unknown) {
             const isNotFound =
-              err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT';
+              err instanceof Error &&
+              'code' in err &&
+              (err as NodeJS.ErrnoException).code === 'ENOENT';
             if (!isNotFound) throw err;
           }
           await writeJsonlGz(filePath, [...existing, ...entries]);

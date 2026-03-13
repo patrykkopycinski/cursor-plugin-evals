@@ -23,7 +23,11 @@ const DISTRACTOR_TEMPLATES: McpToolDefinition[] = [
         title: { type: 'string', description: 'Event title' },
         start: { type: 'string', description: 'Start time in ISO 8601 format' },
         end: { type: 'string', description: 'End time in ISO 8601 format' },
-        attendees: { type: 'array', items: { type: 'string' }, description: 'Email addresses of attendees' },
+        attendees: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Email addresses of attendees',
+        },
       },
       required: ['title', 'start'],
     },
@@ -171,9 +175,7 @@ function generateTargetedDistractor(existingTool: McpToolDefinition): McpToolDef
   const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
   const usePrefix = Math.random() > 0.5;
 
-  const name = usePrefix
-    ? `${prefix}${existingTool.name}`
-    : `${existingTool.name}${suffix}`;
+  const name = usePrefix ? `${prefix}${existingTool.name}` : `${existingTool.name}${suffix}`;
 
   return {
     name,

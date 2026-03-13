@@ -33,7 +33,10 @@ function validateEvaluator(name: string, mod: Record<string, unknown>): Evaluato
   );
 }
 
-function validateReporter(name: string, mod: Record<string, unknown>): (result: RunResult) => string {
+function validateReporter(
+  name: string,
+  mod: Record<string, unknown>,
+): (result: RunResult) => string {
   const fn = (mod.default ?? mod.report ?? mod.reporter) as unknown;
 
   if (typeof fn === 'function') {
@@ -47,28 +50,26 @@ function validateReporter(name: string, mod: Record<string, unknown>): (result: 
 
 function validateTransport(name: string, mod: Record<string, unknown>): void {
   const raw = (mod.default ?? mod) as unknown;
-  const obj = typeof raw === 'function'
-    ? (raw as { prototype?: Record<string, unknown> }).prototype
-    : raw;
+  const obj =
+    typeof raw === 'function' ? (raw as { prototype?: Record<string, unknown> }).prototype : raw;
 
   const required = ['connect', 'send', 'close'] as const;
   const target = obj as Record<string, unknown> | undefined;
   const missing = required.filter((m) => typeof target?.[m] !== 'function');
 
   if (missing.length > 0) {
-    throw new Error(
-      `Plugin transport "${name}": must implement ${missing.join(', ')}()`,
-    );
+    throw new Error(`Plugin transport "${name}": must implement ${missing.join(', ')}()`);
   }
 }
 
-async function importModule(modulePath: string, configDir: string): Promise<Record<string, unknown>> {
-  const resolved = isAbsolute(modulePath)
-    ? modulePath
-    : resolve(configDir, modulePath);
+async function importModule(
+  modulePath: string,
+  configDir: string,
+): Promise<Record<string, unknown>> {
+  const resolved = isAbsolute(modulePath) ? modulePath : resolve(configDir, modulePath);
 
   try {
-    return await import(resolved) as Record<string, unknown>;
+    return (await import(resolved)) as Record<string, unknown>;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     throw new Error(`Failed to import plugin module "${modulePath}": ${message}`, { cause: err });

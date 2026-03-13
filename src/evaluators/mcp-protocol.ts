@@ -1,4 +1,9 @@
-import type { Evaluator, EvaluatorContext, EvaluatorResult, ToolCallRecord } from '../core/types.js';
+import type {
+  Evaluator,
+  EvaluatorContext,
+  EvaluatorResult,
+  ToolCallRecord,
+} from '../core/types.js';
 
 interface ValidationResult {
   tool: string;
@@ -20,7 +25,9 @@ function validateToolCall(tc: ToolCallRecord): ValidationResult {
   if (tc.args === null || tc.args === undefined) {
     issues.push('Arguments are null or undefined.');
   } else if (typeof tc.args !== 'object' || Array.isArray(tc.args)) {
-    issues.push(`Arguments must be a plain object, got ${Array.isArray(tc.args) ? 'array' : typeof tc.args}.`);
+    issues.push(
+      `Arguments must be a plain object, got ${Array.isArray(tc.args) ? 'array' : typeof tc.args}.`,
+    );
   } else {
     try {
       JSON.stringify(tc.args);

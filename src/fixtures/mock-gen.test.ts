@@ -121,9 +121,9 @@ describe('generateMockServer', () => {
 
   it('throws when fixture directory does not exist', async () => {
     const outputPath = join(TMP_DIR, 'out.mjs');
-    await expect(
-      generateMockServer('/nonexistent/path/xyz', outputPath),
-    ).rejects.toThrow('Fixture directory not found');
+    await expect(generateMockServer('/nonexistent/path/xyz', outputPath)).rejects.toThrow(
+      'Fixture directory not found',
+    );
   });
 
   it('throws when fixture directory has no .jsonl.gz files', async () => {

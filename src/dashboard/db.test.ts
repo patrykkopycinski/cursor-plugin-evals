@@ -153,10 +153,13 @@ describe('dashboard db', () => {
   describe('getLatestRuns', () => {
     it('returns limited number of runs', () => {
       for (let i = 0; i < 10; i++) {
-        saveRun(db, makeRunResult({
-          runId: `run-${i}`,
-          timestamp: `2025-01-15T${String(i).padStart(2, '0')}:00:00.000Z`,
-        }));
+        saveRun(
+          db,
+          makeRunResult({
+            runId: `run-${i}`,
+            timestamp: `2025-01-15T${String(i).padStart(2, '0')}:00:00.000Z`,
+          }),
+        );
       }
 
       const latest = getLatestRuns(db, 3);

@@ -73,10 +73,7 @@ describe('resolveDotPath', () => {
 
 describe('mergeDefaults', () => {
   it('merges suite over global', () => {
-    const result = mergeDefaults(
-      { timeout: 5000 },
-      { timeout: 30000, judgeModel: 'gpt-4o' },
-    );
+    const result = mergeDefaults({ timeout: 5000 }, { timeout: 30000, judgeModel: 'gpt-4o' });
     expect(result.timeout).toBe(5000);
     expect(result.judgeModel).toBe('gpt-4o');
   });

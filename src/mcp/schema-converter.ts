@@ -1,8 +1,4 @@
-import type {
-  McpToolDefinition,
-  OpenAIFunctionDefinition,
-  JsonSchema,
-} from '../core/types.js';
+import type { McpToolDefinition, OpenAIFunctionDefinition, JsonSchema } from '../core/types.js';
 
 /**
  * Deep-clone a JsonSchema node, preserving only the properties
@@ -69,8 +65,7 @@ export function convertTools(
   tools: McpToolDefinition[],
   allowlist?: string[],
 ): Record<string, OpenAIFunctionDefinition> {
-  const filter =
-    allowlist && allowlist.length > 0 ? new Set(allowlist) : undefined;
+  const filter = allowlist && allowlist.length > 0 ? new Set(allowlist) : undefined;
 
   const result: Record<string, OpenAIFunctionDefinition> = {};
 

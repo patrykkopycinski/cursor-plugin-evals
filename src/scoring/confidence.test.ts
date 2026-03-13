@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { computeConfidenceInterval, aggregateConfidence, confidenceGatingPass } from './confidence.js';
+import {
+  computeConfidenceInterval,
+  aggregateConfidence,
+  confidenceGatingPass,
+} from './confidence.js';
 import type { ConfidenceInterval } from '../core/types.js';
 
 describe('computeConfidenceInterval', () => {
@@ -60,7 +64,7 @@ describe('computeConfidenceInterval', () => {
 
   it('supports 90% confidence level', () => {
     const scores = [0.8, 0.9, 0.7, 0.85, 0.75];
-    const ci90 = computeConfidenceInterval(scores, 0.90);
+    const ci90 = computeConfidenceInterval(scores, 0.9);
     const ci95 = computeConfidenceInterval(scores, 0.95);
     expect(ci90.upperBound - ci90.lowerBound).toBeLessThan(ci95.upperBound - ci95.lowerBound);
   });
@@ -74,7 +78,9 @@ describe('computeConfidenceInterval', () => {
 
   it('narrows interval with more samples', () => {
     const few = computeConfidenceInterval([0.8, 0.9, 0.7]);
-    const many = computeConfidenceInterval([0.8, 0.9, 0.7, 0.85, 0.75, 0.82, 0.88, 0.78, 0.83, 0.87]);
+    const many = computeConfidenceInterval([
+      0.8, 0.9, 0.7, 0.85, 0.75, 0.82, 0.88, 0.78, 0.83, 0.87,
+    ]);
     const fewWidth = few.upperBound - few.lowerBound;
     const manyWidth = many.upperBound - many.lowerBound;
     expect(manyWidth).toBeLessThan(fewWidth);

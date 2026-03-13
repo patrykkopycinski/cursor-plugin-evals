@@ -45,7 +45,9 @@ export class PlanQualityEvaluator implements Evaluator {
       `User prompt: ${context.prompt ?? '(none)'}`,
       `Total tool calls: ${context.toolCalls.length}`,
       toolSummary ? `Tool call sequence:\n${toolSummary}` : 'No tool calls were made.',
-      context.finalOutput ? `Final output (first 500 chars): ${context.finalOutput.slice(0, 500)}` : '',
+      context.finalOutput
+        ? `Final output (first 500 chars): ${context.finalOutput.slice(0, 500)}`
+        : '',
     ]
       .filter(Boolean)
       .join('\n\n');

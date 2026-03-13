@@ -4,8 +4,7 @@ export class ResponseQualityEvaluator implements Evaluator {
   readonly name = 'response-quality';
 
   async evaluate(context: EvaluatorContext): Promise<EvaluatorResult> {
-    const threshold =
-      (context.config?.['threshold'] as number | undefined) ?? 0.7;
+    const threshold = (context.config?.['threshold'] as number | undefined) ?? 0.7;
     const output = context.finalOutput ?? '';
     const outputLower = output.toLowerCase();
 
@@ -19,8 +18,7 @@ export class ResponseQualityEvaluator implements Evaluator {
         score: 1.0,
         pass: true,
         label: 'skip',
-        explanation:
-          'No response content assertions specified; skipping evaluation.',
+        explanation: 'No response content assertions specified; skipping evaluation.',
       };
     }
 

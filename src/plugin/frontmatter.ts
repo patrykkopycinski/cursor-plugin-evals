@@ -86,7 +86,9 @@ export function parseRuleFile(content: string, filePath: string): RuleComponent 
     description: str(attributes.description),
     path: filePath,
     body,
-    ...(bool(attributes.alwaysApply) !== undefined && { alwaysApply: bool(attributes.alwaysApply) }),
+    ...(bool(attributes.alwaysApply) !== undefined && {
+      alwaysApply: bool(attributes.alwaysApply),
+    }),
     ...(strOrArray(attributes.globs) !== undefined && { globs: strOrArray(attributes.globs) }),
   };
 }
@@ -99,7 +101,9 @@ export function parseAgentFile(content: string, filePath: string): AgentComponen
     path: filePath,
     body,
     ...(attributes.model !== undefined && { model: str(attributes.model) }),
-    ...(bool(attributes.is_background) !== undefined && { isBackground: bool(attributes.is_background) }),
+    ...(bool(attributes.is_background) !== undefined && {
+      isBackground: bool(attributes.is_background),
+    }),
     ...(bool(attributes.readonly) !== undefined && { readonly: bool(attributes.readonly) }),
   };
 }
@@ -111,8 +115,12 @@ export function parseCommandFile(content: string, filePath: string): CommandComp
     path: filePath,
     body,
     ...(attributes.name !== undefined && { name: str(attributes.name) }),
-    ...(attributes['argument-hint'] !== undefined && { argumentHint: str(attributes['argument-hint']) }),
-    ...(attributes['allowed-tools'] !== undefined && { allowedTools: strOrArray(attributes['allowed-tools']) }),
+    ...(attributes['argument-hint'] !== undefined && {
+      argumentHint: str(attributes['argument-hint']),
+    }),
+    ...(attributes['allowed-tools'] !== undefined && {
+      allowedTools: strOrArray(attributes['allowed-tools']),
+    }),
     ...(bool(attributes['disable-model-invocation']) !== undefined && {
       disableModelInvocation: bool(attributes['disable-model-invocation']),
     }),

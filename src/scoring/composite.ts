@@ -9,10 +9,10 @@ export interface QualityScore {
 
 export const DEFAULT_WEIGHTS: Record<string, number> = {
   structure: 0.15,
-  correctness: 0.30,
-  security: 0.20,
+  correctness: 0.3,
+  security: 0.2,
   performance: 0.15,
-  agentReadiness: 0.20,
+  agentReadiness: 0.2,
 };
 
 function toGrade(score: number): string {

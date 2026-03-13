@@ -51,20 +51,18 @@ export async function watchAndRun(
   try {
     chokidar = await import('chokidar');
   } catch {
-    throw new Error(
-      'chokidar is required for watch mode. Install it with: npm install chokidar',
-    );
+    throw new Error('chokidar is required for watch mode. Install it with: npm install chokidar');
   }
 
-  const absConfigPath = isAbsolute(configPath)
-    ? configPath
-    : resolve(process.cwd(), configPath);
+  const absConfigPath = isAbsolute(configPath) ? configPath : resolve(process.cwd(), configPath);
 
   let config;
   try {
     config = loadConfig(absConfigPath);
   } catch (err) {
-    throw new Error(`Failed to load config for watch mode: ${err instanceof Error ? err.message : String(err)}`);
+    throw new Error(
+      `Failed to load config for watch mode: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 
   const pluginDir = config.plugin.dir

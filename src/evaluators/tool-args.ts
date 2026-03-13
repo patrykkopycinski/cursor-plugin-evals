@@ -36,8 +36,7 @@ export class ToolArgsEvaluator implements Evaluator {
   readonly name = 'tool-args';
 
   async evaluate(context: EvaluatorContext): Promise<EvaluatorResult> {
-    const threshold =
-      (context.config?.['threshold'] as number | undefined) ?? 0.7;
+    const threshold = (context.config?.['threshold'] as number | undefined) ?? 0.7;
     const expectedToolArgs = context.expected?.toolArgs;
 
     if (!expectedToolArgs || Object.keys(expectedToolArgs).length === 0) {
@@ -62,9 +61,7 @@ export class ToolArgsEvaluator implements Evaluator {
 
     for (const [toolName, expectedArgs] of Object.entries(expectedToolArgs)) {
       const toolCall = context.toolCalls.find(
-        (tc) =>
-          tc.tool === toolName ||
-          tc.tool.toLowerCase() === toolName.toLowerCase()
+        (tc) => tc.tool === toolName || tc.tool.toLowerCase() === toolName.toLowerCase(),
       );
 
       for (const [argName, expectedValue] of Object.entries(expectedArgs)) {
@@ -97,9 +94,7 @@ export class ToolArgsEvaluator implements Evaluator {
     }
 
     const score =
-      totalExpected > 0
-        ? Math.round((totalMatched / totalExpected) * 1000) / 1000
-        : 1.0;
+      totalExpected > 0 ? Math.round((totalMatched / totalExpected) * 1000) / 1000 : 1.0;
 
     const mismatches = details.filter((d) => !d.match);
 

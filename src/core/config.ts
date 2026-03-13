@@ -316,8 +316,11 @@ function snakeToCamel(obj: unknown, preserveKey = false): unknown {
 
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
-    const camelKey = preserveKey ? key : key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
-    const shouldPreserveChildren = key === 'args' || key === 'env' || key === 'minimal_env' || key === 'minimalEnv';
+    const camelKey = preserveKey
+      ? key
+      : key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+    const shouldPreserveChildren =
+      key === 'args' || key === 'env' || key === 'minimal_env' || key === 'minimalEnv';
     result[camelKey] = snakeToCamel(value, shouldPreserveChildren);
   }
   return result;

@@ -12,15 +12,26 @@ import { log } from '../../cli/logger.js';
 const KEBAB_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z0-9]+(?:-[a-z0-9]+)*)*$/;
 
 const VALID_HOOK_EVENTS = new Set([
-  'beforeTabFileRead', 'afterTabFileEdit',
-  'sessionStart', 'sessionEnd',
-  'preToolUse', 'postToolUse', 'postToolUseFailure',
-  'subagentStart', 'subagentStop',
-  'beforeShellExecution', 'afterShellExecution',
-  'beforeMCPExecution', 'afterMCPExecution',
-  'beforeReadFile', 'afterFileEdit',
-  'beforeSubmitPrompt', 'preCompact',
-  'stop', 'afterAgentResponse', 'afterAgentThought',
+  'beforeTabFileRead',
+  'afterTabFileEdit',
+  'sessionStart',
+  'sessionEnd',
+  'preToolUse',
+  'postToolUse',
+  'postToolUseFailure',
+  'subagentStart',
+  'subagentStop',
+  'beforeShellExecution',
+  'afterShellExecution',
+  'beforeMCPExecution',
+  'afterMCPExecution',
+  'beforeReadFile',
+  'afterFileEdit',
+  'beforeSubmitPrompt',
+  'preCompact',
+  'stop',
+  'afterAgentResponse',
+  'afterAgentThought',
 ]);
 
 function makeResult(
@@ -73,9 +84,12 @@ function checkSkillFrontmatter(
 
   for (const skill of skills) {
     if (!skill.name) errors.push(`Skill at ${skill.path}: missing "name" in frontmatter`);
-    if (!skill.description) errors.push(`Skill "${skill.name || skill.path}": missing "description"`);
+    if (!skill.description)
+      errors.push(`Skill "${skill.name || skill.path}": missing "description"`);
     else if (skill.description.length < 20) {
-      errors.push(`Skill "${skill.name}": description too short (${skill.description.length} chars, min 20)`);
+      errors.push(
+        `Skill "${skill.name}": description too short (${skill.description.length} chars, min 20)`,
+      );
     }
     if (!skill.body || skill.body.trim().length === 0) {
       errors.push(`Skill "${skill.name || skill.path}": body is empty`);
@@ -124,7 +138,8 @@ function checkAgentFrontmatter(
 
   for (const agent of manifest.agents) {
     if (!agent.name) errors.push(`Agent at ${agent.path}: missing "name"`);
-    if (!agent.description) errors.push(`Agent "${agent.name || agent.path}": missing "description"`);
+    if (!agent.description)
+      errors.push(`Agent "${agent.name || agent.path}": missing "description"`);
   }
 
   if (errors.length > 0) {
@@ -297,10 +312,7 @@ function checkNamingConventions(
   return makeResult(test, suite, true, performance.now() - start);
 }
 
-function filterComponents<T extends { name?: string }>(
-  components: T[],
-  filter?: string[],
-): T[] {
+function filterComponents<T extends { name?: string }>(components: T[], filter?: string[]): T[] {
   if (!filter || filter.length === 0) return components;
   const filterSet = new Set(filter);
   return components.filter((c) => c.name && filterSet.has(c.name));

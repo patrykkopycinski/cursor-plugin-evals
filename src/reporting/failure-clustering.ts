@@ -21,7 +21,7 @@ export interface TestResultForClustering {
 }
 
 const RECOMMENDED_ACTIONS: Record<FailureCategory, string> = {
-  wrong_tool_selection: 'Review SKILL.md tool descriptions and \'when to use\' guidance',
+  wrong_tool_selection: "Review SKILL.md tool descriptions and 'when to use' guidance",
   wrong_arguments: 'Add examples with correct argument patterns to SKILL.md',
   wrong_ordering: 'Add multi-step workflow examples showing correct sequence',
   hallucination: 'Add explicit constraints in SKILL.md; improve grounding examples',
@@ -39,7 +39,10 @@ const EVALUATOR_CATEGORY_MAP: Record<string, FailureCategory> = {
   'content-quality': 'content_quality',
 };
 
-function getScore(evaluators: TestResultForClustering['evaluators'], ...names: string[]): number | null {
+function getScore(
+  evaluators: TestResultForClustering['evaluators'],
+  ...names: string[]
+): number | null {
   for (const name of names) {
     const ev = evaluators.find((e) => e.name === name);
     if (ev?.score != null) return ev.score;

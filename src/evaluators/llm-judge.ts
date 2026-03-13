@@ -16,9 +16,7 @@ export async function callJudge(request: JudgeRequest): Promise<JudgeResponse> {
   const model = request.model ?? process.env.JUDGE_MODEL ?? DEFAULT_JUDGE_MODEL;
 
   const isAzure = !!process.env.AZURE_OPENAI_API_KEY && !!process.env.AZURE_OPENAI_ENDPOINT;
-  const apiKey = isAzure
-    ? process.env.AZURE_OPENAI_API_KEY!
-    : (process.env.OPENAI_API_KEY ?? '');
+  const apiKey = isAzure ? process.env.AZURE_OPENAI_API_KEY! : (process.env.OPENAI_API_KEY ?? '');
 
   if (!apiKey) {
     throw new Error(
@@ -32,7 +30,8 @@ export async function callJudge(request: JudgeRequest): Promise<JudgeResponse> {
 
   if (isAzure) {
     const endpoint = process.env.AZURE_OPENAI_ENDPOINT!.replace(/\/+$/, '');
-    const deployment = process.env.AZURE_JUDGE_DEPLOYMENT ?? process.env.AZURE_OPENAI_DEPLOYMENT ?? model;
+    const deployment =
+      process.env.AZURE_JUDGE_DEPLOYMENT ?? process.env.AZURE_OPENAI_DEPLOYMENT ?? model;
     const apiVersion = process.env.AZURE_OPENAI_API_VERSION ?? '2025-01-01-preview';
     url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
     headers = { 'Content-Type': 'application/json', 'api-key': apiKey };

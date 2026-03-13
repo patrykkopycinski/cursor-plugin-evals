@@ -23,9 +23,7 @@ export function resolveCollectionPath(collection: string, configDir?: string): s
     return builtIn;
   }
 
-  throw new Error(
-    `Collection "${collection}" not found. Checked built-in path: ${builtIn}`,
-  );
+  throw new Error(`Collection "${collection}" not found. Checked built-in path: ${builtIn}`);
 }
 
 export function loadCollectionSuite(collectionPath: string): SuiteConfig {

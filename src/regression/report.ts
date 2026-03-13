@@ -52,7 +52,11 @@ export function formatRegressionReport(results: RegressionResult[]): string {
 
   const widths = header.map((_, i) => Math.max(...rows.map((r) => stripAnsi(r[i]).length)));
   for (const row of rows) {
-    lines.push(row.map((cell, i) => cell + ' '.repeat(Math.max(0, widths[i] - stripAnsi(cell).length))).join('  '));
+    lines.push(
+      row
+        .map((cell, i) => cell + ' '.repeat(Math.max(0, widths[i] - stripAnsi(cell).length)))
+        .join('  '),
+    );
   }
 
   lines.push('');
@@ -80,7 +84,9 @@ export function formatRegressionReport(results: RegressionResult[]): string {
     if (failCount > 0) parts.push(chalk.red(`${failCount} fail`));
     if (incCount > 0) parts.push(chalk.yellow(`${incCount} inconclusive`));
 
-    lines.push(`  ${suite.padEnd(30)} ${parts.join(', ')}  (worst p=${worst.pValue < 0.001 ? '<0.001' : worst.pValue.toFixed(3)})`);
+    lines.push(
+      `  ${suite.padEnd(30)} ${parts.join(', ')}  (worst p=${worst.pValue < 0.001 ? '<0.001' : worst.pValue.toFixed(3)})`,
+    );
   }
 
   lines.push('');
@@ -91,9 +97,15 @@ export function formatRegressionReport(results: RegressionResult[]): string {
   const totalInc = results.filter((r) => r.verdict === 'INCONCLUSIVE').length;
 
   if (totalFail > 0) {
-    lines.push(chalk.red(`  ✗ REGRESSION DETECTED — ${totalFail} metric(s) degraded, ${totalPass} stable, ${totalInc} inconclusive`));
+    lines.push(
+      chalk.red(
+        `  ✗ REGRESSION DETECTED — ${totalFail} metric(s) degraded, ${totalPass} stable, ${totalInc} inconclusive`,
+      ),
+    );
   } else if (totalInc > 0) {
-    lines.push(chalk.yellow(`  ? ${totalPass} stable, ${totalInc} inconclusive (need more samples)`));
+    lines.push(
+      chalk.yellow(`  ? ${totalPass} stable, ${totalInc} inconclusive (need more samples)`),
+    );
   } else {
     lines.push(chalk.green(`  ✓ No regressions — all ${totalPass} metric(s) stable`));
   }

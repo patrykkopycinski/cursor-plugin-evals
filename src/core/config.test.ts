@@ -47,9 +47,7 @@ describe('loadConfig', () => {
   });
 
   it('throws when config file is not found', () => {
-    expect(() => loadConfig('/nonexistent/path/config.yaml')).toThrow(
-      'Config file not found'
-    );
+    expect(() => loadConfig('/nonexistent/path/config.yaml')).toThrow('Config file not found');
   });
 
   it('throws when YAML is invalid', () => {
@@ -95,7 +93,7 @@ suites:
 `;
     const path = writeTempConfig('unresolved.yaml', yaml);
     expect(() => loadConfig(path)).toThrow(
-      'Unresolved environment variable: DOES_NOT_EXIST_EVER_XYZ'
+      'Unresolved environment variable: DOES_NOT_EXIST_EVER_XYZ',
     );
   });
 
@@ -135,7 +133,7 @@ suites:
 `;
     const path = writeTempConfig('no-dir-no-env.yaml', yaml);
     expect(() => loadConfig(path)).toThrow(
-      'Either plugin.dir or PLUGIN_DIR environment variable is required'
+      'Either plugin.dir or PLUGIN_DIR environment variable is required',
     );
   });
 

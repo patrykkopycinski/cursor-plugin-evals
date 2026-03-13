@@ -43,7 +43,8 @@ export async function appendJsonlGz(filePath: string, record: unknown): Promise<
   try {
     existing = await readJsonlGz(filePath);
   } catch (err: unknown) {
-    const isNotFound = err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT';
+    const isNotFound =
+      err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT';
     if (!isNotFound) throw err;
   }
 

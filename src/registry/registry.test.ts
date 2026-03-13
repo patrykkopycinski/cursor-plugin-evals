@@ -165,9 +165,7 @@ describe('pullSuite', () => {
     const { readFileSync, existsSync } = await import('fs');
 
     const yamlContent = 'name: fetched-suite\nlayer: unit\ntests: []\n';
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      new Response(yamlContent, { status: 200 }),
-    );
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response(yamlContent, { status: 200 }));
 
     const entry = {
       name: 'fetched-suite',
@@ -187,9 +185,7 @@ describe('pullSuite', () => {
   it('throws when download fails', async () => {
     const { pullSuite } = await import('./index.js');
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      new Response('Not Found', { status: 404 }),
-    );
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response('Not Found', { status: 404 }));
 
     const entry = {
       name: 'missing',

@@ -26,7 +26,8 @@ export class McpFixtureResponder {
     try {
       files = await readdir(this.fixtureDir);
     } catch (err: unknown) {
-      const isNotFound = err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT';
+      const isNotFound =
+        err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT';
       if (isNotFound) return;
       throw err;
     }
