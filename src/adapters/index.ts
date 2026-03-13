@@ -1,6 +1,12 @@
 import type { TaskAdapter, AdapterConfig } from '../core/types.js';
 
-export type AdapterName = 'mcp' | 'plain-llm' | 'headless-coder' | 'gemini-cli' | 'claude-sdk';
+export type AdapterName =
+  | 'mcp'
+  | 'plain-llm'
+  | 'headless-coder'
+  | 'gemini-cli'
+  | 'claude-sdk'
+  | 'cursor-cli';
 
 type AdapterFactory = (config: AdapterConfig) => TaskAdapter;
 
@@ -37,9 +43,14 @@ async function getAdapterFactory(name: string): Promise<AdapterFactory> {
       factory = mod.createClaudeSdkAdapter;
       break;
     }
+    case 'cursor-cli': {
+      const mod = await import('./cursor-cli.js');
+      factory = mod.createCursorCliAdapter;
+      break;
+    }
     default:
       throw new Error(
-        `Unknown adapter "${name}". Available: mcp, plain-llm, headless-coder, gemini-cli, claude-sdk`,
+        `Unknown adapter "${name}". Available: mcp, plain-llm, headless-coder, gemini-cli, claude-sdk, cursor-cli`,
       );
   }
 
@@ -56,3 +67,4 @@ export function createAdapter(name: AdapterName | string, config: AdapterConfig)
 }
 
 export { createMcpAdapter } from './mcp.js';
+export { createCursorCliAdapter } from './cursor-cli.js';

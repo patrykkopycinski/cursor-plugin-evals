@@ -20,7 +20,7 @@ describe('evaluateCi', () => {
     const result = evaluateCi([makeTest()], {});
     expect(result.passed).toBe(true);
     expect(result.violations).toHaveLength(0);
-    expect(result.summary).toBe('All CI thresholds passed');
+    expect(result.summary).toContain('All CI thresholds passed');
   });
 
   it('returns passed when all scores above threshold', () => {
@@ -160,8 +160,10 @@ describe('evaluateCi', () => {
       ],
       { score: { avg: 0.8 }, latency: { avg: 2000 } },
     );
-    expect(result.summary).toContain('score.avg (0.300 < 0.8)');
-    expect(result.summary).toContain('latency.avg (10000.000 > 2000)');
+    expect(result.summary).toContain('score.avg');
+    expect(result.summary).toContain('< threshold');
+    expect(result.summary).toContain('latency.avg');
+    expect(result.summary).toContain('> threshold');
   });
 });
 

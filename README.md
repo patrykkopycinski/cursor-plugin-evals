@@ -5,7 +5,7 @@
 <p align="center">
   <a href="#testing-layers"><img src="https://img.shields.io/badge/layers-12-6C5CE7?style=flat-square" alt="12 Layers" /></a>
   <a href="#evaluators"><img src="https://img.shields.io/badge/evaluators-24-A29BFE?style=flat-square" alt="24 Evaluators" /></a>
-  <a href="#task-adapters"><img src="https://img.shields.io/badge/adapters-5-74B9FF?style=flat-square" alt="5 Adapters" /></a>
+  <a href="#task-adapters"><img src="https://img.shields.io/badge/adapters-6-74B9FF?style=flat-square" alt="6 Adapters" /></a>
   <a href="#security--red-teaming"><img src="https://img.shields.io/badge/security--rules-20-E74C3C?style=flat-square" alt="20 Security Rules" /></a>
   <a href="#community-collections"><img src="https://img.shields.io/badge/community--tests-154-FD79A8?style=flat-square" alt="154 Community Tests" /></a>
   <a href="#reporting"><img src="https://img.shields.io/badge/reporters-6-55E6C1?style=flat-square" alt="6 Reporters" /></a>
@@ -114,7 +114,7 @@ npx cursor-plugin-evals dataset export my-tests -o tests.yaml
 │matter │ion     │Auth/OAuth│put/mem   │turn/judge│overrides │2/3      │
 ├───────┴────────┴──────────┴──────────┴──────────┴──────────┴─────────┤
 │                        Task Adapters                                  │
-│  mcp · plain-llm · headless-coder · gemini-cli · claude-sdk           │
+│  mcp · plain-llm · headless-coder · gemini-cli · claude-sdk · cursor-cli  │
 ├──────────────────────────────────────────────────────────────────────┤
 │  Plugin Discovery  │  MCP Client (stdio / HTTP / SSE / stream-HTTP)   │
 │  Manifest parsing  │  Spawn · Connect · Execute · Auth flows          │
@@ -265,6 +265,7 @@ Adapters decouple _what_ you test from _how_ the agent runs. Each adapter implem
 |---|---|---|
 | `mcp` | Connects to plugin via MCP, runs full agent loop | Default — tests the complete plugin experience |
 | `plain-llm` | Direct OpenAI-compatible API call (no tools) | Test raw LLM quality without MCP overhead |
+| `cursor-cli` | Runs Cursor Agent CLI in headless mode | E2E testing through Cursor's actual agent runtime |
 | `headless-coder` | Uses headless coder SDK for code-gen agents | Test coding-oriented plugins |
 | `gemini-cli` | Spawns Gemini CLI in JSONL mode | Test with Google's CLI agent |
 | `claude-sdk` | Uses Anthropic Claude Code SDK | Test with Claude's agent runtime |
@@ -277,6 +278,77 @@ suites:
     layer: skill
     adapter: [mcp, plain-llm]
     skillDir: ./skills/my-skill
+```
+
+### Cursor CLI Adapter
+
+The `cursor-cli` adapter runs evaluations through Cursor's actual agent runtime using the [Cursor Agent CLI](https://cursor.com/docs/cli/headless) in headless mode. This gives you true end-to-end evaluation — the exact same code path as when you type a prompt in the Cursor IDE, including skill routing, MCP server integration, model selection, and tool execution.
+
+**Prerequisites:**
+
+```bash
+# Install Cursor Agent CLI
+curl https://cursor.com/install -fsS | bash
+
+# Set API key (get from https://cursor.com/settings)
+export CURSOR_API_KEY=your_api_key_here
+```
+
+**Usage in YAML:**
+
+```yaml
+suites:
+  - name: e2e-cursor-eval
+    layer: skill
+    adapter: cursor-cli
+    skillDir: ./skills/my-skill
+    defaults:
+      timeout: 300000
+```
+
+**Configuration:**
+
+| Config key | Description | Default |
+|---|---|---|
+| `model` | Model to use (e.g., `claude-4-sonnet`) | Cursor's default |
+| `timeout` | Max execution time (ms) | `300000` (5 min) |
+| `workingDir` | Workspace directory for the agent | `process.cwd()` |
+
+The adapter spawns `agent -p --force --output-format stream-json --approve-mcps --trust` and parses the NDJSON event stream to extract:
+
+- **Tool calls** with arguments and results (read, write, shell, MCP tools)
+- **Assistant messages** between tool calls
+- **Files modified** during execution
+- **Execution duration** from Cursor's own timing
+
+**Skill isolation:**
+
+When `skillPath` (or `skillDir` in YAML) is specified, the adapter automatically creates an isolated workspace containing only the target skill and its transitive dependencies. This prevents unrelated skills from intercepting prompts during evaluation.
+
+```yaml
+suites:
+  - name: alert-triage-eval
+    layer: skill
+    adapter: cursor-cli
+    skillDir: ./skills/security/alert-triage
+```
+
+Dependencies are auto-detected by parsing each skill's `SKILL.md` for references to sibling skill directories (e.g., "depends on the `case-management` skill" or `node skills/security/case-management/scripts/...`). For the `alert-triage` skill, this would include `case-management` automatically.
+
+The isolated workspace is a temporary directory with:
+- Symlinks to only the included skill directories
+- A filtered `plugin.json` manifest exposing only those skills
+- Symlinks to shared infrastructure (`.cursor/`, `node_modules/`, `package.json`, `.env`, etc.)
+- Automatic cleanup after the evaluation completes
+
+**Comparing adapters:**
+
+```yaml
+suites:
+  - name: cursor-vs-mcp
+    layer: skill
+    adapter: [cursor-cli, mcp]
+    skillDir: ./skills/alert-triage
 ```
 
 ## Evaluators

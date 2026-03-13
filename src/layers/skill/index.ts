@@ -33,13 +33,15 @@ export async function runSkillSuite(
   }
 
   const dataset = loadSkillDataset(skillDir);
-  const adapterNames =
+  const rawAdapters =
     dataset.adapters ??
     (suite.adapter
       ? Array.isArray(suite.adapter)
         ? suite.adapter
         : [suite.adapter]
       : [DEFAULT_ADAPTER]);
+
+  const adapterNames: string[] = rawAdapters.map((a) => (typeof a === 'string' ? a : a.type));
 
   const suiteEvaluators = dataset.evaluators ?? ['correctness', 'groundedness'];
 

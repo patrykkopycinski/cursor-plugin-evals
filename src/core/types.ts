@@ -158,9 +158,15 @@ export interface ExpectedOutput {
   clusterState?: ClusterStateAssertion[];
 }
 
+export type ClusterCheckType = 'es_query' | 'kibana_api' | 'script';
+
 export interface ClusterStateAssertion {
+  type?: ClusterCheckType;
   method: string;
   path: string;
+  body?: unknown;
+  script?: string;
+  description?: string;
   assert: AssertionConfig[];
 }
 
@@ -481,16 +487,51 @@ export interface TaskOutput {
 
 export type TaskAdapter<T extends Example = Example> = (example: T) => Promise<TaskOutput>;
 
+export interface EvalSetupConfig {
+  notes?: string[];
+  script?: string;
+  feature_flags?: string[];
+  seed_data?: boolean;
+}
+
+export interface PhaseGate {
+  first_try_pass_rate?: number;
+  e2e_completion_rate?: number;
+  description: string;
+}
+
+export interface EvalAdapterConfig {
+  type: string;
+  config?: Record<string, unknown>;
+}
+
+export interface EvalDefaultsConfig {
+  maxTurns?: number;
+  timeout?: number;
+  repetitions?: number;
+  judgeModel?: string;
+  thresholds?: Record<string, number>;
+  requiredPass?: string[];
+}
+
 export interface EvaluationDataset<T extends Example = Example> {
   name: string;
   description: string;
   examples: T[];
-  adapters?: string[];
+  adapters?: string[] | EvalAdapterConfig[];
   evaluators?: string[];
-  defaults?: {
-    maxTurns?: number;
-    timeout?: number;
-    repetitions?: number;
+  defaults?: EvalDefaultsConfig;
+  setup?: EvalSetupConfig;
+  models?: string[];
+  phaseGates?: Record<string, PhaseGate>;
+  serverless?: {
+    readiness?: string;
+    limitations?: string[];
+  };
+  clusterSetup?: {
+    seedScript?: string;
+    esUrl?: string;
+    kibanaUrl?: string;
   };
 }
 
@@ -533,6 +574,8 @@ export interface CiThresholds {
     { avg?: number; min?: number; max?: number; p50?: number; p95?: number; p99?: number }
   >;
   requiredPass?: string[];
+  firstTryPassRate?: number;
+  phaseGate?: PhaseGate;
 }
 
 export interface CiViolation {

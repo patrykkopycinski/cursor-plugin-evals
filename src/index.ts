@@ -15,6 +15,7 @@ export type {
   EvaluatorContext,
   ExpectedOutput,
   ClusterStateAssertion,
+  ClusterCheckType,
   AssertionConfig,
   AssertionOp,
   UnitTestConfig,
@@ -46,6 +47,10 @@ export type {
   TaskOutput,
   TaskAdapter,
   EvaluationDataset,
+  EvalSetupConfig,
+  EvalDefaultsConfig,
+  EvalAdapterConfig,
+  PhaseGate,
   SkillTestConfig,
   SkillSuiteConfig,
   AdapterConfig,
@@ -136,8 +141,26 @@ export type { LoadedPlugins } from './plugins/loader.js';
 
 export { createAdapter } from './adapters/index.js';
 export type { AdapterName } from './adapters/index.js';
+export { createCursorCliAdapter } from './adapters/cursor-cli.js';
+export { resolveSkillWithDeps, discoverSkillMetas } from './adapters/cursor-cli-skills.js';
+export type { SkillMeta } from './adapters/cursor-cli-skills.js';
+export {
+  createIsolatedWorkspace,
+  findSkillsRoot,
+  copyDirFiltered,
+  EVAL_INFRA_BLOCKLIST,
+} from './adapters/cursor-cli-workspace.js';
+export type { IsolatedWorkspace, CreateWorkspaceOptions } from './adapters/cursor-cli-workspace.js';
+export {
+  normalizeToolCall,
+  extractToolNameFromShellCommand,
+  parseShellCommandArgs,
+  buildToolCatalogSection,
+} from './utils/shell-command.js';
+export type { ScriptToolMapping, NormalizeToolCallOptions } from './utils/shell-command.js';
 export { calculateCost, getPricingCatalog } from './pricing/index.js';
 export { evaluateCi, convertFlatThresholds } from './ci/index.js';
+export type { EvaluateCiOptions } from './ci/index.js';
 export { analyzeCollisions, scanSkills } from './analyzers/skill-collision.js';
 export {
   runSkillSecurityChecks,
@@ -157,7 +180,10 @@ export type {
   CapabilityFinding,
   CapabilityGraph,
 } from './analyzers/capability-graph.js';
-export { auditPluginDependencies, formatDependencyAuditReport } from './analyzers/dependency-audit.js';
+export {
+  auditPluginDependencies,
+  formatDependencyAuditReport,
+} from './analyzers/dependency-audit.js';
 export type {
   DependencyNode,
   DependencyRiskIndicator,
@@ -342,7 +368,10 @@ export type {
   ConformanceReport,
 } from './layers/conformance/types.js';
 
-export { checkPlatformCompatibility, formatCompatibilityReport } from './analyzers/platform-compat.js';
+export {
+  checkPlatformCompatibility,
+  formatCompatibilityReport,
+} from './analyzers/platform-compat.js';
 export type {
   Platform,
   PlatformRequirement,
@@ -360,30 +389,49 @@ export {
 export type { Leaderboard, LeaderboardEntry } from './leaderboard/types.js';
 
 export { ChaosEngine, applyFault, formatChaosReport } from './chaos/index.js';
-export type {
-  FaultKind, FaultRule, ChaosConfig, ChaosEvent, ChaosReport,
-} from './chaos/index.js';
+export type { FaultKind, FaultRule, ChaosConfig, ChaosEvent, ChaosReport } from './chaos/index.js';
 
 export { generateProbes, generateValidValue, generateWrongType } from './schema-drift/index.js';
 export { analyzeDrift, formatDriftReport } from './schema-drift/index.js';
 export type {
-  DriftKind, DriftFinding, ProbeInput, ProbeResult, SchemaDriftReport,
+  DriftKind,
+  DriftFinding,
+  ProbeInput,
+  ProbeResult,
+  SchemaDriftReport,
 } from './schema-drift/index.js';
 
-export { SAFE_MCP_TECHNIQUES, buildComplianceReport, formatComplianceReport } from './safe-mcp/index.js';
+export {
+  SAFE_MCP_TECHNIQUES,
+  buildComplianceReport,
+  formatComplianceReport,
+} from './safe-mcp/index.js';
 export type {
-  SafeMcpTechnique, SafeMcpTactic, ComplianceMapping, ComplianceReport,
+  SafeMcpTechnique,
+  SafeMcpTactic,
+  ComplianceMapping,
+  ComplianceReport,
 } from './safe-mcp/index.js';
 
-export { CROSS_SERVER_SCENARIOS, analyzeResults, formatCrossServerReport } from './multi-server/index.js';
+export {
+  CROSS_SERVER_SCENARIOS,
+  analyzeResults,
+  formatCrossServerReport,
+} from './multi-server/index.js';
 export type {
-  AttackVector, MaliciousToolDef, CrossServerTestCase,
-  CrossServerResult, CrossServerReport,
+  AttackVector,
+  MaliciousToolDef,
+  CrossServerTestCase,
+  CrossServerResult,
+  CrossServerReport,
 } from './multi-server/index.js';
 
 export {
-  extractTrajectory, computeLevenshteinDistance, computeLCS,
-  scoreTrajectory, TrajectoryEvaluator,
+  extractTrajectory,
+  computeLevenshteinDistance,
+  computeLCS,
+  scoreTrajectory,
+  TrajectoryEvaluator,
 } from './evaluators/trajectory.js';
 export type { TrajectoryStep, TrajectoryMetrics } from './evaluators/trajectory.js';
 
@@ -391,8 +439,12 @@ export { generateFuzzInputs, analyzeFuzzResults, formatFuzzReport } from './fuzz
 export type { FuzzInput, FuzzResult, FuzzReport } from './fuzz/index.js';
 
 export {
-  generateBadgeSvg, generateScoreBadge, generatePassRateBadge,
-  generateConformanceBadge, generateSecurityBadge, generateResilienceBadge,
+  generateBadgeSvg,
+  generateScoreBadge,
+  generatePassRateBadge,
+  generateConformanceBadge,
+  generateSecurityBadge,
+  generateResilienceBadge,
   gradeColor,
 } from './badges/index.js';
 export type { BadgeConfig, BadgeStyle } from './badges/index.js';
