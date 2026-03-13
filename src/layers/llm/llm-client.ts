@@ -68,10 +68,11 @@ interface AnthropicResponse {
   };
 }
 
-type Provider = 'openai' | 'anthropic';
+type Provider = 'openai' | 'anthropic' | 'azure';
 
 function detectProvider(model: string): Provider {
   if (model.startsWith('claude')) return 'anthropic';
+  if (process.env['AZURE_OPENAI_API_KEY'] || process.env['AZURE_OPENAI_ENDPOINT']) return 'azure';
   return 'openai';
 }
 
@@ -85,6 +86,14 @@ function getBaseUrl(): string {
   return 'https://api.openai.com/v1';
 }
 
+function getAzureCompletionsUrl(model: string): string {
+  const endpoint = process.env['AZURE_OPENAI_ENDPOINT']?.replace(/\/+$/, '');
+  if (!endpoint) throw new Error('AZURE_OPENAI_ENDPOINT is required for Azure OpenAI');
+  const deployment = process.env['AZURE_OPENAI_DEPLOYMENT'] ?? model;
+  const apiVersion = process.env['AZURE_OPENAI_API_VERSION'] ?? '2025-01-01-preview';
+  return `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
+}
+
 function getApiKey(provider: Provider): string {
   if (process.env['LITELLM_PROXY_URL']) {
     return process.env['LITELLM_API_KEY'] ?? process.env['OPENAI_API_KEY'] ?? '';
@@ -93,6 +102,12 @@ function getApiKey(provider: Provider): string {
   if (provider === 'anthropic') {
     const key = process.env['ANTHROPIC_API_KEY'];
     if (!key) throw new Error('ANTHROPIC_API_KEY is required for Anthropic models');
+    return key;
+  }
+
+  if (provider === 'azure') {
+    const key = process.env['AZURE_OPENAI_API_KEY'];
+    if (!key) throw new Error('AZURE_OPENAI_API_KEY is required for Azure OpenAI models');
     return key;
   }
 
@@ -247,6 +262,9 @@ export class LlmClient {
     if (this.provider === 'anthropic' && !process.env['LITELLM_PROXY_URL']) {
       return this.converseAnthropic(messages, tools, toolChoice);
     }
+    if (this.provider === 'azure') {
+      return this.converseAzure(messages, tools, toolChoice);
+    }
     return this.converseOpenAI(messages, tools, toolChoice);
   }
 
@@ -280,6 +298,39 @@ export class LlmClient {
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'unknown error');
       throw new Error(`OpenAI API error (${response.status}): ${errorText}`);
+    }
+
+    const data = (await response.json()) as OpenAICompletionResponse;
+    return parseOpenAIResponse(data);
+  }
+
+  private async converseAzure(
+    messages: LlmMessage[],
+    tools?: LlmToolDefinition[],
+    toolChoice?: string,
+  ): Promise<LlmResponse> {
+    const url = getAzureCompletionsUrl(this.model);
+    const apiKey = getApiKey('azure');
+
+    const body: Record<string, unknown> = { messages };
+
+    if (tools && tools.length > 0) {
+      body['tools'] = tools;
+      if (toolChoice) body['tool_choice'] = toolChoice;
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'unknown error');
+      throw new Error(`Azure OpenAI API error (${response.status}): ${errorText}`);
     }
 
     const data = (await response.json()) as OpenAICompletionResponse;

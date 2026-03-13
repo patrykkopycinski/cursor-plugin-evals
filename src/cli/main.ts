@@ -223,6 +223,7 @@ async function doctorCommand(opts: { verbose?: boolean; noColor?: boolean }): Pr
   const apiKeys = [
     { name: 'OPENAI_API_KEY', label: 'OpenAI API Key' },
     { name: 'ANTHROPIC_API_KEY', label: 'Anthropic API Key' },
+    { name: 'AZURE_OPENAI_API_KEY', label: 'Azure OpenAI API Key' },
     { name: 'ES_API_KEY', label: 'Elasticsearch API Key' },
   ];
   for (const key of apiKeys) {

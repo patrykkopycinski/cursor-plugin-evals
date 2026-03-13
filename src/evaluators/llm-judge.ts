@@ -14,31 +14,48 @@ const DEFAULT_JUDGE_MODEL = 'gpt-4o';
 
 export async function callJudge(request: JudgeRequest): Promise<JudgeResponse> {
   const model = request.model ?? process.env.JUDGE_MODEL ?? DEFAULT_JUDGE_MODEL;
-  const apiKey = process.env.OPENAI_API_KEY ?? '';
-  const apiBaseUrl = process.env.LITELLM_URL ?? 'https://api.openai.com/v1';
+
+  const isAzure = !!process.env.AZURE_OPENAI_API_KEY && !!process.env.AZURE_OPENAI_ENDPOINT;
+  const apiKey = isAzure
+    ? process.env.AZURE_OPENAI_API_KEY!
+    : (process.env.OPENAI_API_KEY ?? '');
 
   if (!apiKey) {
     throw new Error(
-      'LLM judge requires OPENAI_API_KEY (or a key routed through LITELLM_URL). ' +
+      'LLM judge requires OPENAI_API_KEY or AZURE_OPENAI_API_KEY. ' +
         'Set the environment variable before running LLM evaluators.',
     );
   }
 
-  const response = await fetch(`${apiBaseUrl}/chat/completions`, {
+  let url: string;
+  let headers: Record<string, string>;
+
+  if (isAzure) {
+    const endpoint = process.env.AZURE_OPENAI_ENDPOINT!.replace(/\/+$/, '');
+    const deployment = process.env.AZURE_JUDGE_DEPLOYMENT ?? process.env.AZURE_OPENAI_DEPLOYMENT ?? model;
+    const apiVersion = process.env.AZURE_OPENAI_API_VERSION ?? '2025-01-01-preview';
+    url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
+    headers = { 'Content-Type': 'application/json', 'api-key': apiKey };
+  } else {
+    const apiBaseUrl = process.env.LITELLM_URL ?? 'https://api.openai.com/v1';
+    url = `${apiBaseUrl}/chat/completions`;
+    headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` };
+  }
+
+  const body: Record<string, unknown> = {
+    messages: [
+      { role: 'system', content: request.systemPrompt },
+      { role: 'user', content: request.userPrompt },
+    ],
+    temperature: 0,
+    max_tokens: 1024,
+  };
+  if (!isAzure) body.model = model;
+
+  const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: request.systemPrompt },
-        { role: 'user', content: request.userPrompt },
-      ],
-      temperature: 0,
-      max_tokens: 1024,
-    }),
+    headers,
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {

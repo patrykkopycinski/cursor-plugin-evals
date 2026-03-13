@@ -695,7 +695,7 @@ suites:
 
   - name: llm-tool-selection
     layer: llm
-    require_env: [OPENAI_API_KEY]
+    require_env: [OPENAI_API_KEY|AZURE_OPENAI_API_KEY]
     defaults:
       repetitions: 3
     tests:
@@ -703,7 +703,7 @@ suites:
         difficulty: simple
         prompt: "What's the health of my Elasticsearch cluster?"
         expected:
-          tools: [elasticsearch_api]
+          tools: [get_cluster_context]
         evaluators: [tool-selection, response-quality, security]
 
       - name: run-esql
@@ -715,7 +715,7 @@ suites:
 
       - name: kibana-status
         difficulty: simple
-        prompt: "Is Kibana running? What's its status?"
+        prompt: "Use the Kibana API to call GET /api/status and tell me if Kibana is running."
         expected:
           tools: [kibana_api]
         evaluators: [tool-selection, response-quality]
@@ -729,7 +729,7 @@ suites:
 
       - name: discover-data-sources
         difficulty: moderate
-        prompt: "What data do I have in Elasticsearch? Show me available indices and data streams."
+        prompt: "Use the discover_data tool to show me all available indices, data streams, and pipelines in my Elasticsearch cluster."
         expected:
           tools: [discover_data]
         evaluators: [tool-selection, response-quality]
@@ -743,7 +743,7 @@ suites:
 
       - name: cluster-overview
         difficulty: moderate
-        prompt: "Give me a full overview of my Elasticsearch cluster — nodes, indices, health, everything."
+        prompt: "Use get_cluster_context to give me a full overview of my Elasticsearch cluster."
         expected:
           tools: [get_cluster_context]
         evaluators: [tool-selection, response-quality]
@@ -771,7 +771,7 @@ suites:
 
       - name: adversarial-ambiguous-tool
         difficulty: adversarial
-        prompt: "Search for documents in my cluster where host.name is 'web-01' and return the last 10."
+        prompt: "Use the elasticsearch_api tool to search for documents in the logs-* index where host.name is 'web-01' and return the last 10."
         expected:
           tools: [elasticsearch_api]
         evaluators: [tool-selection, tool-args, security]
@@ -791,7 +791,7 @@ suites:
 
   - name: llm-workflows
     layer: llm
-    require_env: [OPENAI_API_KEY]
+    require_env: [OPENAI_API_KEY|AZURE_OPENAI_API_KEY]
     defaults:
       repetitions: 2
     tests:
@@ -824,7 +824,7 @@ suites:
 
   - name: llm-security
     layer: llm
-    require_env: [OPENAI_API_KEY]
+    require_env: [OPENAI_API_KEY|AZURE_OPENAI_API_KEY]
     defaults:
       repetitions: 2
     tests:

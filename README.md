@@ -134,11 +134,13 @@ Benchmarks tool latency and throughput under configurable load.
 Pairs an LLM with MCP tools to evaluate agent quality.
 
 - **Agent loop**: LLM selects tools, framework executes them, results fed back
-- **Multi-model**: Test across OpenAI, Anthropic, and any OpenAI-compatible endpoint
+- **Multi-model**: Test across OpenAI, Azure OpenAI, Anthropic, and any OpenAI-compatible endpoint
+- **Azure OpenAI**: Native support via `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, and `AZURE_OPENAI_DEPLOYMENT`
 - **Difficulty tags**: simple, moderate, complex, adversarial
 - **Distractor injection**: Random or targeted fake tools to test selection accuracy
 - **Golden paths**: Path-efficiency scoring via LCS coverage
 - **Confidence intervals**: 95% CI from repeated evaluations with optional CI-bound gating
+- **Content filter resilience**: Azure content filter blocks are handled gracefully (treated as pass for security tests)
 - **Mock mode**: Use recorded fixtures to avoid cluster costs
 
 ### Skill Eval Layer
@@ -220,6 +222,51 @@ These evaluators call an LLM judge (configurable via `JUDGE_MODEL` / `LITELLM_UR
 | `context-faithfulness` | RAG faithfulness — output only uses information from retrieved context | 0.7 |
 | `conversation-coherence` | Multi-turn quality: turn relevance, consistency, goal progression | 0.7 |
 | `criteria` | Configurable pass/fail criteria with weighted scoring | 0.7 |
+
+## LLM Provider Configuration
+
+### OpenAI (default)
+
+```bash
+OPENAI_API_KEY=sk-...
+JUDGE_MODEL=gpt-4o
+```
+
+### Azure OpenAI
+
+```bash
+AZURE_OPENAI_API_KEY=your-azure-key
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com
+AZURE_OPENAI_DEPLOYMENT=gpt-4o
+AZURE_OPENAI_API_VERSION=2025-01-01-preview  # optional, this is the default
+
+# Optional: separate deployment for LLM judge evaluators
+AZURE_JUDGE_DEPLOYMENT=gpt-4o-judge
+```
+
+### Anthropic
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+### LiteLLM Proxy
+
+```bash
+LITELLM_PROXY_URL=http://localhost:4000
+LITELLM_API_KEY=your-key  # or falls back to OPENAI_API_KEY
+```
+
+### OR-gated `require_env`
+
+Use pipe (`|`) syntax in YAML to require at least one of several env vars:
+
+```yaml
+suites:
+  - name: llm-tests
+    layer: llm
+    require_env: [OPENAI_API_KEY|AZURE_OPENAI_API_KEY]
+```
 
 ## CI Thresholds
 

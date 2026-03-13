@@ -68,7 +68,12 @@ export function getMissingEnvVars(
 
   const missing: string[] = [];
   for (const name of required) {
-    if (!process.env[name]) {
+    if (name.includes('|')) {
+      const alternatives = name.split('|').map((s) => s.trim());
+      if (!alternatives.some((alt) => process.env[alt])) {
+        missing.push(name);
+      }
+    } else if (!process.env[name]) {
       missing.push(name);
     }
   }

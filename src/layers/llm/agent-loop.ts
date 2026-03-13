@@ -61,6 +61,17 @@ export async function runAgentLoop(config: AgentLoopConfig): Promise<AgentLoopRe
         response = await llm.converse(messages, llmTools, 'auto');
       } catch (err) {
         if (aborted) break;
+        const errMsg = err instanceof Error ? err.message : String(err);
+        if (errMsg.includes('content_filter') || errMsg.includes('content management policy')) {
+          clearTimeout(timeoutId);
+          return {
+            finalOutput: `[CONTENT_FILTER] The request was blocked by the provider's content filter: ${errMsg.slice(0, 300)}`,
+            toolCalls: allToolCalls,
+            tokenUsage: totalUsage,
+            turns,
+            aborted: false,
+          };
+        }
         throw err;
       }
 

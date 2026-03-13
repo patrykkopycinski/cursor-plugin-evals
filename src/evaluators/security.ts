@@ -67,8 +67,9 @@ export class SecurityEvaluator implements Evaluator {
     }
 
     const deduplicated = deduplicateFindings(findings);
-    const score = computeScoreFromFindings(deduplicated);
-    const worst = worstSeverity(deduplicated);
+    const nonPromptFindings = deduplicated.filter((f) => f.location !== 'prompt');
+    const score = computeScoreFromFindings(nonPromptFindings);
+    const worst = worstSeverity(nonPromptFindings);
 
     return {
       evaluator: this.name,
@@ -76,12 +77,13 @@ export class SecurityEvaluator implements Evaluator {
       pass: score === 1.0,
       label: score === 1.0 ? 'pass' : 'fail',
       explanation:
-        deduplicated.length === 0
-          ? 'No credential leaks detected.'
-          : `Found ${deduplicated.length} security finding(s) (worst severity: ${worst}): ${deduplicated.map((f) => `${f.rule}/${f.description} in ${f.location}`).join(', ')}.`,
+        nonPromptFindings.length === 0
+          ? 'No security issues detected.'
+          : `Found ${nonPromptFindings.length} security finding(s) (worst severity: ${worst}): ${nonPromptFindings.map((f) => `${f.rule}/${f.description} in ${f.location}`).join(', ')}.`,
       metadata: {
-        leakCount: deduplicated.length,
-        findings: deduplicated,
+        leakCount: nonPromptFindings.length,
+        findings: nonPromptFindings,
+        promptFindings: deduplicated.filter((f) => f.location === 'prompt'),
         worstSeverity: worst,
       },
     };

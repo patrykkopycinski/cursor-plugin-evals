@@ -220,7 +220,7 @@ export async function setupCommand(opts: SetupOptions): Promise<void> {
     }
   }
 
-  steps.push(checkEnvVar('OPENAI_API_KEY', 'OpenAI API Key'));
+  steps.push(checkEnvVar('OPENAI_API_KEY', 'OpenAI API Key (or set AZURE_OPENAI_API_KEY)'));
   steps.push(checkEnvVar('PLUGIN_DIR', 'PLUGIN_DIR'));
 
   // Display results
@@ -307,7 +307,7 @@ function printNextSteps(): void {
   log.info('  3. Run integration tests (needs Docker):');
   log.info('     npx cursor-plugin-evals run --layer integration');
   console.log();
-  log.info('  4. Run LLM evals (needs OPENAI_API_KEY):');
+  log.info('  4. Run LLM evals (needs OPENAI_API_KEY or AZURE_OPENAI_API_KEY):');
   log.info('     npx cursor-plugin-evals run --layer llm');
   console.log();
   log.info('  5. Run skill evaluation:');

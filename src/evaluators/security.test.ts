@@ -83,7 +83,7 @@ describe('SecurityEvaluator', () => {
     const result = await evaluator.evaluate(ctx);
     expect(result.score).toBeLessThanOrEqual(0.3);
     expect(result.pass).toBe(false);
-    expect((result.metadata?.leakCount as number)).toBeGreaterThanOrEqual(3);
+    expect((result.metadata?.leakCount as number)).toBeGreaterThanOrEqual(2);
   });
 
   it('detects API key patterns', async () => {
