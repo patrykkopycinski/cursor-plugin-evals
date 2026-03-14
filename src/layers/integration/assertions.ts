@@ -14,7 +14,7 @@ export interface EvaluationResult {
 }
 
 function resolveDotPath(obj: unknown, path: string): unknown {
-  const segments = path.split('.');
+  const segments = path.replace(/\[(\d+)]/g, '.$1').split('.');
   let current: unknown = obj;
 
   for (const segment of segments) {

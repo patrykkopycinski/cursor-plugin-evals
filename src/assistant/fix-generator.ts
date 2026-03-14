@@ -141,7 +141,7 @@ function getLayerTemplate(layer: string): string {
         tool: TOOL_NAME
         args: {}
         assert:
-          - field: content[0].text
+          - field: content.0.text
             op: exists
 `;
     case 'llm':
