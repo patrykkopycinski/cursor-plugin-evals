@@ -15,6 +15,7 @@ export interface McpConnectConfig {
   timeout?: number;
   callTimeout?: number;
   transport?: TransportConfig;
+  isolateEnv?: boolean;
 }
 
 const DEFAULT_CONNECT_TIMEOUT = 30_000;
@@ -63,6 +64,7 @@ export class McpPluginClient {
       args: config.args,
       cwd: config.cwd,
       env: config.env,
+      isolateEnv: config.isolateEnv,
     };
 
     if (transportConfig.type === 'stdio' && !transportConfig.command && config.command) {

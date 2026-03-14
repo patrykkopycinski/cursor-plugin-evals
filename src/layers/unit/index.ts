@@ -12,6 +12,7 @@ import { log } from '../../cli/logger.js';
 async function spawnClient(
   pluginConfig: PluginConfig,
   envOverride?: Record<string, string>,
+  isolateEnv?: boolean,
 ): Promise<McpPluginClient> {
   if (!pluginConfig.entry && !pluginConfig.transport) {
     throw new Error('plugin.entry or plugin.transport is required for unit layer');
@@ -34,7 +35,8 @@ async function spawnClient(
     args,
     cwd: pluginConfig.dir,
     buildCommand: pluginConfig.buildCommand,
-    env: { ...pluginConfig.env, ...envOverride },
+    env: isolateEnv ? (envOverride ?? {}) : { ...pluginConfig.env, ...envOverride },
+    isolateEnv,
   });
 }
 
@@ -178,7 +180,7 @@ async function checkConditionalRegistration(
   let fullClient: McpPluginClient | undefined;
 
   try {
-    minimalClient = await spawnClient(pluginConfig, test.minimalEnv ?? {});
+    minimalClient = await spawnClient(pluginConfig, test.minimalEnv ?? {}, true);
     const minimalTools = await minimalClient.listTools();
     const minimalNames = new Set(minimalTools.map((t) => t.name));
     await minimalClient.disconnect();

@@ -10,6 +10,7 @@ export interface TransportConfig {
   env?: Record<string, string>;
   url?: string;
   headers?: Record<string, string>;
+  isolateEnv?: boolean;
 }
 
 export type { Transport };
