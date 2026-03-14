@@ -1,3 +1,4 @@
+import { existsSync } from 'fs';
 import { describe, it, expect } from 'vitest';
 import { scanCodebase, formatCodebaseReport } from './codebase-scanner.js';
 import { auditCoverage, formatAuditReport } from './coverage-analyzer.js';
@@ -5,8 +6,9 @@ import { detectGaps, formatGapReport } from './gap-detector.js';
 import { generateFixes } from './fix-generator.js';
 
 const TARGET = '/Users/patrykkopycinski/Projects/elastic-cursor-plugin';
+const canRun = existsSync(TARGET);
 
-describe('onboarding pipeline against elastic-cursor-plugin', () => {
+describe.skipIf(!canRun)('onboarding pipeline against elastic-cursor-plugin', () => {
   it('scans the codebase successfully', async () => {
     const profile = await scanCodebase(TARGET);
 
