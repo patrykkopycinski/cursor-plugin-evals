@@ -76,6 +76,23 @@ Executes prompts through the Claude SDK with tool use support.
     adapter: claude-sdk
 ```
 
+## Adapter Capabilities
+
+Each adapter declares its capabilities, which evaluators use to auto-skip inapplicable checks:
+
+| Adapter | Tool Calls | File Access | Workspace Isolation | Reports Input Tokens |
+|---------|-----------|-------------|---------------------|---------------------|
+| **mcp** | Yes | No | No | Yes |
+| **plain-llm** | No | No | No | Yes |
+| **cursor-cli** | Yes | Yes | Yes | No (estimated) |
+| **headless-coder** | Yes | Yes | No | Yes |
+| **gemini-cli** | Yes | No | No | Yes |
+| **claude-sdk** | Yes | No | No | Yes |
+
+When an evaluator like `groundedness` runs against `plain-llm` (no tool calls), it automatically
+returns `skipped: true` instead of scoring 0 — this prevents false negatives from dragging down
+aggregate scores.
+
 ## Configuring Per-Suite
 
 Specify one or more adapters at the suite level:
@@ -109,6 +126,11 @@ interface AdapterConfig {
   workingDir?: string;   // working directory (headless-coder)
   skillPath?: string;    // path to SKILL.md
   toolCatalog?: Record<string, string>; // tool name → description mapping
+  retry?: {              // configurable retry for transient failures
+    maxRetries?: number;   // default: 3
+    baseDelayMs?: number;  // default: 2000
+    retryPattern?: string; // regex pattern for retryable errors (default: cli-config race)
+  };
 }
 ```
 

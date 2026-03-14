@@ -56,6 +56,7 @@ export function evaluateCi(
 
   for (const test of tests) {
     for (const er of test.evaluatorResults) {
+      if (er.skipped) continue;
       allScores.push(er.score);
       const arr = byEvaluator.get(er.evaluator) ?? [];
       arr.push(er.score);

@@ -9,9 +9,10 @@ import type {
 import { resolve, join, dirname } from 'path';
 import fs from 'fs';
 import { createRequire } from 'module';
-import { execSync } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import {
   createIsolatedWorkspace,
+  createSimpleWorkspaceCopy,
   findSkillsRoot,
   type IsolatedWorkspace,
 } from './cursor-cli-workspace.js';
@@ -164,10 +165,19 @@ function extractFilesModified(toolCalls: ToolCallRecord[]): string[] {
 }
 
 // --- Concurrency serialization ---
+// Cursor Agent CLI supports concurrent sessions when each runs in its own
+// isolated workspace (which the skill layer provides). We only serialize when
+// sharing a workspace to avoid file conflicts.
 
 let cursorMutex: Promise<void> = Promise.resolve();
+let serializeCursor = true;
+
+export function setCursorConcurrency(parallel: boolean): void {
+  serializeCursor = !parallel;
+}
 
 function withCursorLock<T>(fn: () => Promise<T>): Promise<T> {
+  if (!serializeCursor) return fn();
   const prev = cursorMutex;
   let releaseLock: () => void;
   cursorMutex = new Promise<void>((r) => {
@@ -176,7 +186,9 @@ function withCursorLock<T>(fn: () => Promise<T>): Promise<T> {
   return prev.then(fn).finally(() => releaseLock!());
 }
 
-// --- Cursor agent binary discovery ---
+// --- Cursor agent binary discovery (cached) ---
+
+let cachedAgentPath: string | undefined;
 
 const CURSOR_MODEL_ALIASES: Record<string, string> = {
   'claude-opus-4-6': 'opus-4.6',
@@ -191,10 +203,14 @@ const CURSOR_MODEL_ALIASES: Record<string, string> = {
 
 function normalizeCursorModel(model?: string): string | undefined {
   if (!model) return undefined;
-  return CURSOR_MODEL_ALIASES[model] ?? model;
+  const direct = CURSOR_MODEL_ALIASES[model];
+  if (direct) return direct;
+  const stripped = model.replace(/-\d{8}$/, '');
+  return CURSOR_MODEL_ALIASES[stripped] ?? model;
 }
 
 function resolveCursorAgentCli(): string {
+  if (cachedAgentPath) return cachedAgentPath;
 
   const localVersionsDir = join(
     process.env.HOME ?? '',
@@ -215,6 +231,7 @@ function resolveCursorAgentCli(): string {
             mode: 0o755,
           });
         }
+        cachedAgentPath = wrapperPath;
         return wrapperPath;
       }
     }
@@ -229,13 +246,18 @@ function resolveCursorAgentCli(): string {
     const manifestPath = join(sdkRoot, 'vendor', 'manifest.json');
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     const binaryPath = join(sdkRoot, manifest.path);
-    if (fs.existsSync(binaryPath)) return binaryPath;
+    if (fs.existsSync(binaryPath)) {
+      cachedAgentPath = binaryPath;
+      return binaryPath;
+    }
   } catch {
     // SDK not installed — continue
   }
 
   try {
-    return execSync('which agent', { encoding: 'utf-8' }).trim();
+    const found = execSync('which agent', { encoding: 'utf-8' }).trim();
+    cachedAgentPath = found;
+    return found;
   } catch {
     throw new Error(
       'cursor-cli adapter requires the Cursor Agent CLI. ' +
@@ -243,6 +265,66 @@ function resolveCursorAgentCli(): string {
         'or npm install @nothumanwork/cursor-agents-sdk',
     );
   }
+}
+
+// --- Workspace pool ---
+// Pre-creates N isolated workspaces for a skill dir so concurrent tests don't
+// each pay the cost of skill discovery + workspace creation.
+
+export interface WorkspacePool {
+  acquire(): Promise<IsolatedWorkspace>;
+  release(ws: IsolatedWorkspace): void;
+  cleanup(): Promise<void>;
+}
+
+export async function createWorkspacePool(
+  skillDir: string,
+  baseWorkspace: string,
+  size: number,
+  pluginRoot?: string,
+): Promise<WorkspacePool> {
+  const absSkillDir = resolve(baseWorkspace, skillDir);
+  const root = pluginRoot ?? await findSkillsRoot(absSkillDir);
+
+  const skillInsideRoot = absSkillDir.startsWith(root + '/') || absSkillDir === root;
+
+  const available: IsolatedWorkspace[] = [];
+  const all: IsolatedWorkspace[] = [];
+
+  const createOne = async () => {
+    let ws: IsolatedWorkspace;
+    if (skillInsideRoot) {
+      ws = await createIsolatedWorkspace(absSkillDir, root);
+    } else {
+      ws = await createSimpleWorkspaceCopy(root);
+    }
+    all.push(ws);
+    return ws;
+  };
+
+  const initial = await Promise.all(Array.from({ length: size }, () => createOne()));
+  available.push(...initial);
+
+  const waiting: Array<(ws: IsolatedWorkspace) => void> = [];
+
+  return {
+    acquire(): Promise<IsolatedWorkspace> {
+      const ws = available.pop();
+      if (ws) return Promise.resolve(ws);
+      return new Promise<IsolatedWorkspace>((resolve) => waiting.push(resolve));
+    },
+    release(ws: IsolatedWorkspace): void {
+      const waiter = waiting.shift();
+      if (waiter) {
+        waiter(ws);
+      } else {
+        available.push(ws);
+      }
+    },
+    async cleanup(): Promise<void> {
+      await Promise.all(all.map((ws) => ws.cleanup()));
+    },
+  };
 }
 
 // --- Main adapter ---
@@ -254,6 +336,8 @@ export function createCursorCliAdapter(config: AdapterConfig): TaskAdapter {
   const skillDir = config.skillPath as string | undefined;
   const toolCatalog = config.toolCatalog;
   const scriptToTool = config['scriptToTool'] as ScriptToolMapping | undefined;
+  const wsPool = config['workspacePool'] as WorkspacePool | undefined;
+  const readOnly = config['readOnly'] === true;
 
   return async (example: Example): Promise<TaskOutput> => {
     const prompt =
@@ -265,12 +349,15 @@ export function createCursorCliAdapter(config: AdapterConfig): TaskAdapter {
     return withCursorLock(async () => {
       const startTime = Date.now();
       const agentPath = resolveCursorAgentCli();
-      const { spawn } = await import('child_process');
 
+      let pooledWs: IsolatedWorkspace | null = null;
       let isolated: IsolatedWorkspace | null = null;
       let workspace = baseWorkspace;
 
-      if (skillDir) {
+      if (wsPool) {
+        pooledWs = await wsPool.acquire();
+        workspace = pooledWs.dir;
+      } else if (skillDir) {
         const absSkillDir = resolve(baseWorkspace, skillDir);
         const root = await findSkillsRoot(absSkillDir);
         isolated = await createIsolatedWorkspace(absSkillDir, root);
@@ -295,11 +382,12 @@ export function createCursorCliAdapter(config: AdapterConfig): TaskAdapter {
         '--workspace',
         workspace,
       ];
+      if (readOnly) agentArgs.push('--mode', 'ask');
       if (model) agentArgs.push('--model', model);
       agentArgs.push(effectivePrompt);
 
       try {
-        return await runAgent(
+        return await runAgentWithRetry(
           spawn,
           agentPath,
           agentArgs,
@@ -310,13 +398,54 @@ export function createCursorCliAdapter(config: AdapterConfig): TaskAdapter {
           scriptToTool,
         );
       } finally {
+        if (pooledWs) {
+          wsPool!.release(pooledWs);
+        }
         await isolated?.cleanup();
       }
     });
   };
 }
 
-type SpawnFn = typeof import('child_process').spawn;
+type SpawnFn = typeof spawn;
+
+const CLI_CONFIG_RACE_PATTERN = /cli-config\.json/;
+const DEFAULT_MAX_CLI_RETRIES = 3;
+const DEFAULT_RETRY_BASE_DELAY_MS = 2000;
+
+async function runAgentWithRetry(
+  spawnFn: SpawnFn,
+  agentPath: string,
+  agentArgs: string[],
+  workspace: string,
+  config: AdapterConfig,
+  timeout: number,
+  startTime: number,
+  scriptToTool?: ScriptToolMapping,
+): Promise<TaskOutput> {
+  const retryConfig = config.retry;
+  const maxRetries = retryConfig?.maxRetries ?? DEFAULT_MAX_CLI_RETRIES;
+  const baseDelay = retryConfig?.baseDelayMs ?? DEFAULT_RETRY_BASE_DELAY_MS;
+  const retryPattern = retryConfig?.retryPattern
+    ? new RegExp(retryConfig.retryPattern)
+    : CLI_CONFIG_RACE_PATTERN;
+
+  const originalStartTime = startTime;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const remainingTimeout = Math.max(30_000, timeout - (Date.now() - originalStartTime));
+      return await runAgent(spawnFn, agentPath, agentArgs, workspace, config, remainingTimeout, startTime, scriptToTool);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const isRetryable = retryPattern.test(msg);
+      if (!isRetryable || attempt === maxRetries) throw err;
+      const delay = baseDelay * (attempt + 1) + Math.random() * 1000;
+      await new Promise((r) => setTimeout(r, delay));
+      startTime = Date.now();
+    }
+  }
+  throw new Error('unreachable');
+}
 
 function runAgent(
   spawn: SpawnFn,

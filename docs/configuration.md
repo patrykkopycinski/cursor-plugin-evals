@@ -69,6 +69,18 @@ defaults:
     tool-selection: 0.8
     tool-args: 0.7
     response-quality: 0.7
+    token-usage:
+      max_input: 5000
+      max_output: 12000
+      max_total: 15000
+    workflow:
+      files_read: [checklist.md]
+      output_patterns: ["CRITICAL"]
+    security:
+      exclude_locations: [finalOutput]
+      domain: security-review
+    groundedness:
+      threshold: 0.8
 ```
 
 | Field | Type | Default | Description |
@@ -76,7 +88,10 @@ defaults:
 | `timeout` | number | `30000` | Max milliseconds per test |
 | `repetitions` | number | `1` | How many times to repeat each test |
 | `judge_model` | string | `gpt-5.4` | LLM model used by LLM evaluators |
-| `thresholds` | map | — | Per-evaluator pass/fail thresholds (0–1) |
+| `thresholds` | map | — | Per-evaluator pass/fail thresholds (number for simple, object for complex) |
+
+Thresholds can be a simple number (0–1) for evaluators that use a single threshold, or a typed
+configuration object for evaluators that need richer config (e.g., `token-usage`, `workflow`, `security`).
 
 ## scoring
 
@@ -206,7 +221,55 @@ suites:
 | `setup` | string | Shell command to run before the suite |
 | `teardown` | string | Shell command to run after the suite |
 | `defaults` | object | Suite-level overrides for timeout/repetitions/thresholds |
+| `evaluators` | object | Per-adapter evaluator overrides (see below) |
+| `test_filter` | object | Filter tests by adapter compatibility (see below) |
 | `tests` | array | Test definitions (shape depends on layer) |
+
+### Suite Evaluator Overrides
+
+Control which evaluators run for a specific suite without modifying the shared `eval.yaml`.
+This is essential when the same dataset is used by different adapters with different capabilities.
+
+```yaml
+suites:
+  - name: cursor-cli-behavior
+    layer: skill
+    adapter: cursor-cli
+    evaluators:
+      add: [groundedness, workflow]     # Add evaluators for this adapter
+      remove: [task-completion]         # Remove evaluators that don't apply
+
+  - name: plain-llm-behavior
+    layer: skill
+    adapter: plain-llm
+    evaluators:
+      remove: [groundedness, workflow]  # These need tool calls (plain-llm has none)
+
+  - name: custom-suite
+    evaluators:
+      override: [keywords, correctness] # Replace all dataset evaluators entirely
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `evaluators.add` | string[] | Evaluators to append to the dataset's list |
+| `evaluators.remove` | string[] | Evaluators to exclude from the dataset's list |
+| `evaluators.override` | string[] | Completely replace the dataset's evaluator list |
+
+Precedence: `override` wins over `add`/`remove`. If `override` is set, `add` and `remove` are ignored.
+
+### Test Filtering by Adapter
+
+Filter which tests from the dataset run for a given adapter. Tests can also declare
+`metadata.adapters` in their `eval.yaml` to self-select which adapters they support.
+
+```yaml
+suites:
+  - name: cli-only
+    adapter: cursor-cli
+    test_filter:
+      adapters: [cursor-cli]  # Only run tests that support cursor-cli
+```
 
 ## Environment Variable Interpolation
 

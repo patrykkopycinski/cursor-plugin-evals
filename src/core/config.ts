@@ -46,7 +46,10 @@ const DefaultsConfigSchema = z
     timeout: z.number().positive().optional(),
     judge_model: z.string().optional(),
     repetitions: z.number().int().positive().optional(),
-    thresholds: z.record(z.string(), z.number().min(0).max(1)).optional(),
+    thresholds: z.record(z.string(), z.union([
+      z.number().min(0).max(1),
+      z.record(z.string(), z.unknown()),
+    ])).optional(),
   })
   .optional();
 
@@ -160,6 +163,16 @@ const TestSchema = z.union([
 
 const LayerSchema = z.enum(['unit', 'static', 'integration', 'llm', 'performance', 'skill']);
 
+const SuiteEvaluatorOverridesSchema = z.object({
+  add: z.array(z.string()).optional(),
+  remove: z.array(z.string()).optional(),
+  override: z.array(z.string()).optional(),
+}).optional();
+
+const TestFilterSchema = z.object({
+  adapters: z.array(z.string()).optional(),
+}).optional();
+
 const SuiteSchema = z.object({
   name: z.string(),
   layer: LayerSchema,
@@ -168,8 +181,11 @@ const SuiteSchema = z.object({
   defaults: DefaultsConfigSchema,
   tests: z.array(TestSchema),
   adapter: z.union([z.string(), z.array(z.string())]).optional(),
-  skillDir: z.string().optional(),
+  skill_dir: z.string().optional(),
+  skill_path: z.string().optional(),
   require_env: z.array(z.string()).optional(),
+  evaluators: SuiteEvaluatorOverridesSchema,
+  test_filter: TestFilterSchema,
 });
 
 const AuthSchema = z.discriminatedUnion('type', [

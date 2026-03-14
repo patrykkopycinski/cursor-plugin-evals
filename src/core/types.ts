@@ -24,6 +24,7 @@ export interface EvaluatorResult {
   evaluator: string;
   score: number;
   pass: boolean;
+  skipped?: boolean;
   label?: string;
   explanation?: string;
   metadata?: Record<string, unknown>;
@@ -139,6 +140,13 @@ export interface Evaluator {
   evaluate(context: EvaluatorContext): Promise<EvaluatorResult>;
 }
 
+export interface AdapterCapabilities {
+  hasToolCalls: boolean;
+  hasFileAccess: boolean;
+  hasWorkspaceIsolation: boolean;
+  reportsInputTokens: boolean;
+}
+
 export interface EvaluatorContext {
   testName: string;
   prompt?: string;
@@ -146,6 +154,10 @@ export interface EvaluatorContext {
   finalOutput?: string;
   expected?: ExpectedOutput;
   config?: Record<string, unknown>;
+  tokenUsage?: TokenUsage;
+  latencyMs?: number;
+  adapterName?: string;
+  adapterCapabilities?: AdapterCapabilities;
 }
 
 export interface ExpectedOutput {
@@ -362,6 +374,12 @@ export interface PluginManifest {
   mcpServers: McpServerComponent[];
 }
 
+export interface SuiteEvaluatorOverrides {
+  add?: string[];
+  remove?: string[];
+  override?: string[];
+}
+
 export interface SuiteConfig {
   name: string;
   layer: Layer;
@@ -370,6 +388,12 @@ export interface SuiteConfig {
   teardown?: string;
   defaults?: DefaultsConfig;
   adapter?: string | string[];
+  skillDir?: string;
+  skillPath?: string;
+  evaluators?: SuiteEvaluatorOverrides;
+  testFilter?: {
+    adapters?: string[];
+  };
   tests: TestConfig[];
 }
 
@@ -412,7 +436,7 @@ export interface DefaultsConfig {
   timeout?: number;
   judgeModel?: string;
   repetitions?: number;
-  thresholds?: Record<string, number>;
+  thresholds?: Record<string, number | Record<string, unknown>>;
 }
 
 export interface ScoringConfig {
@@ -510,7 +534,7 @@ export interface EvalDefaultsConfig {
   timeout?: number;
   repetitions?: number;
   judgeModel?: string;
-  thresholds?: Record<string, number>;
+  thresholds?: Record<string, number | Record<string, unknown>>;
   requiredPass?: string[];
 }
 
@@ -560,6 +584,11 @@ export interface AdapterConfig {
   workingDir?: string;
   skillPath?: string;
   toolCatalog?: Record<string, string>;
+  retry?: {
+    maxRetries?: number;
+    baseDelayMs?: number;
+    retryPattern?: string;
+  };
   [key: string]: unknown;
 }
 

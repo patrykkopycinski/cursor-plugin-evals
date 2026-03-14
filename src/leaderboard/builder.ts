@@ -82,6 +82,7 @@ export function buildLeaderboard(
         }
 
         for (const er of test.evaluatorResults) {
+          if (er.skipped) continue;
           allEvaluators.add(er.evaluator);
           if (!acc.evaluatorScores[er.evaluator]) {
             acc.evaluatorScores[er.evaluator] = [];
@@ -89,7 +90,9 @@ export function buildLeaderboard(
           acc.evaluatorScores[er.evaluator].push(er.score);
         }
 
-        const testScores = test.evaluatorResults.map((e) => e.score);
+        const testScores = test.evaluatorResults
+          .filter((e) => !e.skipped)
+          .map((e) => e.score);
         if (testScores.length > 0) {
           acc.scores.push(testScores.reduce((a, b) => a + b, 0) / testScores.length);
         }

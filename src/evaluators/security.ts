@@ -1,6 +1,7 @@
 import type { Evaluator, EvaluatorContext, EvaluatorResult } from '../core/types.js';
 import type { SecurityFinding, Severity, RuleContext } from './security-rules/types.js';
 import { createAllRules } from './security-rules/index.js';
+import { resolveSecurityConfig } from './config-schemas.js';
 
 export function computeScoreFromFindings(findings: SecurityFinding[]): number {
   if (findings.length === 0) return 1.0;
@@ -25,6 +26,9 @@ export class SecurityEvaluator implements Evaluator {
     const rules = createAllRules();
     const findings: SecurityFinding[] = [];
 
+    const secConfig = resolveSecurityConfig(context.config);
+    const excludeLocations = new Set<string>(secConfig.exclude_locations ?? []);
+
     const toolDescriptions = new Map<string, string>();
     for (const tc of context.toolCalls) {
       if (tc.args?.description && typeof tc.args.description === 'string') {
@@ -35,12 +39,16 @@ export class SecurityEvaluator implements Evaluator {
     const ruleContext: RuleContext = { toolDescriptions };
 
     const scanAll = (text: string, location: string) => {
+      if (excludeLocations.has(location)) return;
+      for (const locationPrefix of excludeLocations) {
+        if (location.startsWith(locationPrefix)) return;
+      }
       for (const rule of rules) {
         findings.push(...rule.scan(text, location, ruleContext));
       }
     };
 
-    if (context.finalOutput) {
+    if (!excludeLocations.has('finalOutput') && context.finalOutput) {
       scanAll(context.finalOutput, 'finalOutput');
     }
 

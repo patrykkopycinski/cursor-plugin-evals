@@ -52,6 +52,7 @@ function computeEvaluatorSummary(
 
   for (const test of tests) {
     for (const er of test.evaluatorResults) {
+      if (er.skipped) continue;
       const arr = byEvaluator.get(er.evaluator);
       if (arr) {
         arr.push(er);
@@ -304,6 +305,7 @@ export async function runEvaluation(
   for (const suite of suiteResults) {
     for (const test of suite.tests) {
       for (const er of test.evaluatorResults) {
+        if (er.skipped) continue;
         scoreEntries.push({
           score: er.score,
           evaluator: er.evaluator,

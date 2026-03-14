@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/getting-started"><img src="https://img.shields.io/badge/layers-12-6C5CE7?style=flat-square" alt="12 Layers" /></a>
-  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/evaluators"><img src="https://img.shields.io/badge/evaluators-24-A29BFE?style=flat-square" alt="24 Evaluators" /></a>
+  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/evaluators"><img src="https://img.shields.io/badge/evaluators-26-A29BFE?style=flat-square" alt="26 Evaluators" /></a>
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/adapters"><img src="https://img.shields.io/badge/adapters-6-74B9FF?style=flat-square" alt="6 Adapters" /></a>
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/red-teaming"><img src="https://img.shields.io/badge/security--rules-20-E74C3C?style=flat-square" alt="20 Security Rules" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Elastic--2.0-00E676?style=flat-square" alt="Elastic License 2.0" /></a>
@@ -99,9 +99,13 @@ Every Cursor plugin component is covered — not just MCP tools:
 
 ## Key Features
 
-- **24 evaluators** — 13 deterministic + 9 LLM-as-judge + multi-judge blind panel
+- **26 evaluators** — 15 deterministic + 9 LLM-as-judge + multi-judge blind panel
+- **Evaluator skip/not-applicable** — auto-skips inapplicable evaluators per adapter
+- **Per-adapter evaluator config** — add/remove/override evaluators at the suite level
+- **Adapter-aware context** — evaluators know which adapter is running and its capabilities
 - **6 task adapters** — MCP, plain-llm, cursor-cli, headless-coder, gemini-cli, claude-sdk
 - **20 OWASP-aligned security rules** with 3-pass audit and red-teaming
+- **Security domain awareness** — exclude locations to prevent false positives
 - **SAFE-MCP compliance** with 26 attack technique coverage
 - **Auto-test generation** — schema-based and LLM-powered smart generation
 - **Regression detection** — Welch's t-test between runs with fingerprinting
@@ -112,6 +116,9 @@ Every Cursor plugin component is covered — not just MCP tools:
 - **12-page web dashboard** with dark mode, live SSE, and interactive charts
 - **Cost optimization** — find the cheapest model per test that meets quality thresholds
 - **Threshold auto-calibration** — tighten CI gates when scores exceed thresholds
+- **Typed evaluator configs** — type-safe configuration for token-usage, workflow, security, groundedness
+- **Configurable adapter retry** — exponential backoff with pattern-based retry for CLI race conditions
+- **Token input estimation** — estimates input tokens for adapters that don't report them
 
 ## Model Defaults
 
@@ -132,6 +139,17 @@ ci:
   evaluators: { security: { min: 1.0 }, tool-selection: { avg: 0.9 } }
   required_pass: [security, tool-poisoning, mcp-protocol]
   first_try_pass_rate: 0.80
+
+# Per-adapter evaluator overrides — different adapters, different evaluators:
+suites:
+  - name: cli-behavior
+    adapter: cursor-cli
+    evaluators:
+      add: [groundedness, workflow]  # Only cursor-cli supports tool calls
+  - name: llm-behavior
+    adapter: plain-llm
+    evaluators:
+      remove: [groundedness, workflow]  # Skip tool-dependent evaluators
 ```
 
 ```bash

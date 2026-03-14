@@ -24,6 +24,8 @@ import { PlanQualityEvaluator } from './plan-quality.js';
 import { TaskCompletionEvaluator } from './task-completion.js';
 import { TrajectoryEvaluator } from './trajectory.js';
 import { VisualRegressionEvaluator } from './visual-regression.js';
+import { TokenUsageEvaluator } from './token-usage.js';
+import { WorkflowEvaluator } from './workflow.js';
 
 export const EVALUATOR_NAMES = [
   'tool-selection',
@@ -50,6 +52,8 @@ export const EVALUATOR_NAMES = [
   'task-completion',
   'visual-regression',
   'trajectory',
+  'token-usage',
+  'workflow',
 ] as const;
 
 export type EvaluatorName = (typeof EVALUATOR_NAMES)[number];
@@ -79,6 +83,8 @@ const EVALUATOR_MAP: Record<EvaluatorName, new () => Evaluator> = {
   'task-completion': TaskCompletionEvaluator,
   'visual-regression': VisualRegressionEvaluator,
   trajectory: TrajectoryEvaluator,
+  'token-usage': TokenUsageEvaluator,
+  workflow: WorkflowEvaluator,
 };
 
 export function createEvaluator(name: string): Evaluator {
@@ -114,4 +120,19 @@ export {
   TaskCompletionEvaluator,
   VisualRegressionEvaluator,
   TrajectoryEvaluator,
+  TokenUsageEvaluator,
+  WorkflowEvaluator,
 };
+
+export type {
+  TokenUsageConfig,
+  WorkflowConfig,
+  SecurityConfig,
+  GroundednessConfig,
+} from './config-schemas.js';
+export {
+  resolveTokenUsageConfig,
+  resolveWorkflowConfig,
+  resolveSecurityConfig,
+  resolveGroundednessConfig,
+} from './config-schemas.js';

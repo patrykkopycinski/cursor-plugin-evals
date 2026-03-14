@@ -309,9 +309,90 @@ const result = await evaluator.evaluate({
   toolCalls: [{ tool: 'search_tool', args: { query: 'errors' }, result: { content: [] }, latencyMs: 100 }],
   finalOutput: 'Found 10 errors',
   expected: { tools: ['search_tool'] },
+  adapterName: 'mcp',
+  adapterCapabilities: {
+    hasToolCalls: true,
+    hasFileAccess: false,
+    hasWorkspaceIsolation: false,
+    reportsInputTokens: true,
+  },
 });
 
 console.log(`${result.evaluator}: ${result.score} (${result.pass ? 'PASS' : 'FAIL'})`);
+// result.skipped === true means the evaluator was not applicable
+```
+
+## Evaluator Result Skipping
+
+Evaluators can return `skipped: true` when they cannot meaningfully score in the current context.
+Skipped results are excluded from all aggregation (CI thresholds, leaderboards, quality scores).
+
+This happens automatically when:
+- **groundedness** runs without tool calls (e.g., with `plain-llm` adapter)
+- **workflow** has no workflow checks configured
+- **token-usage** has no token usage data
+
+```typescript
+interface EvaluatorResult {
+  evaluator: string;
+  score: number;
+  pass: boolean;
+  skipped?: boolean;     // NEW — excluded from aggregation when true
+  label?: string;
+  explanation?: string;
+  metadata?: Record<string, unknown>;
+}
+```
+
+## Adapter-Aware Context
+
+Evaluators receive adapter information in their context, enabling them to auto-skip
+or adjust behavior based on adapter capabilities:
+
+```typescript
+interface EvaluatorContext {
+  // ... existing fields ...
+  adapterName?: string;             // 'plain-llm', 'cursor-cli', 'mcp', etc.
+  adapterCapabilities?: {
+    hasToolCalls: boolean;           // Can the adapter make tool calls?
+    hasFileAccess: boolean;          // Can it read/write files?
+    hasWorkspaceIsolation: boolean;  // Does it create isolated workspaces?
+    reportsInputTokens: boolean;     // Does it report real input token counts?
+  };
+}
+```
+
+## Typed Evaluator Configurations
+
+Evaluators that accept complex configuration via `defaults.thresholds` use typed schemas:
+
+```yaml
+defaults:
+  thresholds:
+    token-usage:                # TokenUsageConfig
+      max_input: 5000
+      max_output: 12000
+      max_total: 15000
+    workflow:                   # WorkflowConfig
+      tools_used: [read_file]
+      files_read: [checklist.md]
+      files_written: [report.md]
+      output_patterns: ["CRITICAL"]
+    security:                   # SecurityConfig
+      exclude_locations: [finalOutput]
+      domain: security-review
+    groundedness: 0.8           # Simple threshold (number) or GroundednessConfig
+```
+
+Import typed resolvers for programmatic use:
+
+```typescript
+import {
+  resolveTokenUsageConfig,
+  resolveWorkflowConfig,
+  resolveSecurityConfig,
+  resolveGroundednessConfig,
+} from 'cursor-plugin-evals';
 ```
 
 ## See Also

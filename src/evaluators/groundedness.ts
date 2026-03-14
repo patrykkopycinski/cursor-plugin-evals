@@ -1,5 +1,6 @@
 import type { Evaluator, EvaluatorContext, EvaluatorResult, EvaluatorKind } from '../core/types.js';
 import { callJudge } from './llm-judge.js';
+import { resolveGroundednessConfig } from './config-schemas.js';
 
 const SYSTEM_PROMPT = `You are an evaluation judge checking groundedness. Determine if the output's claims are supported by the tool call results provided.
 
@@ -20,6 +21,28 @@ export class GroundednessEvaluator implements Evaluator {
   kind: EvaluatorKind = 'LLM';
 
   async evaluate(context: EvaluatorContext): Promise<EvaluatorResult> {
+    if (context.adapterCapabilities && !context.adapterCapabilities.hasToolCalls) {
+      return {
+        evaluator: this.name,
+        score: 0,
+        pass: true,
+        skipped: true,
+        label: 'not_applicable',
+        explanation: `Adapter "${context.adapterName}" does not support tool calls — groundedness check skipped`,
+      };
+    }
+
+    if (context.toolCalls.length === 0) {
+      return {
+        evaluator: this.name,
+        score: 0,
+        pass: true,
+        skipped: true,
+        label: 'not_applicable',
+        explanation: 'No tool calls present — groundedness check skipped',
+      };
+    }
+
     const toolResults = context.toolCalls
       .map((tc) => {
         const text = tc.result.content
@@ -37,7 +60,8 @@ export class GroundednessEvaluator implements Evaluator {
 
     try {
       const result = await callJudge({ systemPrompt: SYSTEM_PROMPT, userPrompt });
-      const threshold = (context.config?.['groundedness'] as number | undefined) ?? 0.7;
+      const { threshold: configThreshold } = resolveGroundednessConfig(context.config);
+      const threshold = configThreshold ?? 0.7;
 
       return {
         evaluator: this.name,
