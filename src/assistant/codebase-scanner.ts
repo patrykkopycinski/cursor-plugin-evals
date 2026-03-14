@@ -166,6 +166,7 @@ async function scanEvalFiles(rootDir: string): Promise<EvalFileInfo[]> {
         const tests = suite.tests ?? [];
         const tools = new Set<string>();
         const evaluators = new Set<string>();
+        const difficulties = new Set<string>();
 
         if (suite.evaluators) {
           for (const e of suite.evaluators) evaluators.add(e);
@@ -175,6 +176,7 @@ async function scanEvalFiles(rootDir: string): Promise<EvalFileInfo[]> {
           if (!t || typeof t !== 'object') continue;
           const test = t as Record<string, unknown>;
           if (test.tool) tools.add(String(test.tool));
+          if (test.difficulty) difficulties.add(String(test.difficulty));
           if (test.expected && typeof test.expected === 'object') {
             const expected = test.expected as Record<string, unknown>;
             if (Array.isArray(expected.tools)) {
@@ -195,12 +197,14 @@ async function scanEvalFiles(rootDir: string): Promise<EvalFileInfo[]> {
           testCount: tests.length,
           tools: [...tools],
           evaluators: [...evaluators],
+          difficulties: [...difficulties],
         });
       }
     } else {
       const tests = parsed.tests ?? parsed.examples ?? [];
       const tools = new Set<string>();
       const evaluators = new Set<string>();
+      const difficulties = new Set<string>();
 
       if (parsed.evaluators) {
         for (const e of parsed.evaluators) evaluators.add(e);
@@ -210,6 +214,7 @@ async function scanEvalFiles(rootDir: string): Promise<EvalFileInfo[]> {
         if (!t || typeof t !== 'object') continue;
         const test = t as Record<string, unknown>;
         if (test.tool) tools.add(String(test.tool));
+        if (test.difficulty) difficulties.add(String(test.difficulty));
         if (test.expected && typeof test.expected === 'object') {
           const expected = test.expected as Record<string, unknown>;
           if (Array.isArray(expected.tools)) {
@@ -227,6 +232,7 @@ async function scanEvalFiles(rootDir: string): Promise<EvalFileInfo[]> {
         testCount: tests.length,
         tools: [...tools],
         evaluators: [...evaluators],
+        difficulties: [...difficulties],
       });
     }
   }
@@ -254,6 +260,9 @@ function buildToolCoverage(evalFiles: EvalFileInfo[]): Map<string, ToolCoverage>
       }
       for (const e of ef.evaluators) {
         if (!existing.evaluators.includes(e)) existing.evaluators.push(e);
+      }
+      for (const d of ef.difficulties) {
+        if (!existing.difficulties.includes(d)) existing.difficulties.push(d);
       }
       existing.testCount += ef.testCount;
       coverage.set(tool, existing);

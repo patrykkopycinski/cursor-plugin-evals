@@ -29,6 +29,7 @@ export interface EvalFileInfo {
   testCount: number;
   tools: string[];
   evaluators: string[];
+  difficulties: string[];
 }
 
 export interface ConfigQualityIssue {
