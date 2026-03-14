@@ -77,12 +77,23 @@ Connect failure patterns to coverage gaps and invoke the eval generator:
 - Security failures → add more adversarial tests
 - Missing evaluator on failing tests → add the evaluator
 
-### Step 7: Validate Fixes
+### Step 7: Run → Fix → Converge
 
-After all fixes are applied:
-1. Run `npx cursor-plugin-evals run --dry-run` to validate config
-2. Re-run any failing suite with `--verbose` to confirm fix
-3. Report before/after comparison
+After all fixes are applied, run the full convergence loop:
+
+```
+REPEAT (max 5 iterations):
+  1. Re-run failing suites: `npx cursor-plugin-evals run --suite <name> --verbose`
+  2. If all pass → run full CI check
+  3. If new failures → classify and fix, go to step 1
+  4. If same failures persist → try different fix strategy
+```
+
+Final check:
+```bash
+npx cursor-plugin-evals run --ci
+```
+Iterate until exit 0. Only then declare done.
 
 ## Output Format
 
@@ -90,6 +101,7 @@ After all fixes are applied:
 # Evaluation Analysis Report
 
 **Pass Rate:** XX% → YY% (after fixes)
+**CI Status:** ✅ All thresholds passing
 
 ## Fixes Applied
 1. ✅ Updated expected.tools for N tests (tool renamed)
@@ -100,8 +112,10 @@ After all fixes are applied:
 ## Genuine Issues (plugin bugs, not config issues)
 1. ⚠️ Tool X returns empty response — needs plugin fix
 
-## Suggested Actions
-1. [HIGH] Action — estimated impact
+## Convergence
+- Iterations needed: N
+- Final pass rate: XX%
+- CI exit code: 0
 ```
 
 ## DO NOT
@@ -110,3 +124,5 @@ After all fixes are applied:
 - Ask "should I fix this?" for config issues — just fix them
 - Leave flaky tests unfixed
 - Ignore threshold miscalibration
+- Stop after one fix attempt — iterate until CI passes
+- Declare done while any threshold is failing

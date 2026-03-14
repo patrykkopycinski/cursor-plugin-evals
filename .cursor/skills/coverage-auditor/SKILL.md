@@ -81,12 +81,33 @@ For each gap found:
 
 6. **Single difficulty**: Add complex and adversarial variants of existing simple tests
 
-### Step 4: Validate & Report
+### Step 4: Run → Fix → Converge
 
-After applying all fixes:
+After applying all coverage fixes, you MUST run the evals and fix any failures:
+
+```
+REPEAT (max 5 iterations):
+  1. Run evals: `npx cursor-plugin-evals run --verbose`
+  2. If all pass → proceed to CI check
+  3. If failures:
+     a. Classify: config issue vs plugin bug vs infra issue
+     b. Fix config issues in YAML immediately
+     c. Re-run only failing suites
+  4. Go to step 1
+```
+
+Then run full CI:
+```bash
+npx cursor-plugin-evals run --ci
+```
+If CI gate fails → fix the gate-failing tests → re-run until exit 0.
+
+### Step 5: Report Final State
+
+After convergence (all CI thresholds passing):
 1. Re-run the coverage scanner to compute the new score
 2. Report the before/after comparison
-3. If any critical gaps remain, iterate
+3. Commit the green state
 
 ## Output Format
 
@@ -113,3 +134,5 @@ After applying all fixes:
 - Leave any critical or high gap unresolved
 - Generate incomplete test suites
 - Skip security coverage
+- Stop after writing YAML — you MUST run evals and iterate until green
+- Declare done while any CI threshold is failing

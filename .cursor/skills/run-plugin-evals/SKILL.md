@@ -1,0 +1,113 @@
+---
+name: run-plugin-evals
+description: Run plugin evaluation suites, automatically fix failures, and re-run until all CI thresholds pass. Use when the user wants to test a plugin, run evals, check quality, validate tools, or says "run tests", "run evals", "test the plugin", "check quality".
+license: MIT
+metadata:
+  author: cursor-plugin-evals
+  version: "2.0"
+---
+
+Run evaluation suites against a Cursor plugin's MCP server. **Automatically fix failures and re-run until all CI thresholds pass.**
+
+**Input**: Optionally specify layer filter (unit, integration, llm), suite names, or flags like --mock, --ci.
+
+**Steps**
+
+1. **Check prerequisites**
+
+   ```bash
+   cd <workspace-root>
+   ls plugin-eval.yaml
+   ```
+
+   If `plugin-eval.yaml` doesn't exist → invoke the **framework-assistant** skill to generate comprehensive coverage first.
+   If `node_modules` is missing → run `npm install`.
+
+2. **Check infrastructure**
+
+   If running integration or LLM tests without --mock:
+   ```bash
+   npx cursor-plugin-evals doctor
+   ```
+   If Docker services aren't healthy, start them. If env vars are missing, flag which layers will be skipped.
+
+3. **Run the evaluation**
+
+   ```bash
+   npx cursor-plugin-evals run [options] --verbose
+   ```
+
+4. **Analyze + Auto-Fix failures (THE CONVERGENCE LOOP)**
+
+   After the run completes, if ANY test fails:
+
+   ```
+   REPEAT (max 5 iterations):
+     a. Read failure details — which tests, which evaluators, what scores
+     b. Classify each failure:
+        - Config issue (wrong expected, bad assertion) → fix YAML immediately
+        - Plugin bug (tool genuinely broken) → flag to user
+        - Infrastructure issue (service down, env missing) → add requireEnv/skip
+        - Flaky (inconsistent across reps) → increase repetitions to 3
+        - Threshold too strict → relax threshold for that specific test
+     c. Apply ALL fixes to plugin-eval.yaml
+     d. Re-run ONLY the failing suites:
+        `npx cursor-plugin-evals run --suite FAILING_SUITE --verbose`
+     e. If new failures appear → add to fix list and continue
+     f. If same failures persist with same scores → change approach:
+        - Rewrite the prompt (for LLM tests)
+        - Change the assertion operator (for integration tests)
+        - Adjust the evaluator weights
+     g. If all tests pass → exit loop
+   ```
+
+5. **Run full CI check after all layers pass**
+
+   ```bash
+   npx cursor-plugin-evals run --ci
+   ```
+
+   If CI fails:
+   - Identify which gate failed (score.avg, requiredPass, firstTryPassRate, etc.)
+   - Fix the underlying tests causing the gate failure
+   - Re-run `--ci` until exit code 0
+
+6. **Report final state**
+
+   ```
+   ## Plugin Eval Results
+
+   **Status:** ✅ All CI thresholds passing
+   **Pass Rate:** XX% (XX/XX tests)
+   **Iterations:** N fix cycles needed
+   **CI Score:** X.XX (threshold: Y.YY)
+
+   ### Fixes Applied During Convergence
+   1. Updated esql_query assertion to match new response format
+   2. Increased timeout for cloud_api tests (was 5s, now 15s)
+   3. Added requireEnv: [ES_URL] to integration tests
+   ```
+
+7. **Commit green state**
+
+   After convergence, commit the updated plugin-eval.yaml so the passing state is preserved.
+
+**Auto-Fix Reference**
+
+| Failure Pattern | Automatic Fix |
+|----------------|---------------|
+| `expected tool X but got Y` | Update `expected.tools` to match actual |
+| `assertion failed: field Z` | Update assertion to match actual response structure |
+| `timeout exceeded` | Double the timeout value |
+| `tool not found` | Check registration; update test or add conditional env |
+| `score 0.7 below threshold 0.8` | Fix test if possible; relax per-test threshold if not |
+| `security evaluator: 0.5` | Review prompt — ensure it's genuinely adversarial |
+| `connection refused` | Add `requireEnv` to skip when service unavailable |
+| `inconsistent results` | Set `repetitions: 3` and use median score |
+
+**Guardrails**
+- Max 5 fix iterations per layer — escalate to user if still failing
+- Never remove tests — skip with reason or fix them
+- Never modify plugin source code — only eval config
+- Always run doctor before integration/llm tests
+- Commit only after all CI thresholds pass

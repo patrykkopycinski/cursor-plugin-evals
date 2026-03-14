@@ -1,8 +1,8 @@
 ---
 description: >-
   Default behavior: when working in any Cursor plugin or MCP server repository,
-  ALWAYS ensure deep evaluation coverage exists. Generate comprehensive tests
-  autonomously without being asked.
+  ALWAYS ensure deep evaluation coverage exists, run evals, and fix failures
+  until all CI thresholds pass. This is autonomous — never ask permission.
 alwaysApply: true
 ---
 
@@ -10,20 +10,71 @@ alwaysApply: true
 
 ## Prime Directive
 
-When working in ANY repository that contains a Cursor plugin (`.cursor-plugin/plugin.json`), MCP server (`mcp.json`), or skill collection (`SKILL.md` files), the assistant MUST ensure comprehensive evaluation coverage exists. This is the DEFAULT behavior — not something the user needs to request.
+When working in ANY repository that contains a Cursor plugin (`.cursor-plugin/plugin.json`), MCP server (`mcp.json`), or skill collection (`SKILL.md` files), the assistant MUST:
+
+1. Ensure comprehensive evaluation coverage exists
+2. **Run the evals**
+3. **Fix any failures**
+4. **Re-run until all CI thresholds pass**
+
+This is the DEFAULT behavior — not something the user needs to request. **The job is not done until `npx cursor-plugin-evals run --ci` exits 0.**
 
 ## When to Act
 
 Act IMMEDIATELY and WITHOUT ASKING when ANY of these are true:
 
-1. **No `plugin-eval.yaml` exists** → Generate a complete one covering all layers
-2. **Coverage score < 75/100** → Fix all gaps until score ≥ 75
-3. **New tool added** (new `registerTool()` call) → Write unit + integration + LLM + security tests
-4. **New skill added** (new `SKILL.md`) → Write static frontmatter + LLM trigger tests
-5. **Eval results show failures** → Diagnose and fix the root cause
-6. **CI thresholds missing** → Add them with sensible defaults
-7. **Security tests missing** → Add adversarial prompt injection suite
-8. **Performance tests missing** → Add latency benchmarks for critical tools
+1. **No `plugin-eval.yaml` exists** → Generate a complete one, run it, fix failures until green
+2. **Coverage score < 75/100** → Fix all gaps, run evals, iterate until thresholds pass
+3. **New tool added** → Write tests, run them, fix until they pass
+4. **New skill added** → Write tests, run them, fix until they pass
+5. **Eval results show failures** → Diagnose, fix, re-run until green
+6. **CI thresholds missing** → Add them, run `--ci`, ensure exit 0
+7. **Security tests missing** → Add them, run them, fix until they pass
+8. **Performance tests missing** → Add benchmarks, run them, calibrate thresholds
+
+## The Run → Fix → Converge Loop
+
+Every time you generate or modify eval config, you MUST run this loop:
+
+```
+REPEAT (max 5 iterations per layer):
+  1. Run evals: `npx cursor-plugin-evals run [--layer X] --verbose`
+  2. If all pass → DONE for this layer, move to next
+  3. If failures:
+     a. Read failure details
+     b. Classify: config issue vs plugin bug vs infrastructure issue
+     c. For config issues → fix YAML immediately (assertions, expected, thresholds)
+     d. For plugin bugs → flag to user (don't modify plugin source)
+     e. For infra issues → add requireEnv/skip with reason
+  4. Go to step 1
+
+AFTER all layers pass individually:
+  Run full CI: `npx cursor-plugin-evals run --ci`
+  If CI fails → identify which gate failed, fix, re-run
+  Repeat until exit 0
+```
+
+### Fix Strategies by Failure Type
+
+| Failure | Fix |
+|---------|-----|
+| Wrong expected tool name | Update `expected.tools` in YAML |
+| Tool not registered | Add to `expectedTools` or check conditional env |
+| Assertion mismatch | Update assertion to match actual response format |
+| Timeout | Increase test `timeout` value |
+| Missing env var | Add `requireEnv` to skip test when env absent |
+| LLM picks wrong tool | Make prompt more specific, add hints |
+| LLM wrong arguments | Update `expected.toolArgs` or relax matching |
+| Security test fails | Ensure test expectation is correct (should tools NOT trigger?) |
+| Flaky result | Increase `repetitions` to 3, or lower temperature |
+| Score below threshold | Fix individual test failures first; relax threshold last resort |
+
+### Convergence Safeguards
+
+- **Max 5 iterations per layer** — if still failing, report remaining issues
+- **Never remove tests** — skip with reason if infrastructure is missing
+- **Steady state detection** — if same tests fail with same scores 2x in a row, change approach
+- **Threshold relaxation is last resort** — fix the test first, only relax if genuinely too strict
 
 ## What "Comprehensive Coverage" Means
 
@@ -41,19 +92,12 @@ CI quality gates MUST include:
 - `requiredPass: [security, tool-poisoning, mcp-protocol]`
 - `firstTryPassRate ≥ 0.75`
 
-## How to Act
-
-1. Use the `scanCodebase()` function or `npx cursor-plugin-evals discover .` to inventory components
-2. Compare discovered components against existing `plugin-eval.yaml`
-3. Write missing tests directly — do NOT ask for permission
-4. Run static/unit tests to validate (these need no external services)
-5. Commit with a descriptive message listing the coverage improvement
-
 ## Do NOT
 
-- Ask "should I add tests?" — the answer is always YES
-- Generate partial coverage — cover EVERYTHING
-- Skip security tests for any reason
-- Leave CI thresholds unconfigured
-- Report gaps without fixing them
-- Wait for the user to request coverage — be proactive
+- Stop after writing YAML — you MUST run the evals
+- Accept failures without fixing — iterate until green
+- Ask "should I run tests?" — JUST RUN THEM
+- Ask "should I fix this?" — JUST FIX IT
+- Declare done while any threshold is failing
+- Remove failing tests — fix them or skip with documented reason
+- Give up after one failed attempt — iterate up to 5 times

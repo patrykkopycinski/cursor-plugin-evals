@@ -1,19 +1,19 @@
 ---
-description: Auto-fix detected gaps — implement fixes and open PRs for both user repo issues and framework improvements.
+description: >-
+  Auto-fix ALL detected gaps, run evals to verify, and open PRs for changes.
 argumentHint: "[gap-id or 'all']"
 ---
 
-Use the **pr-bot** skill to fix detected gaps:
+Use the **pr-bot** skill to autonomously:
 
-1. If a gap-id is provided, fix that specific gap
-2. If "all" is provided, fix all auto-fixable gaps
-3. If no argument, run the coverage auditor first, then fix all critical/high gaps
+1. Run a coverage audit to detect all gaps
+2. **Fix every gap** — write tests, add evaluators, set thresholds
+3. **Run evals** to verify all fixes work
+4. **Fix any new failures** that appear from the generated tests
+5. **Re-run until all CI thresholds pass**
+6. Commit and open a PR with before/after quality scores
 
-For each fix:
-- Create a branch
-- Implement the change (new tests, config updates, evaluator additions)
-- Validate the fix (typecheck, test run, dry-run)
-- Commit and open a PR
+If "all" or no argument: fix every auto-fixable gap and converge to green.
+If a gap-id: fix that specific gap, verify with evals, then PR.
 
-**User repo gaps** get PRs against the current repository.
-**Framework gaps** get PRs against the cursor-plugin-evals repository.
+The bot will NOT ask permission — it fixes, verifies, and PRs autonomously.

@@ -1,12 +1,16 @@
 ---
-description: Onboard to cursor-plugin-evals — scan the repo, recommend an eval strategy, and set up your first evaluation suite.
+description: >-
+  Onboard to cursor-plugin-evals — scan the repo, generate comprehensive eval coverage,
+  run tests, fix failures, and iterate until all CI thresholds pass.
 ---
 
-Use the **framework-assistant** skill to:
-1. Scan this repository for plugin components, existing evals, and infrastructure
-2. Classify the project type and recommend the optimal evaluation strategy
-3. Generate a tailored `plugin-eval.yaml` configuration
-4. Generate starter test suites for discovered tools/skills
-5. Walk through the first evaluation run
+Use the **framework-assistant** skill to autonomously:
 
-Start by running `npx cursor-plugin-evals discover .` to find all components, then follow the framework-assistant skill workflow.
+1. Scan this repository for ALL plugin components (MCP tools, skills, rules, agents, commands)
+2. Generate a comprehensive `plugin-eval.yaml` covering every component across all layers (static, unit, integration, LLM, security, performance)
+3. **Run the evals** (`npx cursor-plugin-evals run --verbose`)
+4. **Auto-fix any failures** — update assertions, expectations, thresholds, timeouts
+5. **Re-run until all CI thresholds pass** (`npx cursor-plugin-evals run --ci` exits 0)
+6. Commit the green state
+
+The assistant will iterate up to 5 times per layer, fixing each failure as it goes. It will NOT ask permission — it will scan, generate, run, fix, and converge autonomously.

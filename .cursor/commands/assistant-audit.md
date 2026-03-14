@@ -1,13 +1,15 @@
 ---
-description: Audit evaluation coverage — find gaps in tools, layers, evaluators, security, performance, and regression baselines.
+description: >-
+  Audit eval coverage, fix ALL gaps, run evals, and iterate until thresholds pass.
 ---
 
-Use the **coverage-auditor** skill to perform a comprehensive coverage audit:
-1. Scan for tool coverage gaps (tools without tests)
-2. Check layer coverage (unit, integration, LLM, performance, static)
-3. Audit evaluator utilization (24 available — how many are used?)
-4. Check difficulty distribution (simple/moderate/complex/adversarial)
-5. Verify security coverage (security evaluator, red-team, security-lint)
-6. Check regression detection setup (fingerprints, baselines)
+Use the **coverage-auditor** skill to autonomously:
 
-Present findings as a prioritized gap report with auto-fix recommendations.
+1. Scan all components and existing coverage
+2. Identify every gap (uncovered tools, missing layers, missing evaluators, etc.)
+3. **Fix every gap immediately** — write missing tests, add evaluators, set thresholds
+4. **Run evals** to validate fixes
+5. **Fix any failures** that appear in the new tests
+6. **Re-run until all CI thresholds pass**
+
+The auditor will NOT ask which gaps to fix — it fixes ALL of them and iterates until green.
