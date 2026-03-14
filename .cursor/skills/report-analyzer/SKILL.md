@@ -46,6 +46,13 @@ Group failures by root cause and FIX what you can:
 | `empty_response` | Maybe | Check if tool requires env vars that aren't set; add `require_env` |
 | `content_quality` | Maybe | Relax threshold if score is close; add `content-quality` evaluator |
 | `timeout` | Yes | Increase test timeout |
+| `framework_limitation` | **STOP** | Framework bottleneck — propose fix before continuing (see below) |
+
+**Framework limitation detection:** Before classifying any failure as one of the above types,
+check if the root cause is the framework itself. Signals: evaluator returns 0/1 due to
+missing adapter context, same workaround needed across multiple suites, config can't express
+what's needed, removing evaluators or loosening thresholds is the only "fix". If detected →
+STOP, propose framework change with specifics (files, API, effort), ask user before continuing.
 
 **For each fixable pattern: edit the plugin-eval.yaml immediately.**
 

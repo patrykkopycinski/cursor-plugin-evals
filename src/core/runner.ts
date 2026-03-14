@@ -352,5 +352,19 @@ export async function runEvaluation(
     // Fingerprint save is best-effort
   }
 
+  try {
+    const { appendHistory, loadHistory, summarizeTrend } = await import('../regression/history.js');
+    await appendHistory(runResult);
+    const history = await loadHistory();
+    if (history.entries.length >= 2) {
+      const trend = summarizeTrend(history);
+      for (const line of trend.split('\n')) {
+        log.debug(line);
+      }
+    }
+  } catch {
+    // Score history is best-effort
+  }
+
   return runResult;
 }

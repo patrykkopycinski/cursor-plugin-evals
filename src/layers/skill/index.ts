@@ -274,7 +274,11 @@ export async function runSkillSuite(
 
           log.test(displayName, allPass ? 'pass' : 'fail');
           for (const evalResult of evaluatorResults) {
-            log.evaluator(evalResult.evaluator, evalResult.score, evalResult.pass);
+            if (evalResult.skipped) {
+              log.evaluatorSkipped(evalResult.evaluator);
+            } else {
+              log.evaluator(evalResult.evaluator, evalResult.score, evalResult.pass);
+            }
           }
 
           return {

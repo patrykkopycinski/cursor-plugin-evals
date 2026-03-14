@@ -312,6 +312,94 @@ function checkNamingConventions(
   return makeResult(test, suite, true, performance.now() - start);
 }
 
+function checkSkillContentQuality(
+  test: StaticTestConfig,
+  suite: string,
+  manifest: PluginManifest,
+): TestResult {
+  const start = performance.now();
+  const errors: string[] = [];
+  const skills = filterComponents(manifest.skills, test.components);
+
+  for (const skill of skills) {
+    const body = skill.body ?? '';
+    const wordCount = body.split(/\s+/).filter(Boolean).length;
+    const headings = body.match(/^#{1,4}\s+.+$/gm) ?? [];
+    const codeBlocks = body.match(/```[\s\S]*?```/g) ?? [];
+
+    if (wordCount < 100) {
+      errors.push(`Skill "${skill.name}": body too short (${wordCount} words, min 100)`);
+    }
+    if (headings.length < 2) {
+      errors.push(`Skill "${skill.name}": needs at least 2 markdown headings for structure (found ${headings.length})`);
+    }
+    if (body.length > 0 && !body.includes('##')) {
+      errors.push(`Skill "${skill.name}": missing section structure (no ## headings)`);
+    }
+    if (codeBlocks.length === 0 && wordCount > 200) {
+      errors.push(`Skill "${skill.name}": large skill body with no code examples`);
+    }
+  }
+
+  if (skills.length === 0 && !test.components) {
+    return makeResult(test, suite, true, performance.now() - start);
+  }
+
+  if (errors.length > 0) {
+    return makeResult(test, suite, false, performance.now() - start, errors.join('; '));
+  }
+  return makeResult(test, suite, true, performance.now() - start);
+}
+
+function checkSkillReferenceFiles(
+  test: StaticTestConfig,
+  suite: string,
+  manifest: PluginManifest,
+): TestResult {
+  const start = performance.now();
+  const errors: string[] = [];
+  const skills = filterComponents(manifest.skills, test.components);
+
+  const FILE_REF_PATTERNS = [
+    /(?:read|open|load|check|review|reference|see|at)\s+[`"]?([a-zA-Z0-9_/-]+\.[a-z]{1,5})[`"]?/gi,
+    /\[([^\]]+)\]\(([^)]+\.[a-z]{1,5})\)/g,
+  ];
+
+  for (const skill of skills) {
+    const body = skill.body ?? '';
+    const referencedFiles = new Set<string>();
+
+    for (const pattern of FILE_REF_PATTERNS) {
+      let match;
+      const regex = new RegExp(pattern.source, pattern.flags);
+      while ((match = regex.exec(body)) !== null) {
+        const filePath = match[2] ?? match[1];
+        if (filePath && !filePath.startsWith('http') && !filePath.includes('*')) {
+          referencedFiles.add(filePath);
+        }
+      }
+    }
+
+    const skillDir = resolve(manifest.dir, skill.path, '..');
+    for (const ref of referencedFiles) {
+      const refPath = isAbsolute(ref) ? ref : resolve(skillDir, ref);
+      if (!existsSync(refPath)) {
+        const relPath = relative(manifest.dir, refPath);
+        errors.push(`Skill "${skill.name}": references "${ref}" but file not found at ${relPath}`);
+      }
+    }
+  }
+
+  if (skills.length === 0 && !test.components) {
+    return makeResult(test, suite, true, performance.now() - start);
+  }
+
+  if (errors.length > 0) {
+    return makeResult(test, suite, false, performance.now() - start, errors.join('; '));
+  }
+  return makeResult(test, suite, true, performance.now() - start);
+}
+
 function filterComponents<T extends { name?: string }>(components: T[], filter?: string[]): T[] {
   if (!filter || filter.length === 0) return components;
   const filterSet = new Set(filter);
@@ -332,6 +420,8 @@ const CHECK_HANDLERS: Record<
   component_references: checkComponentReferences,
   cross_component_coherence: checkCrossComponentCoherence,
   naming_conventions: checkNamingConventions,
+  skill_content_quality: checkSkillContentQuality,
+  skill_reference_files: checkSkillReferenceFiles,
 };
 
 export async function runStaticSuite(

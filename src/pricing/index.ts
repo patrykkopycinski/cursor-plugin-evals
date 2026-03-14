@@ -7,6 +7,8 @@ interface ModelPricing {
 }
 
 const pricingCatalog: Record<string, ModelPricing> = {
+  'gpt-5.2': { input: 2.0, output: 8.0, cached: 1.0 },
+  'gpt-5.2-mini': { input: 0.12, output: 0.5, cached: 0.06 },
   'gpt-4o': { input: 2.5, output: 10.0, cached: 1.25 },
   'gpt-4o-mini': { input: 0.15, output: 0.6, cached: 0.075 },
   'gpt-4-turbo': { input: 10.0, output: 30.0 },

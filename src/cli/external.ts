@@ -174,7 +174,7 @@ export async function externalInitCommand(opts: ExternalInitOptions): Promise<vo
     defaults: {
       timeout: 30000,
       repetitions: 3,
-      judge_model: 'gpt-5.4',
+      judge_model: 'gpt-5.2',
       thresholds: {
         'tool-selection': 0.8,
         'content-quality': 0.7,

@@ -197,3 +197,4 @@ Every command MUST have:
 - Declare done while any threshold is failing
 - Remove failing tests — fix them or skip with documented reason
 - Give up after one failed attempt — iterate up to 5 times
+- **Silently work around framework limitations** — if the framework is the bottleneck (evaluator scores wrong, config can't express what's needed, adapter lacks context), STOP and propose a framework fix before continuing

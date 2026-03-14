@@ -40,7 +40,7 @@ export interface MultiJudgeConfig {
 
 export const DEFAULT_MULTI_JUDGE_CONFIG: MultiJudgeConfig = {
   judges: [
-    { model: 'gpt-5.4', weight: 1.0 },
+    { model: 'gpt-5.2', weight: 1.0 },
     { model: 'claude-opus-4-6', weight: 1.0 },
     { model: 'gemini-3.1-pro', weight: 1.0 },
   ],

@@ -412,6 +412,71 @@ Your generated eval file MUST achieve:
 - Remove tests that fail — fix them or skip with a reason
 - Declare done while any CI threshold is failing
 - Give up after one failed run — iterate up to 5 times per layer
+- Silently work around framework limitations — propose fixes instead (see Phase 3.5)
+
+## Phase 3.5: Framework Bottleneck Detection (DURING EVERY FIX CYCLE)
+
+While iterating in Phase 3, you MUST continuously evaluate whether the **framework itself**
+is the reason results are suboptimal. If the framework is the bottleneck, stop fixing YAML
+and fix the framework first.
+
+### How to Detect
+
+During each fix cycle, ask: **"Am I fixing the test/skill, or working around a framework limitation?"**
+
+| What you're about to do | Is it a workaround? | What to do instead |
+|---|---|---|
+| Removing an evaluator from eval.yaml because the adapter doesn't support it | YES | Implement `EvaluatorResult.skipped` or per-adapter evaluator config |
+| Setting `score: 1` for a check that can't run | YES | Implement skip/not_applicable return type |
+| Duplicating eval.yaml per adapter | YES | Implement suite-level evaluator overrides |
+| Loosening CI thresholds because an evaluator gives wrong scores | YES | Fix the evaluator's scoring logic |
+| Adding complex YAML nesting to express something simple | YES | Extend the Zod schema |
+| Hardcoding a constant that should vary per context | YES | Make it configurable |
+| Accepting false positives/negatives from an evaluator | YES | Add domain awareness or context to the evaluator |
+| Manually estimating data the adapter should report | YES | Add estimation logic to the adapter or evaluator |
+
+### What to Do When Detected
+
+1. **STOP** the current fix cycle immediately
+2. **Classify the limitation**:
+   - **P0** — causes incorrect scores, false pass/fail, or corrupts aggregation → propose NOW
+   - **P1** — degrades quality or forces manual workarounds → propose before next eval run
+   - **P2** — quality-of-life, expressiveness → note and propose at session end
+3. **Propose the framework change** with:
+   - What is blocked or degraded
+   - Which source files need to change (types, evaluators, adapters, config schema)
+   - The proposed API/YAML shape
+   - Backward compatibility impact
+   - Effort estimate (S = <30min, M = 30-90min, L = 90min+)
+4. **Ask**: "This is a framework limitation blocking better results. Want me to fix the framework first?"
+5. **If approved**: implement the framework change, run `npm test` to verify 0 regressions, update docs, THEN resume Phase 3 with the improved framework
+6. **If deferred**: document the limitation as a comment in the YAML and continue with the best available workaround, noting the quality impact
+
+### Framework Fix Workflow (when approved)
+
+```
+1. Create a branch or note the current state
+2. Implement the type/schema/evaluator changes
+3. Run `npx tsc --noEmit` — must pass
+4. Run `npm test` — all existing tests must pass
+5. Update docs (README, docs/*.md) if the change is user-facing
+6. Update the workspace's plugin-eval.yaml to USE the new feature
+7. Resume the eval fix cycle from where you stopped
+```
+
+### Real Examples from Past Sessions
+
+These are REAL bottlenecks that were hit and should have triggered this phase:
+
+| Bottleneck | Workaround Used | Framework Fix That Was Needed |
+|---|---|---|
+| `groundedness` scores 0.0 on plain-llm (no tool calls) | Removed groundedness from eval.yaml | `EvaluatorResult.skipped` + adapter capabilities |
+| Same eval.yaml shared by cursor-cli and plain-llm | Removed evaluators that only work on one adapter | Per-adapter evaluator config (`evaluators: { add/remove/override }`) |
+| `security` evaluator false positives on security review skill | Removed security evaluator entirely | `SecurityConfig.exclude_locations` |
+| `workflow` evaluator returns 1.0 when no checks configured | Accepted inflated scores | `skipped: true` for no-check case |
+| cursor-cli doesn't report input tokens | Accepted 0-input-token efficiency scores | Token estimation from prompt/result lengths |
+| cursor-cli race condition on config file | Lowered concurrency to 1 | Configurable retry with exponential backoff |
+| No way to express "this test only runs on cursor-cli" | Duplicated eval.yaml files | `metadata.adapters` filter + `test_filter.adapters` |
 
 ## External Workspace Mode
 

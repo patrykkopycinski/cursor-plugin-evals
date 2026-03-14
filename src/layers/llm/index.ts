@@ -19,7 +19,7 @@ import { log } from '../../cli/logger.js';
 
 const DEFAULT_MAX_TURNS = 10;
 const DEFAULT_TIMEOUT = 120_000;
-const DEFAULT_MODEL = 'gpt-5.4';
+const DEFAULT_MODEL = 'gpt-5.2';
 
 async function runSingleLlmTest(
   test: LlmTestConfig,
@@ -73,6 +73,7 @@ async function runSingleLlmTest(
       finalOutput: result.finalOutput,
       expected: test.expected,
       config: defaults.thresholds as Record<string, unknown> | undefined,
+      tokenUsage: result.tokenUsage ?? undefined,
     };
 
     const evaluatorResults: EvaluatorResult[] = [];

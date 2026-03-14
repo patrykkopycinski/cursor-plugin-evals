@@ -177,7 +177,7 @@ async function generateForTool(
 
 export async function generateSmartTests(config: SmartGenConfig): Promise<GeneratedTestCase[]> {
   const count = config.count ?? 5;
-  const model = config.model ?? 'gpt-5.4-mini';
+  const model = config.model ?? 'gpt-5.2-mini';
   const llm = new LlmClient(model);
   const results: GeneratedTestCase[] = [];
 

@@ -295,7 +295,9 @@ export type StaticCheck =
   | 'mcp_config'
   | 'component_references'
   | 'cross_component_coherence'
-  | 'naming_conventions';
+  | 'naming_conventions'
+  | 'skill_content_quality'
+  | 'skill_reference_files';
 
 export interface StaticTestConfig {
   name: string;

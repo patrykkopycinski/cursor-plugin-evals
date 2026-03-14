@@ -168,6 +168,64 @@ suites:
     expect(config.suites[0].defaults?.repetitions).toBe(3);
   });
 
+  it('preserves snake_case keys inside thresholds', () => {
+    const yaml = `
+plugin:
+  name: test-plugin
+  dir: /some/path
+  entry: index.js
+defaults:
+  thresholds:
+    content-quality: 0.7
+    token-usage:
+      max_input: 5000
+      max_output: 12000
+    security:
+      exclude_locations:
+        - finalOutput
+suites:
+  - name: basic
+    layer: unit
+    tests:
+      - name: t1
+        check: registration
+`;
+    const path = writeTempConfig('thresholds.yaml', yaml);
+    const config = loadConfig(path);
+
+    expect(config.defaults?.thresholds?.['content-quality']).toBe(0.7);
+    expect(config.defaults?.thresholds?.['token-usage']).toEqual({
+      max_input: 5000,
+      max_output: 12000,
+    });
+    expect(config.defaults?.thresholds?.security).toEqual({
+      exclude_locations: ['finalOutput'],
+    });
+  });
+
+  it('converts snake_case to camelCase for non-threshold fields', () => {
+    const yaml = `
+plugin:
+  name: test-plugin
+  dir: /some/path
+  entry: index.js
+defaults:
+  judge_model: gpt-4
+  timeout: 5000
+suites:
+  - name: basic
+    layer: unit
+    tests:
+      - name: t1
+        check: registration
+`;
+    const path = writeTempConfig('camel.yaml', yaml);
+    const config = loadConfig(path);
+
+    expect(config.defaults?.judgeModel).toBe('gpt-4');
+    expect(config.defaults?.timeout).toBe(5000);
+  });
+
   it('throws validation error on invalid layer enum', () => {
     const yaml = `
 plugin:

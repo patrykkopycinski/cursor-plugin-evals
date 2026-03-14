@@ -184,6 +184,38 @@ const SHARED_SYMLINKS = [
   'CLAUDE.md',
 ] as const;
 
+/**
+ * Create a lightweight workspace by symlinking the entire plugin root's content.
+ * Used when the eval data directory is outside the plugin root and the full
+ * createIsolatedWorkspace logic doesn't apply.
+ */
+export async function createSimpleWorkspaceCopy(root: string): Promise<IsolatedWorkspace> {
+  const tmpBase = join(tmpdir(), 'cursor-eval-' + randomBytes(6).toString('hex'));
+  await mkdir(tmpBase, { recursive: true });
+
+  const entries = await readdir(root, { withFileTypes: true });
+  for (const entry of entries) {
+    if (entry.name === '.git') continue;
+    const src = join(root, entry.name);
+    const dest = join(tmpBase, entry.name);
+    await mkdir(dirname(dest), { recursive: true });
+    await symlink(src, dest);
+  }
+
+  return {
+    dir: tmpBase,
+    includedSkills: [],
+    skillDir: null,
+    cleanup: async () => {
+      try {
+        await rm(tmpBase, { recursive: true, force: true });
+      } catch {
+        // best-effort cleanup
+      }
+    },
+  };
+}
+
 async function symlinkSharedInfra(tmpBase: string, sourceRoot: string): Promise<void> {
   for (const item of SHARED_SYMLINKS) {
     const src = join(sourceRoot, item);
@@ -218,9 +250,15 @@ async function writeFilteredPluginManifest(
     parentDirs.add(dirname(rel));
   }
 
-  const originalSkills = (manifest.skills as string[]) ?? [];
+  const originalSkills = (manifest.skills as Array<string | Record<string, unknown>>) ?? [];
+
+  function getSkillPath(entry: string | Record<string, unknown>): string {
+    if (typeof entry === 'string') return entry;
+    return (entry.path as string) ?? '';
+  }
+
   const filteredSkills = originalSkills.filter((s) => {
-    const normalized = s.replace(/\/$/, '');
+    const normalized = getSkillPath(s).replace(/\/$/, '');
     return relPaths.some((r) => r.startsWith(normalized)) || parentDirs.has(normalized);
   });
   if (filteredSkills.length === 0) {

@@ -26,6 +26,7 @@ import { TrajectoryEvaluator } from './trajectory.js';
 import { VisualRegressionEvaluator } from './visual-regression.js';
 import { TokenUsageEvaluator } from './token-usage.js';
 import { WorkflowEvaluator } from './workflow.js';
+import { ResistanceEvaluator } from './resistance.js';
 
 export const EVALUATOR_NAMES = [
   'tool-selection',
@@ -54,6 +55,7 @@ export const EVALUATOR_NAMES = [
   'trajectory',
   'token-usage',
   'workflow',
+  'resistance',
 ] as const;
 
 export type EvaluatorName = (typeof EVALUATOR_NAMES)[number];
@@ -85,6 +87,7 @@ const EVALUATOR_MAP: Record<EvaluatorName, new () => Evaluator> = {
   trajectory: TrajectoryEvaluator,
   'token-usage': TokenUsageEvaluator,
   workflow: WorkflowEvaluator,
+  resistance: ResistanceEvaluator,
 };
 
 export function createEvaluator(name: string): Evaluator {
@@ -122,6 +125,7 @@ export {
   TrajectoryEvaluator,
   TokenUsageEvaluator,
   WorkflowEvaluator,
+  ResistanceEvaluator,
 };
 
 export type {

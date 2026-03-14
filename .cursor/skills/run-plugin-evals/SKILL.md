@@ -174,3 +174,22 @@ Run evaluation suites against a Cursor plugin's MCP server. **Automatically fix 
 - Never modify plugin source code — only eval config
 - Always run doctor before integration/llm tests
 - Commit only after all CI thresholds pass
+
+**Framework Bottleneck Detection (DURING EVERY FIX CYCLE)**
+
+While iterating in step 4, continuously check: **"Am I fixing the test, or working around a framework limitation?"**
+
+If any of these are true, STOP and propose a framework change:
+- Removing an evaluator because the adapter doesn't support it
+- Setting `score: 1` for a check that can't meaningfully run
+- Duplicating eval.yaml to serve different adapters
+- Loosening thresholds because an evaluator gives incorrect scores
+- Accepting false positives/negatives from an evaluator
+- Manually estimating data the adapter should report
+
+When detected:
+1. STOP the fix cycle
+2. Propose the framework change: what's blocked, which files change, proposed API, effort
+3. Ask: "This is a framework limitation. Want me to fix the framework first?"
+4. If approved → implement framework fix, run `npm test`, update docs, THEN resume evals
+5. If deferred → document as YAML comment, continue with best workaround

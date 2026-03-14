@@ -141,7 +141,7 @@ describe('generateConfig', () => {
 
     expect(defaults.timeout).toBe(30000);
     expect(defaults.repetitions).toBe(3);
-    expect(defaults.judge_model).toBe('gpt-5.4');
+    expect(defaults.judge_model).toBe('gpt-5.2');
     expect(defaults.thresholds).toEqual({
       'tool-selection': 0.8,
       'tool-args': 0.7,

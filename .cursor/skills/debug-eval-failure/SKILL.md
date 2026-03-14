@@ -36,8 +36,26 @@ Automatically debug, fix, and verify failing plugin evaluation tests. Does NOT j
    | security-leak | Sensitive data in output | Yes — update expected response |
    | schema-drift | Tool schema changed | Yes — update schema assertions |
    | flaky | Inconsistent results | Yes — increase repetitions |
+   | **framework-limitation** | Evaluator scores wrong due to adapter mismatch, missing skip logic, or config expressiveness gap | **STOP — propose framework fix** |
+
+   **CRITICAL: framework-limitation detection.** Before classifying any failure as one of
+   the above types, first check: is the root cause actually a framework limitation? Signals:
+   - An evaluator returns 0.0 or 1.0 because it lacks context about the adapter
+   - A workaround (removing evaluator, duplicating config, loosening threshold) is the only "fix"
+   - The same pattern keeps appearing across different test suites
+   - You're about to do something from the anti-pattern list (see below)
+
+   If it's a framework limitation → classify as `framework-limitation` and proceed to step 3a.
 
 3. **Apply fixes immediately (for EACH failure)**
+
+   **framework-limitation (HANDLE FIRST — before all other fix types):**
+   - STOP applying workarounds
+   - Identify the root cause in framework source (types, evaluators, adapters, config schema)
+   - Propose the fix: what changes, proposed API, effort (S/M/L), backward compatibility
+   - Ask: "This is a framework limitation blocking correct results. Want me to fix the framework first?"
+   - If approved → implement in framework source, run `npm test`, update docs, then resume debugging
+   - If deferred → document in YAML comment, apply best available workaround
 
    **wrong-tool:**
    - Read the prompt and check if it's ambiguous
@@ -137,3 +155,10 @@ Automatically debug, fix, and verify failing plugin evaluation tests. Does NOT j
 - Never remove tests — fix or skip with reason
 - Always re-run to verify after fixing
 - Always run full CI check before declaring done
+- **Never silently work around framework limitations** — always propose framework fixes first
+- Anti-pattern watchlist (if you're about to do any of these, it's a framework limitation):
+  - Removing an evaluator from eval.yaml because the adapter doesn't support it
+  - Setting `score: 1` for inapplicable checks
+  - Duplicating eval.yaml per adapter
+  - Loosening CI thresholds to compensate for evaluator bugs
+  - Accepting false positives/negatives

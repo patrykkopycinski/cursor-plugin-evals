@@ -96,6 +96,11 @@ export const log = {
     console.log(`      ${icon} ${name}: ${c(scoreColor, scoreStr)}`);
   },
 
+  evaluatorSkipped(name: string): void {
+    if (!shouldLog('info')) return;
+    console.log(`      ${c(chalk.gray, '⊘')} ${c(chalk.gray, `${name}: skipped`)}`);
+  },
+
   table(rows: string[][]): void {
     if (!shouldLog('info')) return;
     if (rows.length === 0) return;

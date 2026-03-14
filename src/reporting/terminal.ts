@@ -21,7 +21,11 @@ function printTestResult(test: TestResult): void {
   log.test(test.name + difficultyTag(test), status);
 
   for (const ev of test.evaluatorResults) {
-    log.evaluator(ev.evaluator, ev.score, ev.pass);
+    if (ev.skipped) {
+      log.evaluatorSkipped(ev.evaluator);
+    } else {
+      log.evaluator(ev.evaluator, ev.score, ev.pass);
+    }
   }
 
   if (test.tokenUsage) {

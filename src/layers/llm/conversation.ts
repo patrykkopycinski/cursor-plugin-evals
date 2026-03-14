@@ -133,6 +133,7 @@ export async function runConversationTest(
         finalOutput: result.finalOutput,
         expected: turn.expected ?? test.expected,
         config: defaults.thresholds as Record<string, unknown> | undefined,
+        tokenUsage: result.tokenUsage ?? undefined,
       };
 
       const evaluatorResults: EvaluatorResult[] = [];

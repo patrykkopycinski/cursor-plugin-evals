@@ -317,5 +317,5 @@ function printNextSteps(): void {
   log.info('     npx cursor-plugin-evals score');
   console.log();
   log.info('  7. Compare models:');
-  log.info('     npx cursor-plugin-evals compare --model gpt-5.4 --model claude-opus-4-6');
+  log.info('     npx cursor-plugin-evals compare --model gpt-5.2 --model claude-opus-4-6');
 }

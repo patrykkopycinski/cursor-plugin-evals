@@ -79,7 +79,7 @@ function parseDefaults(raw: Record<string, unknown> | undefined): EvalDefaultsCo
     timeout: raw.timeout as number | undefined,
     repetitions: raw.repetitions as number | undefined,
     judgeModel: (raw.judge_model ?? raw.judgeModel) as string | undefined,
-    thresholds: raw.thresholds as Record<string, number> | undefined,
+    thresholds: raw.thresholds as Record<string, number | Record<string, unknown>> | undefined,
     requiredPass: (raw.required_pass ?? raw.requiredPass) as string[] | undefined,
   };
 }

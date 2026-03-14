@@ -131,6 +131,8 @@ const StaticTestSchema = z.object({
     'component_references',
     'cross_component_coherence',
     'naming_conventions',
+    'skill_content_quality',
+    'skill_reference_files',
   ]),
   components: z.array(z.string()).optional(),
 });
@@ -336,7 +338,7 @@ function snakeToCamel(obj: unknown, preserveKey = false): unknown {
       ? key
       : key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
     const shouldPreserveChildren =
-      key === 'args' || key === 'env' || key === 'minimal_env' || key === 'minimalEnv';
+      preserveKey || key === 'args' || key === 'env' || key === 'minimal_env' || key === 'minimalEnv' || key === 'thresholds';
     result[camelKey] = snakeToCamel(value, shouldPreserveChildren);
   }
   return result;
