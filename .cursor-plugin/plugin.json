@@ -1,0 +1,113 @@
+{
+  "name": "cursor-plugin-evals",
+  "version": "0.1.0",
+  "displayName": "Plugin Eval Framework Assistant",
+  "description": "Proactive evaluation assistant for Cursor plugins — onboarding, test generation, coverage auditing, report analysis, and autonomous gap fixing with PR creation.",
+  "author": "patrykkopycinski",
+  "license": "MIT",
+  "repository": "https://github.com/patrykkopycinski/cursor-plugin-evals",
+  "skills": [
+    {
+      "name": "Framework Assistant",
+      "path": ".cursor/skills/framework-assistant/SKILL.md"
+    },
+    {
+      "name": "Coverage Auditor",
+      "path": ".cursor/skills/coverage-auditor/SKILL.md"
+    },
+    {
+      "name": "Report Analyzer",
+      "path": ".cursor/skills/report-analyzer/SKILL.md"
+    },
+    {
+      "name": "Eval Generator",
+      "path": ".cursor/skills/eval-generator/SKILL.md"
+    },
+    {
+      "name": "PR Bot",
+      "path": ".cursor/skills/pr-bot/SKILL.md"
+    },
+    {
+      "name": "Run Plugin Evals",
+      "path": ".cursor/skills/run-plugin-evals/SKILL.md"
+    },
+    {
+      "name": "Write Eval Suite",
+      "path": ".cursor/skills/write-eval-suite/SKILL.md"
+    },
+    {
+      "name": "Debug Eval Failure",
+      "path": ".cursor/skills/debug-eval-failure/SKILL.md"
+    },
+    {
+      "name": "Record Fixtures",
+      "path": ".cursor/skills/record-fixtures/SKILL.md"
+    },
+    {
+      "name": "Eval Doctor",
+      "path": ".cursor/skills/eval-doctor/SKILL.md"
+    }
+  ],
+  "commands": [
+    {
+      "name": "assistant:onboard",
+      "path": ".cursor/commands/assistant-onboard.md"
+    },
+    {
+      "name": "assistant:audit",
+      "path": ".cursor/commands/assistant-audit.md"
+    },
+    {
+      "name": "assistant:analyze",
+      "path": ".cursor/commands/assistant-analyze.md"
+    },
+    {
+      "name": "assistant:generate",
+      "path": ".cursor/commands/assistant-generate.md"
+    },
+    {
+      "name": "assistant:fix",
+      "path": ".cursor/commands/assistant-fix.md"
+    },
+    {
+      "name": "eval:run",
+      "path": ".cursor/commands/eval-run.md"
+    },
+    {
+      "name": "eval:write",
+      "path": ".cursor/commands/eval-write.md"
+    },
+    {
+      "name": "eval:debug",
+      "path": ".cursor/commands/eval-debug.md"
+    },
+    {
+      "name": "eval:record",
+      "path": ".cursor/commands/eval-record.md"
+    },
+    {
+      "name": "eval:doctor",
+      "path": ".cursor/commands/eval-doctor.md"
+    }
+  ],
+  "rules": [
+    {
+      "path": ".cursor/rules/post-run-analysis.mdc"
+    },
+    {
+      "path": ".cursor/rules/new-tool-detection.mdc"
+    },
+    {
+      "path": ".cursor/rules/config-validation.mdc"
+    },
+    {
+      "path": ".cursor/rules/mcp-client-patterns.mdc"
+    },
+    {
+      "path": ".cursor/rules/eval-suite-guidelines.mdc"
+    },
+    {
+      "path": ".cursor/rules/framework-conventions.mdc"
+    }
+  ]
+}

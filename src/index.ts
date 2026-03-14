@@ -471,3 +471,60 @@ export {
   gradeColor,
 } from './badges/index.js';
 export type { BadgeConfig, BadgeStyle } from './badges/index.js';
+
+export {
+  scanCodebase,
+  formatCodebaseReport,
+} from './assistant/codebase-scanner.js';
+export {
+  auditCoverage,
+  formatAuditReport,
+} from './assistant/coverage-analyzer.js';
+export {
+  findLatestRunResult,
+  loadRunResult,
+  analyzeRunResult,
+  formatAnalysisReport,
+} from './assistant/report-reader.js';
+export {
+  detectGaps,
+  formatGapReport,
+} from './assistant/gap-detector.js';
+export {
+  generateFix,
+  generateFixes,
+} from './assistant/fix-generator.js';
+export {
+  applyFixes,
+  createPr,
+} from './assistant/pr-creator.js';
+export {
+  ensureDbDir,
+  recordSnapshot,
+  getHistory,
+  detectDrift,
+  formatHistoryReport,
+} from './assistant/score-history.js';
+export type {
+  ProjectKind,
+  ToolCoverage,
+  EvalFileInfo,
+  ConfigQualityIssue,
+  CodebaseProfile,
+  AuditSeverity,
+  CoverageGap,
+  CoverageAuditReport,
+  AnalysisReport,
+  FailureClusterSummary,
+  RegressionSummary,
+  CostOptimization,
+  ThresholdCheck,
+  SuggestedAction,
+  GapTarget,
+  DetectedGap,
+  GeneratedFix,
+  PrRequest,
+  PrResult,
+  ScoreSnapshot,
+  DriftAlert,
+} from './assistant/types.js';

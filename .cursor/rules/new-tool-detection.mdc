@@ -1,0 +1,32 @@
+---
+description: Suggest tests when new tools or skills are added to the plugin
+globs:
+  - ".cursor-plugin/**/*.md"
+  - "**/SKILL.md"
+  - "src/**/tools/**/*.ts"
+  - "src/**/skills/**/*.ts"
+---
+
+# New Tool/Skill Detection
+
+When new tools, skills, or MCP server endpoints are added to the project, proactively suggest evaluation tests.
+
+## What to Do
+
+1. When a new SKILL.md file is created or a new tool handler is added:
+   - Note the tool/skill name and its purpose
+   - Check if evaluation tests already exist for it
+   - If not, suggest running the **eval-generator** to create tests
+
+2. Recommend the minimum test coverage for a new tool:
+   - Unit test: schema validation
+   - Integration test: happy path with assertions
+   - LLM test: natural language prompt with tool-selection + correctness evaluators
+   - Negative test: error handling for invalid inputs
+
+3. Provide a concrete YAML snippet the user can add to their eval config
+
+## When to Stay Silent
+
+- If the tool already has eval tests
+- If the file is a minor edit to an existing tool (not a new one)

@@ -1,0 +1,35 @@
+---
+description: Validate evaluation config when YAML files are modified
+globs:
+  - "plugin-eval.yaml"
+  - "**/eval.yaml"
+  - "**/eval-defaults.yaml"
+  - "**/*eval*.yaml"
+  - "**/*eval*.yml"
+---
+
+# Config Validation
+
+When evaluation configuration files are modified, validate them for correctness and best practices.
+
+## What to Check
+
+1. **YAML syntax**: Is the file valid YAML?
+2. **Required fields**: Does each test have a `name`? Do integration tests have `tool` and `args`?
+3. **Evaluator names**: Are all referenced evaluators valid? (24 available: tool-selection, tool-args, tool-sequence, response-quality, cluster-state, mcp-protocol, security, tool-poisoning, skill-trigger, content-quality, path-efficiency, correctness, groundedness, g-eval, keywords, similarity, context-faithfulness, conversation-coherence, criteria, rag, plan-quality, task-completion, visual-regression, trajectory)
+4. **Layer names**: Are layer values valid? (unit, static, integration, llm, performance, skill)
+5. **Adapter names**: Are adapter values valid? (mcp, openai, anthropic, gemini, cursor-cli, gemini-cli)
+6. **Threshold values**: Are CI thresholds within reasonable ranges? (scores: 0-1, latency: > 0)
+7. **Difficulty values**: Are difficulty values valid? (simple, moderate, complex, adversarial)
+
+## What to Flag
+
+- Invalid evaluator names (typos are common: "tool_selection" instead of "tool-selection")
+- Tests without evaluators in LLM layer (they default to correctness+groundedness, but being explicit is better)
+- Unreasonably high timeouts (> 300s suggests a misconfiguration)
+- Missing `expected` in LLM tests (reduces evaluator effectiveness)
+
+## When to Stay Silent
+
+- Minor whitespace or comment changes
+- Changes to non-eval YAML files

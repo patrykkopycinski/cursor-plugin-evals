@@ -23,6 +23,7 @@ interface RawManifest {
   agents?: string | string[];
   commands?: string | string[];
   hooks?: string;
+  mcp?: string;
   mcpServers?: string;
   [key: string]: unknown;
 }
@@ -222,7 +223,11 @@ export function discoverPlugin(pluginDir: string, pluginRoot?: string): PluginMa
     hooks: discoverHooks(root, typeof manifest.hooks === 'string' ? manifest.hooks : undefined),
     mcpServers: discoverMcpServers(
       root,
-      typeof manifest.mcpServers === 'string' ? manifest.mcpServers : undefined,
+      typeof manifest.mcp === 'string'
+        ? manifest.mcp
+        : typeof manifest.mcpServers === 'string'
+          ? manifest.mcpServers
+          : undefined,
     ),
   };
 }

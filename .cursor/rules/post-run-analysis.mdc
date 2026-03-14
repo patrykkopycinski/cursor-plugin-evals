@@ -1,0 +1,25 @@
+---
+description: Auto-analyze evaluation results after an eval run completes
+globs:
+  - ".cursor-plugin-evals/results/**/*.json"
+  - "**/eval-report*.json"
+  - "**/eval-results*.json"
+---
+
+# Post-Run Analysis
+
+When evaluation result files are created or updated, proactively analyze them using the **report-analyzer** skill.
+
+## What to Do
+
+1. Read the new/updated result file
+2. Check the overall pass rate — if below 80%, highlight it immediately
+3. Look for failure patterns: are multiple tests failing for the same reason?
+4. If regression fingerprints exist, compare against the baseline
+5. Summarize findings in 3-5 bullet points
+6. If there are auto-fixable issues (wrong evaluator config, missing tests), offer to fix them
+
+## When to Stay Silent
+
+- If the pass rate is above 95% and no regressions detected, just note "all looks good"
+- Don't re-analyze the same result file repeatedly
