@@ -412,3 +412,73 @@ Your generated eval file MUST achieve:
 - Remove tests that fail — fix them or skip with a reason
 - Declare done while any CI threshold is failing
 - Give up after one failed run — iterate up to 5 times per layer
+
+## External Workspace Mode
+
+When the user wants to evaluate a plugin in another repository **without committing eval files** to that repo,
+use the external workspace workflow. This keeps all eval artifacts (config, results, infrastructure) local
+while only applying content improvements to the target.
+
+### When to Activate External Mode
+
+- User says "evaluate skills in [repo]" or "evaluate [repo] without committing evals"
+- User references a repo they don't want eval artifacts in
+- User mentions "external evaluation" or "workspace mode"
+- The target repo is not the current workspace
+
+### External Workflow
+
+1. **Create the workspace**:
+   ```bash
+   npx cursor-plugin-evals external-init \
+     --external /path/to/target-repo \
+     --scope skills/security \
+     --layers static unit llm skill
+   ```
+   This creates `workspaces/<plugin-name>/` in the framework repo with:
+   - `workspace.json` — metadata (target path, scope, timestamps)
+   - `plugin-eval.yaml` — eval config pointing to the external repo
+   - `eval-results/` — where results are stored locally
+   - `fixes/` — where content improvements are staged
+
+2. **Enhance the generated config** — read the target skills/rules/tools and add comprehensive
+   tests just like in normal mode, but write the YAML to the workspace, not the target.
+
+3. **Run evals against the external repo**:
+   ```bash
+   npx cursor-plugin-evals run -c workspaces/<name>/plugin-eval.yaml --verbose
+   ```
+
+4. **Fix → Re-run → Converge** — same loop as normal mode.
+
+5. **Save content improvements** — when fixing skills/rules, save the improved versions to
+   `workspaces/<name>/fixes/<relative-path>` mirroring the target repo structure.
+   DO NOT write eval artifacts (YAML, docker, scripts) to the target repo.
+
+6. **Apply fixes to the target**:
+   ```bash
+   npx cursor-plugin-evals apply-fixes --workspace workspaces/<name>
+   ```
+
+7. **Generate PR findings**:
+   ```bash
+   npx cursor-plugin-evals pr-findings --workspace workspaces/<name> -o FINDINGS.md
+   ```
+
+8. **Open the PR** on the target repo with only skill/rule improvements:
+   ```bash
+   cd /path/to/target-repo
+   git checkout -b eval/skill-improvements
+   git add skills/ rules/
+   gh pr create --title "Improve skills based on eval findings" \
+     --body-file /path/to/framework/FINDINGS.md
+   ```
+
+### Key Rules for External Mode
+
+- **NEVER write** `plugin-eval.yaml`, `docker-compose.yml`, `.env.test`, `scripts/`, `.github/workflows/`,
+  or any eval infrastructure files to the target repo
+- **ONLY write** improved skill content (`SKILL.md`), rule content (`.mdc`), and agent content (`.md`) to the target
+- Store ALL eval artifacts under the workspace directory
+- The workspace's `plugin-eval.yaml` uses absolute paths to the target via `plugin.dir`
+- Results (`--output`) should go to `workspaces/<name>/eval-results/`

@@ -18,6 +18,7 @@ import { log, setLogLevel, setNoColor } from './logger.js';
 import { watchAndRun } from './watch.js';
 import { initCommand } from './init.js';
 import { ciInitCommand } from './ci-init.js';
+import { externalInitCommand, applyFixesCommand, generatePrFindings } from './external.js';
 
 const EXIT_OK = 0;
 const EXIT_FAIL = 1;
@@ -400,6 +401,97 @@ program
         layers: opts.layers,
         interactive: opts.interactive,
       });
+    },
+  );
+
+program
+  .command('external-init')
+  .description('Create an evaluation workspace targeting an external plugin repo (no files written to the target)')
+  .requiredOption('-e, --external <path>', 'path to the external plugin repository')
+  .option('-s, --scope <subdir>', 'subdirectory scope within the plugin (e.g., skills/security)')
+  .option('-o, --output <path>', 'output workspace directory (default: workspaces/<plugin-name>)')
+  .option('--plugin-root <path>', 'path to plugin root relative to external dir')
+  .option('--transport <type>', 'transport type (stdio, http, sse, streamable-http)')
+  .option('-l, --layers <layers...>', 'layers to generate (static, unit, integration, llm, skill)')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: {
+      external: string;
+      scope?: string;
+      output?: string;
+      pluginRoot?: string;
+      transport?: string;
+      layers?: string[];
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+      await externalInitCommand(opts);
+    },
+  );
+
+program
+  .command('apply-fixes')
+  .description('Apply skill/rule improvements from a workspace to the target repository')
+  .requiredOption('-w, --workspace <path>', 'path to the evaluation workspace')
+  .option('-t, --target <path>', 'override target directory (default: workspace\'s external dir)')
+  .option('--dry-run', 'show what would be changed without writing files')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: {
+      workspace: string;
+      target?: string;
+      dryRun?: boolean;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+      await applyFixesCommand(opts);
+    },
+  );
+
+program
+  .command('pr-findings')
+  .description('Generate a PR-ready findings report from workspace evaluation results')
+  .requiredOption('-w, --workspace <path>', 'path to the evaluation workspace')
+  .option('-o, --output <path>', 'write report to file (default: stdout)')
+  .option('--title <title>', 'custom PR title')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    (opts: {
+      workspace: string;
+      output?: string;
+      title?: string;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+
+      const wsDir = resolve(process.cwd(), opts.workspace);
+      try {
+        const report = generatePrFindings(wsDir, {
+          workspace: wsDir,
+          title: opts.title,
+        });
+
+        if (opts.output) {
+          const outPath = resolve(process.cwd(), opts.output);
+          mkdirSync(dirname(outPath), { recursive: true });
+          writeFileSync(outPath, report, 'utf-8');
+          log.success(`PR findings written to ${outPath}`);
+        } else {
+          process.stdout.write(report);
+        }
+      } catch (err) {
+        log.error('Failed to generate PR findings', err);
+        process.exitCode = EXIT_CONFIG_ERROR;
+      }
     },
   );
 

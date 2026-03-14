@@ -132,5 +132,6 @@ The assistant enforces strict YAML conventions:
 ## See Also
 
 - [Getting Started](./getting-started.md) — manual setup if you prefer
+- [External Evaluation](./external-eval.md) — evaluate plugins without committing eval files to the target
 - [Configuration Reference](./configuration.md) — what the assistant generates
 - [CI/CD Integration](./ci-cd.md) — CI workflows the assistant creates

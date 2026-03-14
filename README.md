@@ -52,6 +52,26 @@ npx cursor-plugin-evals run --ci      # Enforce CI quality gates
 npx cursor-plugin-evals score         # Quality score with badge
 ```
 
+## External Evaluation (No Commit Mode)
+
+Evaluate any plugin without committing eval files to the target repo. All configs, results, and infrastructure stay local — only content improvements are applied to the target.
+
+```bash
+# 1. Create a workspace targeting an external repo
+npx cursor-plugin-evals external-init --external ~/Projects/some-plugin --scope skills/security
+
+# 2. Run evals (config lives in workspaces/, not the target)
+npx cursor-plugin-evals run -c workspaces/some-plugin-skills-security/plugin-eval.yaml
+
+# 3. Apply only skill/rule improvements to the target
+npx cursor-plugin-evals apply-fixes --workspace workspaces/some-plugin-skills-security
+
+# 4. Generate a PR-ready findings report
+npx cursor-plugin-evals pr-findings --workspace workspaces/some-plugin-skills-security -o FINDINGS.md
+```
+
+See [External Evaluation docs](docs/external-eval.md) for the full workflow.
+
 ## What It Tests
 
 Every Cursor plugin component is covered — not just MCP tools:

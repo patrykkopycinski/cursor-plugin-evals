@@ -12,3 +12,4 @@ fixtures/**/*.jsonl.gz
 .DS_Store
 .cursor-plugin-evals/
 openspec/
+workspaces/

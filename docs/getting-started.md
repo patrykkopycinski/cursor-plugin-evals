@@ -111,6 +111,7 @@ npx cursor-plugin-evals run --report markdown -o results.md
 ## Next Steps
 
 - **[Framework Assistant](./framework-assistant.md)** — let the autonomous AI agent set up and maintain your evals
+- **[External Evaluation](./external-eval.md)** — evaluate any plugin without committing eval files to the target repo
 - [Configuration Reference](./configuration.md) — tune thresholds, scoring weights, and guardrails
 - [Static Layer](./layers/static.md) — validate plugin structure without running the server
 - [Integration Layer](./layers/integration.md) — test individual tool calls with assertions

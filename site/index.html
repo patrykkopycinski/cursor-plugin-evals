@@ -67,12 +67,12 @@ a:hover{color:var(--purple)}
 .card-icon{font-size:1.75rem;margin-bottom:.75rem}
 
 /* Pipeline */
-.pipeline{display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding:1rem 0}
-.pipe-step{flex:1;min-width:150px;text-align:center;position:relative;padding:0 .5rem}
-.pipe-num{width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-family:var(--font-mono);font-size:.85rem;margin-bottom:.5rem;border:2px solid var(--purple);color:var(--purple);background:var(--bg)}
-.pipe-step h4{font-size:.95rem;margin-bottom:.25rem}
-.pipe-step p{font-size:.78rem;color:var(--text-dim)}
-.pipe-arrow{flex:0 0 30px;display:flex;align-items:center;justify-content:center;color:var(--purple);font-size:1.2rem;padding-top:.5rem}
+.pipeline{display:flex;align-items:flex-start;gap:0;padding:1rem 0;justify-content:center}
+.pipe-step{flex:0 1 140px;text-align:center;position:relative;padding:0 .25rem}
+.pipe-num{width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-family:var(--font-mono);font-size:.8rem;margin-bottom:.5rem;border:2px solid var(--purple);color:var(--purple);background:var(--bg)}
+.pipe-step h4{font-size:.85rem;margin-bottom:.25rem}
+.pipe-step p{font-size:.72rem;color:var(--text-dim);line-height:1.35}
+.pipe-arrow{flex:0 0 20px;display:flex;align-items:center;justify-content:center;color:var(--purple);font-size:1rem;padding-top:.25rem}
 
 /* Features Grid */
 .features-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
@@ -106,10 +106,17 @@ tr:hover td{background:var(--surface)}
 .footer a:hover{color:var(--cyan)}
 
 /* Responsive */
+@media(max-width:1100px){
+  .pipeline{flex-wrap:wrap;justify-content:center;gap:.75rem 0}
+  .pipe-step{flex:0 1 130px}
+  .pipe-arrow{flex:0 0 16px;font-size:.85rem}
+}
 @media(max-width:900px){
   .features-grid{grid-template-columns:repeat(2,1fr)}
-  .pipeline{flex-wrap:wrap;justify-content:center}
-  .pipe-arrow{transform:rotate(90deg);flex:0 0 auto;width:100%}
+  .pipeline{gap:.5rem .25rem}
+  .pipe-step{flex:0 1 110px}
+  .pipe-step p{font-size:.68rem}
+  .pipe-arrow{display:none}
 }
 @media(max-width:640px){
   .nav-links{display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;background:rgba(10,14,26,.97);padding:1rem 1.5rem;gap:1rem;border-bottom:1px solid var(--border)}
@@ -118,6 +125,7 @@ tr:hover td{background:var(--surface)}
   .features-grid{grid-template-columns:1fr 1fr}
   .hero h1{font-size:2.2rem}
   .section{padding:3.5rem 1rem}
+  .pipe-step{flex:0 1 90px}
 }
 </style>
 </head>
@@ -225,6 +233,7 @@ tr:hover td{background:var(--surface)}
     <div class="feat"><div class="feat-icon">💰</div><h4>Cost Advisor</h4><p>Token usage analysis and budget enforcement</p></div>
     <div class="feat"><div class="feat-icon">📉</div><h4>Regression Detection</h4><p>Catch quality drops before they ship</p></div>
     <div class="feat"><div class="feat-icon">🛡️</div><h4>Guardrails</h4><p>Safety boundaries with automated enforcement</p></div>
+    <div class="feat"><div class="feat-icon">🔗</div><h4>External Eval</h4><p>Evaluate any plugin without committing eval files to the target repo</p></div>
     <div class="feat"><div class="feat-icon">🔬</div><h4>Prompt Sensitivity</h4><p>Measure robustness to prompt variations</p></div>
     <div class="feat"><div class="feat-icon">💥</div><h4>Collision Detection</h4><p>Find overlapping skills before they confuse the LLM</p></div>
     <div class="feat"><div class="feat-icon">🔍</div><h4>Trace Viewer</h4><p>Visual execution traces for debugging failures</p></div>

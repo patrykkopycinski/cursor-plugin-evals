@@ -1,6 +1,7 @@
 - Getting Started
   - [Quick Start](getting-started.md)
   - [Framework Assistant](framework-assistant.md)
+  - [External Evaluation](external-eval.md)
   - [Configuration](configuration.md)
 
 - Testing Layers

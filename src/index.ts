@@ -528,3 +528,15 @@ export type {
   ScoreSnapshot,
   DriftAlert,
 } from './assistant/types.js';
+
+export {
+  externalInitCommand,
+  applyFixesCommand,
+  generatePrFindings,
+  loadWorkspaceMeta,
+} from './cli/external.js';
+export type {
+  ExternalInitOptions,
+  ApplyFixesOptions,
+  PrFindingsOptions,
+} from './cli/external.js';
