@@ -15,7 +15,7 @@ import { log } from '../../cli/logger.js';
 import { calculateCost } from '../../pricing/index.js';
 
 const DEFAULT_ADAPTER = 'mcp';
-const DEFAULT_MODEL = 'gpt-4o';
+const DEFAULT_MODEL = 'gpt-5.4';
 
 export async function runSkillSuite(
   suite: SuiteConfig,

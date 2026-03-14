@@ -25,11 +25,9 @@ suites:
     layer: performance
     tests:
       - name: search-latency
-        tool: elasticsearch_api
+        tool: search_tool
         args:
-          method: GET
-          path: /my-index/_search
-          body: '{"query":{"match_all":{}}}'
+          query: "match all items"
         warmup: 3
         iterations: 50
         thresholds:
@@ -38,10 +36,9 @@ suites:
           p99: 1000
 
       - name: concurrent-load
-        tool: elasticsearch_api
+        tool: search_tool
         args:
-          method: GET
-          path: /_cat/indices
+          query: "list items"
         iterations: 100
         concurrency: 10
         thresholds:

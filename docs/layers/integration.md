@@ -10,17 +10,16 @@ Each integration test calls a specific tool with given arguments and optionally 
 suites:
   - name: integration-tests
     layer: integration
-    require_env: [ES_URL]
+    require_env: [MY_SERVICE_URL]
     tests:
-      - name: cat-health
-        tool: elasticsearch_api
+      - name: health-check
+        tool: search_tool
         args:
-          method: GET
-          path: /_cat/health
+          query: "health check"
         assert:
           - field: content[0].text
             op: contains
-            value: "green"
+            value: "ok"
 ```
 
 ## Assertions
@@ -49,11 +48,10 @@ Assertions use `field`, `op`, and `value` to check tool call results. The `field
 ### Multiple Assertions
 
 ```yaml
-      - name: index-exists
-        tool: elasticsearch_api
+      - name: item-exists
+        tool: search_tool
         args:
-          method: GET
-          path: /my-index/_count
+          query: "count items"
         assert:
           - field: content[0].text
             op: exists
@@ -68,29 +66,25 @@ Chain multiple tool calls together with variable binding. Use `output` to captur
 
 ```yaml
       - name: create-and-query
-        tool: elasticsearch_api
+        tool: create_record
         args:
-          method: PUT
-          path: /test-index
+          name: "test-item"
         workflow:
-          - tool: elasticsearch_api
+          - tool: update_record
             args:
-              method: POST
-              path: /test-index/_doc
-              body: '{"title": "hello"}'
-            output: docId
-          - tool: elasticsearch_api
+              id: "$recordId"
+              title: "hello"
+            output: recordId
+          - tool: search_tool
             args:
-              method: GET
-              path: /test-index/_doc/$docId
+              query: "hello"
             assert:
               - field: content[0].text
                 op: contains
                 value: "hello"
-          - tool: elasticsearch_api
+          - tool: delete_record
             args:
-              method: DELETE
-              path: /test-index
+              id: "$recordId"
 ```
 
 Each workflow step runs sequentially. If any step fails its assertions, the test fails.
@@ -101,10 +95,10 @@ Test that tools return proper errors for invalid input:
 
 ```yaml
       - name: invalid-method
-        tool: elasticsearch_api
+        tool: search_tool
         args:
           method: INVALID
-          path: /test
+          query: ""
         expectError: true
 ```
 
@@ -118,14 +112,13 @@ Run shell commands before and after a suite:
 suites:
   - name: integration-with-setup
     layer: integration
-    setup: "curl -X PUT http://localhost:9200/test-index"
-    teardown: "curl -X DELETE http://localhost:9200/test-index"
+    setup: "curl -X POST http://localhost:3000/setup"
+    teardown: "curl -X POST http://localhost:3000/teardown"
     tests:
-      - name: query-test-index
-        tool: elasticsearch_api
+      - name: query-test-data
+        tool: search_tool
         args:
-          method: GET
-          path: /test-index/_search
+          query: "test data"
 ```
 
 ## Conditional Gating
@@ -134,13 +127,13 @@ Skip suites when required environment variables are missing:
 
 ```yaml
 suites:
-  - name: es-integration
+  - name: service-integration
     layer: integration
-    require_env: [ES_URL, ES_API_KEY]
+    require_env: [MY_SERVICE_URL, MY_API_KEY]
     tests:
-      - name: cluster-health
-        tool: elasticsearch_api
-        args: { method: GET, path: /_cluster/health }
+      - name: service-health
+        tool: search_tool
+        args: { query: "health check" }
 ```
 
 Individual tests can also use `require_env`:
@@ -159,7 +152,7 @@ Individual tests can also use `require_env`:
 cursor-plugin-evals run -l integration
 
 # Run a specific suite
-cursor-plugin-evals run -l integration -s es-integration
+cursor-plugin-evals run -l integration -s service-integration
 
 # Use mock fixtures instead of live server
 cursor-plugin-evals run -l integration --mock

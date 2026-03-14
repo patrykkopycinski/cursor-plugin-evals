@@ -9,7 +9,7 @@ Automatically generate integration test cases from MCP tool JSON schemas. The sc
 cursor-plugin-evals gen-tests -o generated-tests.yaml
 
 # Generate tests for a single tool
-cursor-plugin-evals gen-tests --tool elasticsearch_api -o es-tests.yaml
+cursor-plugin-evals gen-tests --tool search_tool -o search-tests.yaml
 
 # Use a custom config
 cursor-plugin-evals gen-tests -c ./plugin-eval.yaml --tool search -o search-tests.yaml

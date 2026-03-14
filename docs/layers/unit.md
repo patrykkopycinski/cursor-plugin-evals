@@ -21,13 +21,13 @@ suites:
       - name: all-tools-register
         check: registration
         expectedTools:
-          - elasticsearch_api
-          - esql_query
-          - kibana_api
+          - search_tool
+          - query_tool
+          - dashboard_tool
 
       - name: search-schema
         check: schema
-        tool: elasticsearch_api
+        tool: search_tool
 
       - name: conditional-apm
         check: conditional_registration
@@ -39,10 +39,9 @@ suites:
 
       - name: response-shape
         check: response_format
-        tool: elasticsearch_api
+        tool: search_tool
         args:
-          method: GET
-          path: /_cat/health
+          query: "health check"
 ```
 
 ## How It Works

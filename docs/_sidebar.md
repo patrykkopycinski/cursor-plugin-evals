@@ -1,5 +1,6 @@
 - Getting Started
   - [Quick Start](getting-started.md)
+  - [Framework Assistant](framework-assistant.md)
   - [Configuration](configuration.md)
 
 - Testing Layers
@@ -9,6 +10,7 @@
   - [Performance](layers/performance.md)
   - [LLM Eval](layers/llm.md)
   - [Skill Eval](layers/skill.md)
+  - [Conformance](layers/conformance.md)
 
 - Core Concepts
   - [Evaluators](evaluators.md)

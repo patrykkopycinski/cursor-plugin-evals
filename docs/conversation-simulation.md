@@ -22,7 +22,7 @@ const customPersona: UserPersona = {
   name: 'security-auditor',
   description: 'Security professional testing access controls',
   traits: ['methodical', 'probes authorization', 'asks about audit logs'],
-  systemPrompt: 'You are a security auditor testing an Elasticsearch assistant. Methodically probe access controls, ask about audit logging, and test authorization boundaries.',
+  systemPrompt: 'You are a security auditor testing a plugin assistant. Methodically probe access controls, ask about audit logging, and test authorization boundaries.',
 };
 ```
 
@@ -59,7 +59,7 @@ suites:
             evaluators: [conversation-coherence]
           - prompt: "Set the sample rate to 0.1 and enable distributed tracing"
             expected:
-              tools: [elasticsearch_api]
+              tools: [search_tool]
             evaluators: [conversation-coherence, tool-selection]
 ```
 
@@ -84,7 +84,7 @@ cursor-plugin-evals gen-conversations \
 cursor-plugin-evals gen-conversations \
   --persona expert \
   --goal "Create a dashboard with CPU and memory panels" \
-  -m gpt-4o \
+  -m gpt-5.4 \
   -o dashboard-convos.yaml
 ```
 

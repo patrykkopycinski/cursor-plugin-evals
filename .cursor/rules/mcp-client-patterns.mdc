@@ -16,13 +16,13 @@ const client = await McpPluginClient.connect({
   command: 'node',
   args: ['dist/index.js'],
   cwd: '/path/to/plugin',
-  env: { ES_URL: 'http://localhost:9200' },
+  env: { MY_SERVICE_URL: 'http://localhost:3000' },
 });
 
 // Always disconnect when done
 try {
   const tools = await client.listTools();
-  const result = await client.callTool('elasticsearch_api', { method: 'GET', path: '/' });
+  const result = await client.callTool('my_tool', { query: 'test' });
 } finally {
   await client.disconnect();
 }
@@ -44,5 +44,5 @@ Create one MCP client per test suite, not per test. This avoids the 1-3 second s
 When converting MCP tools to OpenAI format for LLM evals, use the allowlist to limit which tools the LLM sees:
 
 ```typescript
-const toolDefs = convertToolsToArray(mcpTools, ['elasticsearch_api', 'esql_query']);
+const toolDefs = convertToolsToArray(mcpTools, ['my_tool', 'my_other_tool']);
 ```

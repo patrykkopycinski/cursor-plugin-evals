@@ -10,7 +10,7 @@ export interface JudgeResponse {
   explanation: string;
 }
 
-const DEFAULT_JUDGE_MODEL = 'gpt-4o';
+const DEFAULT_JUDGE_MODEL = 'gpt-5.4';
 
 export async function callJudge(request: JudgeRequest): Promise<JudgeResponse> {
   const model = request.model ?? process.env.JUDGE_MODEL ?? DEFAULT_JUDGE_MODEL;

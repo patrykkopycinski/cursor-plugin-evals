@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>cursor-plugin-evals — The Definitive Testing Framework for Cursor Plugins</title>
-<meta name="description" content="6 testing layers, 23 evaluators, 5 adapters. The MCP-native evaluation framework built for Cursor plugin quality.">
+<meta name="description" content="7 testing layers, 24 evaluators, 6 adapters. The MCP-native evaluation framework built for Cursor plugin quality.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -129,6 +129,7 @@ tr:hover td{background:var(--surface)}
     <a href="#" class="nav-logo"><span>cursor</span>-plugin-evals</a>
     <button class="nav-toggle" aria-label="Menu">&#9776;</button>
     <div class="nav-links">
+      <a href="#assistant">Assistant</a>
       <a href="#features">Features</a>
       <a href="#layers">Layers</a>
       <a href="#evaluators">Evaluators</a>
@@ -141,11 +142,11 @@ tr:hover td{background:var(--surface)}
 <!-- Hero -->
 <section class="hero fade-in">
   <h1>cursor-plugin-evals</h1>
-  <p class="tagline">The definitive testing framework for Cursor plugins</p>
+  <p class="tagline">The definitive testing framework for Cursor plugins — with an autonomous AI assistant</p>
   <div class="badges">
-    <span class="badge">6 layers</span>
-    <span class="badge">23 evaluators</span>
-    <span class="badge">5 adapters</span>
+    <span class="badge">7 layers</span>
+    <span class="badge">24 evaluators</span>
+    <span class="badge">6 adapters</span>
     <span class="badge">10 attack categories</span>
   </div>
   <div class="btn-row">
@@ -171,15 +172,15 @@ tr:hover td{background:var(--surface)}
   <p class="section-sub">Purpose-built for the MCP ecosystem. No retrofitting generic LLM evals onto plugin workflows.</p>
   <div class="cards">
     <div class="card"><div class="card-icon">🔌</div><h3>Only MCP-Native</h3><p>Speaks the Model Context Protocol natively — tests tool registration, gateway routing, and schema validation the way Cursor actually uses your plugin.</p></div>
-    <div class="card"><div class="card-icon">🧪</div><h3>6 Testing Layers</h3><p>From static analysis to LLM-driven skill evaluation, every layer of plugin quality is covered with dedicated evaluators.</p></div>
-    <div class="card"><div class="card-icon">🛡️</div><h3>Battle-Tested</h3><p>738+ tests across production plugins. Red-teaming, prompt injection defense, guardrails, and regression detection built in.</p></div>
+    <div class="card"><div class="card-icon">🧪</div><h3>7 Testing Layers</h3><p>From static analysis to LLM-driven skill evaluation, every layer of plugin quality is covered with dedicated evaluators.</p></div>
+    <div class="card"><div class="card-icon">🛡️</div><h3>Battle-Tested</h3><p>1161+ tests across production plugins. Red-teaming, prompt injection defense, guardrails, and regression detection built in.</p></div>
   </div>
 </section>
 
 <!-- Layers -->
 <section class="section fade-in" id="layers">
-  <h2 class="section-title">6 Testing Layers</h2>
-  <p class="section-sub">A progressive pipeline from static checks to full LLM-powered skill evaluation.</p>
+  <h2 class="section-title">7 Testing Layers</h2>
+  <p class="section-sub">A progressive pipeline from static checks to full LLM-powered skill evaluation and protocol conformance.</p>
   <div class="pipeline">
     <div class="pipe-step"><div class="pipe-num">1</div><h4>Static</h4><p>Manifest validation, schema checks, file structure</p></div>
     <div class="pipe-arrow">→</div>
@@ -192,13 +193,29 @@ tr:hover td{background:var(--surface)}
     <div class="pipe-step"><div class="pipe-num">5</div><h4>LLM</h4><p>Tool selection accuracy, response quality, multi-turn</p></div>
     <div class="pipe-arrow">→</div>
     <div class="pipe-step"><div class="pipe-num">6</div><h4>Skill</h4><p>Collision detection, activation accuracy, conversation sim</p></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="pipe-num">7</div><h4>Conformance</h4><p>MCP protocol spec compliance, 25 checks across 9 categories</p></div>
+  </div>
+</section>
+
+<!-- Framework Assistant -->
+<section class="section fade-in" id="assistant">
+  <h2 class="section-title">Meet the Framework Assistant</h2>
+  <p class="section-sub">An autonomous AI agent that handles your entire eval lifecycle. Point it at your plugin — it does the rest.</p>
+  <div class="cards">
+    <div class="card"><div class="card-icon">1</div><h3>Deep Scan</h3><p>Discovers every MCP tool, skill, rule, agent, command, and hook in your plugin. Reads every file to understand what each component does.</p></div>
+    <div class="card"><div class="card-icon">2</div><h3>Generate Coverage</h3><p>Writes a comprehensive plugin-eval.yaml covering every component across all 7 layers — static, unit, integration, performance, LLM, skill, and conformance.</p></div>
+    <div class="card"><div class="card-icon">3</div><h3>Set Up Infrastructure</h3><p>Creates Docker Compose, test data seeds, .env files, CI workflows, and orchestration scripts. Everything needed for e2e testing.</p></div>
+    <div class="card"><div class="card-icon">4</div><h3>Run &rarr; Fix &rarr; Converge</h3><p>Executes all suites, analyzes failures, fixes YAML and assertions, and re-runs. Iterates up to 5 times per layer until CI passes.</p></div>
+    <div class="card"><div class="card-icon">5</div><h3>Calibrate Thresholds</h3><p>After tests pass, tightens CI gates based on actual scores. Ensures quality never regresses — thresholds track real capability.</p></div>
+    <div class="card"><div class="card-icon">6</div><h3>Stay Proactive</h3><p>Detects new tools and skills as you add them. Auto-generates tests, updates coverage, and monitors for regressions — without being asked.</p></div>
   </div>
 </section>
 
 <!-- Features -->
 <section class="section fade-in" id="features">
   <h2 class="section-title">Everything You Need</h2>
-  <p class="section-sub">20 capabilities purpose-built for Cursor plugin quality.</p>
+  <p class="section-sub">24 capabilities purpose-built for Cursor plugin quality.</p>
   <div class="features-grid" id="evaluators">
     <div class="feat"><div class="feat-icon">🔴</div><h4>Red-Teaming</h4><p>10 attack categories including prompt injection and jailbreak</p></div>
     <div class="feat"><div class="feat-icon">⚡</div><h4>Smart Gen</h4><p>AI-powered test generation from tool schemas</p></div>
@@ -216,8 +233,8 @@ tr:hover td{background:var(--surface)}
     <div class="feat"><div class="feat-icon">🔔</div><h4>Notifications</h4><p>Slack and webhook alerts on quality changes</p></div>
     <div class="feat"><div class="feat-icon">📼</div><h4>Fixture Record/Replay</h4><p>Deterministic offline testing with recorded calls</p></div>
     <div class="feat"><div class="feat-icon">🗄️</div><h4>LLM Cache</h4><p>Semantic caching for fast, cheap re-runs</p></div>
-    <div class="feat"><div class="feat-icon">🔌</div><h4>5 Adapters</h4><p>OpenAI, Anthropic, Bedrock, Vertex, Ollama</p></div>
-    <div class="feat"><div class="feat-icon">✅</div><h4>23 Evaluators</h4><p>From schema validity to conversational coherence</p></div>
+    <div class="feat"><div class="feat-icon">🔌</div><h4>6 Adapters</h4><p>MCP, plain-llm, cursor-cli, gemini-cli, claude-sdk, headless-coder</p></div>
+    <div class="feat"><div class="feat-icon">✅</div><h4>24 Evaluators</h4><p>From schema validity to conversational coherence</p></div>
     <div class="feat"><div class="feat-icon">🚦</div><h4>CI Thresholds</h4><p>Quality gates that block merges below your bar</p></div>
     <div class="feat"><div class="feat-icon">🏆</div><h4>Quality Score</h4><p>A single A–F grade for every eval run</p></div>
   </div>
@@ -255,13 +272,14 @@ tr:hover td{background:var(--surface)}
         <tr><th>Capability</th><th>cursor-plugin-evals</th><th>DeepEval</th><th>Braintrust</th><th>MCP-Eval</th></tr>
       </thead>
       <tbody>
+        <tr><td>Autonomous AI assistant</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
         <tr><td>MCP-native protocol testing</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
         <tr><td>Cursor-aware (skills, rules)</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
         <tr><td>Skill collision detection</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
         <tr><td>Red-teaming / guardrails</td><td class="check">✓</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td></tr>
         <tr><td>Fixture record &amp; replay</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
-        <tr><td>5 LLM adapters</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="cross">✗</td></tr>
-        <tr><td>6 testing layers</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>6 task adapters</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="cross">✗</td></tr>
+        <tr><td>7 testing layers</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
         <tr><td>CI quality gates</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="cross">✗</td></tr>
         <tr><td>Conversation simulation</td><td class="check">✓</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td></tr>
         <tr><td>Cost tracking</td><td class="check">✓</td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td></tr>

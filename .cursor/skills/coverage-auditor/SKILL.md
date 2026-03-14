@@ -36,8 +36,12 @@ You are the Coverage Auditor for `cursor-plugin-evals`. When you find gaps, you 
 
 Use the codebase scanner to build a complete profile:
 - All MCP tools (from source code registerTool patterns)
-- All skills, rules, agents, commands (from manifest)
-- All existing eval files and their coverage
+- All skills (`SKILL.md` files — read frontmatter for name, description, triggers)
+- All rules (`.mdc` files — read frontmatter for description, alwaysApply, globs)
+- All agents (`.md` files in agents/ — read frontmatter for name, description, model)
+- All commands (`.md` files in commands/ — read frontmatter for name, description, argument-hint)
+- All hooks (from hooks.json or manifest)
+- All existing eval files and their coverage per component type
 
 ### Step 2: Identify ALL Gaps
 
@@ -45,13 +49,19 @@ Run every audit dimension:
 
 | Dimension | Critical If Missing | Auto-Fix |
 |-----------|-------------------|----------|
-| Tool coverage (every tool in ≥1 test) | Yes | Write integration + LLM tests for uncovered tools |
+| MCP tool coverage (every tool in ≥1 test) | Yes | Write integration + LLM tests for uncovered tools |
+| Skill coverage (every skill tested) | Yes | Write frontmatter + activation + negative activation tests |
+| Rule coverage (every rule tested) | Yes if ≥3 rules | Write frontmatter + content quality tests |
+| Agent coverage (every agent tested) | Yes if agents exist | Write frontmatter + behavior tests |
+| Command coverage (every command tested) | Yes if commands exist | Write frontmatter + execution tests |
+| Cross-component coherence | Yes | Write coherence tests (skills ref existing tools, etc.) |
 | Layer coverage (static, unit, integration, llm, performance) | Yes if <3 layers | Write missing layer suites |
 | Security evaluators (security + tool-poisoning) | Yes | Add security tests to LLM suite |
 | Evaluator diversity (≥30% utilization) | No | Add recommended evaluators to existing tests |
 | Difficulty distribution (≥2 levels) | No | Add complex/adversarial test cases |
 | Performance tests | If >5 tools | Write performance benchmarks |
 | CI thresholds configured | Yes | Add ci: section to plugin-eval.yaml |
+| CI thresholds stale/lenient | Yes if scores >> thresholds | Tighten thresholds to `actual - 5%` headroom |
 | Fixtures recorded | No | Inform user to run with --record |
 | Regression baseline | No | Inform user to save fingerprint |
 | E2E infrastructure (docker, seed, env, CI) | Yes if integration/perf tests exist | Create docker-compose.yml, seed script, .env.test, run script, CI workflow |
@@ -60,27 +70,53 @@ Run every audit dimension:
 
 For each gap found:
 
-1. **Missing tool tests**: Write complete test YAML covering the tool across integration + LLM layers. Include:
+1. **Missing MCP tool tests**: Write complete test YAML covering the tool across integration + LLM layers. Include:
    - Integration: tool call with realistic args + assertions on response structure
    - LLM: natural language prompt + expected.tools + evaluators
 
-2. **Missing layer suites**: Write the entire suite from scratch:
-   - Static: all 10 check types
+2. **Missing skill tests**: Write complete test YAML:
+   - Static: frontmatter validation per skill
+   - LLM: skill activation test (positive) — prompt matching a trigger phrase
+   - LLM: skill activation test (negative) — prompt that should NOT activate the skill
+   - Static: cross-reference check (tools mentioned in skill body exist)
+
+3. **Missing rule tests**: Write:
+   - Static: frontmatter validation per rule (description, alwaysApply/globs)
+   - Static: content quality check (non-empty, actionable)
+
+4. **Missing agent tests**: Write:
+   - Static: frontmatter validation per agent
+   - LLM: behavior test (prompt in agent's domain, verify it uses the right tools)
+
+5. **Missing command tests**: Write:
+   - Static: frontmatter validation per command
+   - LLM: execution test (invoke command, verify expected workflow triggers)
+
+6. **Missing cross-component coherence tests**: Write:
+   - Verify skills reference existing MCP tools
+   - Verify commands reference existing tools/skills
+   - Verify agent instructions reference available tools
+   - Verify no orphaned components
+
+7. **Missing layer suites**: Write the entire suite from scratch:
+   - Static: all check types for ALL component types (not just MCP)
    - Unit: registration + schema + conditional
    - Integration: every tool that can run
-   - LLM: every tool via natural language
+   - LLM: every tool via natural language + skill activation + agent behavior + command execution
    - Performance: top tools by importance
 
-3. **Missing security**: Add a dedicated security suite with 5+ adversarial prompts
+8. **Missing security**: Add a dedicated security suite with 5+ adversarial prompts
+   including skill confusion attacks and rule bypass attempts
 
-4. **Missing evaluators**: Add evaluators to existing LLM tests:
+9. **Missing evaluators**: Add evaluators to existing LLM tests:
    - Always: tool-selection, correctness, mcp-protocol, security
    - If tools return data: groundedness, content-quality
    - If multi-step: plan-quality, task-completion, path-efficiency
+   - If skill activation: skill-trigger, content-quality
 
-5. **Missing CI thresholds**: Add complete ci: section with score, evaluator, latency, and required-pass gates
+10. **Missing CI thresholds**: Add complete ci: section with score, evaluator, latency, and required-pass gates
 
-6. **Single difficulty**: Add complex and adversarial variants of existing simple tests
+11. **Single difficulty**: Add complex and adversarial variants of existing simple tests
 
 ### Step 3.5: Ensure E2E Infrastructure
 
@@ -93,7 +129,7 @@ Before running any tests, verify infrastructure exists:
    - Check `scripts/run-evals.sh` → create if missing
    - Check `.github/workflows/plugin-evals.yml` → create if missing
 
-2. If `require_env: [ES_URL]` appears but no docker-compose exists → create it
+2. If `require_env` references service URLs but no docker-compose exists → create it
 
 3. Load `.env.test` before running: `set -a && source .env.test && set +a`
 
@@ -118,12 +154,27 @@ npx cursor-plugin-evals run --ci
 ```
 If CI gate fails → fix the gate-failing tests → re-run until exit 0.
 
-### Step 5: Report Final State
+### Step 5: Calibrate Thresholds
 
-After convergence (all CI thresholds passing):
+After convergence, evaluate whether CI thresholds are properly calibrated:
+
+1. **Compute headroom** for every CI gate (`actual - threshold`)
+2. If headroom > 20%: threshold is stale — **bump to `actual - 5%`**
+3. If headroom 10-20%: consider tightening
+4. If headroom < 10%: well calibrated
+5. Identify weakest tests dragging averages down — recommend fixing them
+6. Update `plugin-eval.yaml` with calibrated thresholds
+7. Re-run `--ci` to confirm tighter thresholds still pass
+8. Back off by 2% if variance causes failures
+
+**Never lower `security.min = 1.0`** — security is absolute.
+
+### Step 6: Report Final State
+
+After convergence AND threshold calibration:
 1. Re-run the coverage scanner to compute the new score
-2. Report the before/after comparison
-3. Commit the green state
+2. Report the before/after comparison including threshold changes
+3. Commit the green + calibrated state
 
 ## Output Format
 
@@ -137,6 +188,13 @@ After convergence (all CI thresholds passing):
 2. ✅ [HIGH] Added integration layer suite (N tests)
 3. ✅ [HIGH] Added security evaluators to LLM tests
 4. ✅ [MEDIUM] Added CI quality thresholds
+
+### Threshold Calibration
+| Gate | Old | Actual | New | Headroom |
+|------|-----|--------|-----|----------|
+| score.avg | 0.80 | 0.94 | 0.89 | 5.6% |
+| tool-selection.avg | 0.80 | 0.97 | 0.92 | 5.4% |
+| first_try_pass_rate | 0.75 | 0.90 | 0.85 | 5.9% |
 
 ### Remaining (requires user action)
 - ⏳ Record fixtures: `npx cursor-plugin-evals run --record`

@@ -22,7 +22,7 @@ const ENV_VARS = [
     description: 'Azure deployment for LLM judge (defaults to AZURE_OPENAI_DEPLOYMENT)',
     default: '',
   },
-  { name: 'JUDGE_MODEL', description: 'LLM model for judge evaluators', default: 'gpt-4o' },
+  { name: 'JUDGE_MODEL', description: 'LLM model for judge evaluators', default: 'gpt-5.4' },
   {
     name: 'LITELLM_URL',
     description: 'LiteLLM proxy URL for LLM routing',

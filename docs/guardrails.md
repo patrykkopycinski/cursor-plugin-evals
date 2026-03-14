@@ -59,7 +59,7 @@ Violations are attached to `TestResult.metadata.guardrailViolations`:
   "guardrailViolations": [
     {
       "rule": "warn-write-ops",
-      "tool": "elasticsearch_api",
+      "tool": "search_tool",
       "action": "warn",
       "message": "Write operation detected during eval"
     }
@@ -78,7 +78,7 @@ const rules: GuardrailRule[] = [
   { name: 'no-prod', pattern: /prod|production/i, action: 'block', message: 'No prod access' },
 ];
 
-const violation = checkGuardrails(rules, 'elasticsearch_api', {
+const violation = checkGuardrails(rules, 'search_tool', {
   method: 'DELETE',
   path: '/_all',
 });

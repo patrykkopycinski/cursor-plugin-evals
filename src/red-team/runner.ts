@@ -187,7 +187,7 @@ function buildReport(results: AttackResult[]): RedTeamReport {
 
 export async function runRedTeam(config: RedTeamConfig): Promise<RedTeamReport> {
   const countPerCategory = config.countPerCategory ?? 5;
-  const model = config.model ?? 'gpt-4o-mini';
+  const model = config.model ?? 'gpt-5.4-mini';
   const maxTurns = config.maxTurns ?? 3;
   const timeout = config.timeout ?? 30_000;
   const selectedCategories = config.categories ?? ALL_ATTACK_MODULES.map((m) => m.category);

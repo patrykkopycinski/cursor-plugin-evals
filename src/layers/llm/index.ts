@@ -19,7 +19,7 @@ import { log } from '../../cli/logger.js';
 
 const DEFAULT_MAX_TURNS = 10;
 const DEFAULT_TIMEOUT = 120_000;
-const DEFAULT_MODEL = 'gpt-4o';
+const DEFAULT_MODEL = 'gpt-5.4';
 
 async function runSingleLlmTest(
   test: LlmTestConfig,

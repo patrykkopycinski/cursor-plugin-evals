@@ -5,7 +5,7 @@ import { buildSystemPrompt } from '../layers/llm/system-prompt.js';
 import { parseEntry } from '../core/utils.js';
 
 export function createMcpAdapter(config: AdapterConfig): TaskAdapter {
-  const model = config.model ?? 'gpt-4o';
+  const model = config.model ?? 'gpt-5.4';
   const timeout = config.timeout ?? 120_000;
   const maxTurns = 10;
 

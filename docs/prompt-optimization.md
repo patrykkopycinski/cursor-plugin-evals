@@ -70,9 +70,9 @@ Original prompt:
   "Search for documents"
 
 Optimized prompt:
-  "Search the Elasticsearch cluster for documents matching
-   the user's query. Use the elasticsearch_api tool with
-   method GET and the _search endpoint."
+  "Search for documents matching the user's query.
+   Use the search_tool with the appropriate query
+   parameters and filter options."
 ```
 
 When the score stops improving between iterations, the optimizer declares convergence.

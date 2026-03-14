@@ -37,7 +37,7 @@ Run evaluation suites against a Cursor plugin's MCP server. **Automatically fix 
    fi
    ```
 
-   c. If docker-compose does NOT exist but integration tests use `require_env: [ES_URL]`:
+   c. If docker-compose does NOT exist but integration tests use `require_env` with service URLs:
       → Create the full e2e infrastructure (docker-compose, seed script, .env.test, run script)
       → See the framework-assistant skill Phase 1.5 for the exact template
 
@@ -106,12 +106,50 @@ Run evaluation suites against a Cursor plugin's MCP server. **Automatically fix 
    ### Fixes Applied During Convergence
    1. Updated esql_query assertion to match new response format
    2. Increased timeout for cloud_api tests (was 5s, now 15s)
-   3. Added require_env: [ES_URL] to integration tests
+   3. Added require_env to integration tests for service dependencies
    ```
 
-7. **Commit green state**
+7. **Calibrate thresholds (MANDATORY after convergence)**
 
-   After convergence, commit the updated plugin-eval.yaml so the passing state is preserved.
+   Once all CI gates pass, analyze whether the thresholds are properly calibrated.
+   Lenient thresholds provide false confidence and allow regressions to slip through.
+
+   a. For each CI gate, compute headroom:
+      - `headroom = actual_score - threshold_value`
+
+   b. Apply tightening rules:
+      | Headroom | Action |
+      |----------|--------|
+      | > 20% above threshold | **Bump** to `actual - 5%` |
+      | 10-20% above | **Bump** if stable across run |
+      | 5-10% above | Well calibrated — leave |
+      | < 5% above | Tight — leave, monitor |
+      | `security.min = 1.0` | NEVER lower |
+
+   c. Identify weakest tests dragging averages down — fix those tests
+      rather than keeping thresholds low to accommodate them
+
+   d. Update `plugin-eval.yaml` with tighter thresholds
+
+   e. Re-run to confirm:
+   ```bash
+   npx cursor-plugin-evals run --ci
+   ```
+   If tighter thresholds fail due to variance, back off by 2% and retry.
+
+   f. Report calibration:
+   ```
+   ## Threshold Calibration
+   | Gate | Old | Actual | New | Headroom |
+   |------|-----|--------|-----|----------|
+   | score.avg | 0.80 | 0.94 | 0.89 | 5.6% |
+   | tool-selection.avg | 0.80 | 0.97 | 0.92 | 5.4% |
+   ```
+
+8. **Commit green + calibrated state**
+
+   After convergence AND calibration, commit the updated plugin-eval.yaml so the
+   passing state with properly-tight thresholds is preserved.
 
 **Auto-Fix Reference**
 

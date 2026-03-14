@@ -12,7 +12,7 @@ cursor-plugin-evals registry list
 cursor-plugin-evals registry pull filesystem-basics
 
 # Download to a custom directory
-cursor-plugin-evals registry pull elasticsearch-smoke -o ./my-collections
+cursor-plugin-evals registry pull search-basics -o ./my-collections
 
 # Package a local suite for submission
 cursor-plugin-evals registry push --suite ./suites/my-suite.yaml

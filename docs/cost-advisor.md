@@ -16,18 +16,18 @@ Cost is computed from token usage using a built-in pricing catalog that covers O
 ```bash
 # Compare costs across 3 models (threshold: 0.8)
 cursor-plugin-evals cost-report \
-  -m gpt-4o -m gpt-4o-mini -m claude-sonnet-4-20250514 \
+  -m gpt-5.4 -m gpt-5.4-mini -m claude-opus-4-6 \
   --threshold 0.8
 
 # Lower threshold for cost-sensitive environments
 cursor-plugin-evals cost-report \
-  -m gpt-4o -m gpt-4o-mini \
+  -m gpt-5.4 -m gpt-5.4-mini \
   --threshold 0.7 \
   -o cost-report.txt
 
 # Filter to specific suites
 cursor-plugin-evals cost-report \
-  -m gpt-4o -m gpt-4o-mini \
+  -m gpt-5.4 -m gpt-5.4-mini \
   -s llm-e2e \
   --threshold 0.8
 ```
@@ -53,18 +53,18 @@ Optimized total: $0.38
 Savings:         $0.86 (69%)
 
 Model Breakdown:
-  gpt-4o:        12 tests, $0.96
-  gpt-4o-mini:    8 tests, $0.18
-  claude-sonnet-4-20250514:  12 tests, $0.48
+  gpt-5.4:        12 tests, $0.96
+  gpt-5.4-mini:    8 tests, $0.18
+  claude-opus-4-6:  12 tests, $0.48
 
 Recommendations:
   llm-e2e/basic-search
-    Current:     gpt-4o ($0.08, score: 0.95)
-    Recommended: gpt-4o-mini ($0.01, score: 0.88) — saves 87%
+    Current:     gpt-5.4 ($0.08, score: 0.95)
+    Recommended: gpt-5.4-mini ($0.01, score: 0.88) — saves 87%
 
   llm-e2e/complex-workflow
-    Current:     gpt-4o ($0.12, score: 0.92)
-    Recommended: gpt-4o (keep) — no cheaper model meets threshold
+    Current:     gpt-5.4 ($0.12, score: 0.92)
+    Recommended: gpt-5.4 (keep) — no cheaper model meets threshold
 ```
 
 For each test, the report recommends the cheapest model that:
@@ -78,10 +78,10 @@ import { analyzeCosts, formatCostReport } from 'cursor-plugin-evals';
 import type { CostReport, CostRecommendation } from 'cursor-plugin-evals';
 
 const comparisonData = [
-  { testName: 'basic-search', model: 'gpt-4o', score: 0.95, tokenUsage: { input: 500, output: 200 } },
-  { testName: 'basic-search', model: 'gpt-4o-mini', score: 0.88, tokenUsage: { input: 500, output: 180 } },
-  { testName: 'complex-workflow', model: 'gpt-4o', score: 0.92, tokenUsage: { input: 2000, output: 800 } },
-  { testName: 'complex-workflow', model: 'gpt-4o-mini', score: 0.65, tokenUsage: { input: 2000, output: 750 } },
+  { testName: 'basic-search', model: 'gpt-5.4', score: 0.95, tokenUsage: { input: 500, output: 200 } },
+  { testName: 'basic-search', model: 'gpt-5.4-mini', score: 0.88, tokenUsage: { input: 500, output: 180 } },
+  { testName: 'complex-workflow', model: 'gpt-5.4', score: 0.92, tokenUsage: { input: 2000, output: 800 } },
+  { testName: 'complex-workflow', model: 'gpt-5.4-mini', score: 0.65, tokenUsage: { input: 2000, output: 750 } },
 ];
 
 const report: CostReport = analyzeCosts(comparisonData, 0.8);

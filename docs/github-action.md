@@ -88,8 +88,8 @@ Artifacts are uploaded under the name `eval-reports` and can be downloaded from 
 
 | Secret | Description |
 |---|---|
-| `ES_URL` | Elasticsearch URL (if your plugin connects to ES) |
-| `ES_API_KEY` | Elasticsearch API key |
+| `MY_SERVICE_URL` | Backend service URL (if your plugin connects to an external service) |
+| `MY_API_KEY` | Service API key |
 
 To add secrets, go to **Settings > Secrets and variables > Actions** in your repository.
 

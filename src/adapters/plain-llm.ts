@@ -7,7 +7,7 @@ import type {
 } from '../core/types.js';
 
 export function createPlainLlmAdapter(config: AdapterConfig): TaskAdapter {
-  const model = config.model ?? 'gpt-4o';
+  const model = config.model ?? 'gpt-5.4';
   const timeout = config.timeout ?? 120_000;
   const maxTurns = 10;
   const apiBaseUrl = config.apiBaseUrl ?? process.env.LITELLM_URL ?? 'https://api.openai.com/v1';

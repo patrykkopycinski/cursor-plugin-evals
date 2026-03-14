@@ -75,7 +75,7 @@ Diagnose and fix infrastructure issues preventing plugin evals from running.
 ✓ Plugin: builds successfully
 ✗ API Keys: OPENAI_API_KEY not set
 ✓ Test ES: healthy (localhost:9220)
-✓ Test Kibana: healthy (localhost:5620)
+✓ Backend services: healthy
 ✗ Obs ES: not running
 
 ### Fixes Applied

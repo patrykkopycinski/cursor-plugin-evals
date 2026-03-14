@@ -30,7 +30,7 @@ const result = await runEvaluation(config, {
   layers: ['static', 'unit'],
   suites: ['smoke-tests'],
   mock: false,
-  models: ['gpt-4o'],
+  models: ['gpt-5.4'],
   repeat: 3,
   ci: true,
 });
@@ -59,13 +59,13 @@ const client = await McpPluginClient.connect({
   command: 'node',
   args: ['dist/index.js'],
   cwd: './my-plugin',
-  env: { ES_URL: 'http://localhost:9200' },
+  env: { MY_SERVICE_URL: 'http://localhost:3000' },
   buildCommand: 'npm run build',
   transport: { type: 'streamable-http', url: 'http://localhost:3000' },
 });
 
 const tools = await client.listTools();
-const result = await client.callTool('elasticsearch_api', { method: 'GET', path: '/_cat/health' });
+const result = await client.callTool('search_tool', { query: 'health check' });
 
 await client.disconnect();
 ```
@@ -83,7 +83,7 @@ const evaluator = createEvaluator('tool-selection');
 const result = await evaluator.evaluate({
   testName: 'test',
   toolCalls: [...],
-  expected: { tools: ['elasticsearch_api'] },
+  expected: { tools: ['search_tool'] },
 });
 // result: EvaluatorResult { evaluator, score, pass, explanation }
 ```
@@ -124,7 +124,7 @@ Run a multi-turn conversation test.
 import { runConversationTest } from 'cursor-plugin-evals';
 
 const result = await runConversationTest(
-  test, 'my-suite', pluginConfig, tools, mcpClient, defaults, 'gpt-4o', evaluatorRegistry,
+  test, 'my-suite', pluginConfig, tools, mcpClient, defaults, 'gpt-5.4', evaluatorRegistry,
 );
 // result: TestResult (with metadata.turns)
 ```
@@ -187,7 +187,7 @@ Test tool calls against guardrail rules.
 ```typescript
 import { checkGuardrails, DEFAULT_GUARDRAILS } from 'cursor-plugin-evals';
 
-const violation = checkGuardrails(DEFAULT_GUARDRAILS, 'elasticsearch_api', {
+const violation = checkGuardrails(DEFAULT_GUARDRAILS, 'search_tool', {
   method: 'DELETE', path: '/_all',
 });
 // violation: GuardrailViolation | null
@@ -204,7 +204,7 @@ const report = await runRedTeam({
   plugin: pluginConfig,
   categories: ['jailbreak', 'prompt-injection'],
   countPerCategory: 10,
-  model: 'gpt-4o',
+  model: 'gpt-5.4',
 });
 console.log(formatRedTeamReport(report));
 // report: RedTeamReport
@@ -231,7 +231,7 @@ Generate integration tests from a JSON Schema.
 ```typescript
 import { generateTestsFromSchema, formatAsYaml } from 'cursor-plugin-evals';
 
-const tests = generateTestsFromSchema('elasticsearch_api', tool.inputSchema);
+const tests = generateTestsFromSchema('search_tool', tool.inputSchema);
 console.log(formatAsYaml(tests, 'my-plugin'));
 // tests: GeneratedTest[]
 ```

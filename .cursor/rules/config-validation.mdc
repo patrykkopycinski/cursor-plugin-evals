@@ -72,7 +72,7 @@ When evaluation configuration files are modified, validate AND auto-fix issues.
 
 12. **Orphan `adapter:` section**: The runner ignores `adapter:` — remove it and ensure `plugin.entry` is set instead.
 
-13. **Missing e2e infrastructure**: If `require_env: [ES_URL]` is used but no `docker/docker-compose.yml` exists, warn that integration tests need infrastructure.
+13. **Missing e2e infrastructure**: If `require_env` references service URLs (e.g., `ES_URL`, `DATABASE_URL`, `REDIS_URL`) but no `docker/docker-compose.yml` exists, warn that integration tests need infrastructure.
 
 ## When to Stay Silent
 

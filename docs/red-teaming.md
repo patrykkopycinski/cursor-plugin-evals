@@ -30,7 +30,7 @@ cursor-plugin-evals red-team --categories jailbreak prompt-injection data-exfilt
 cursor-plugin-evals red-team --count 20
 
 # Use a specific model
-cursor-plugin-evals red-team -m gpt-4o
+cursor-plugin-evals red-team -m gpt-5.4
 
 # JSON output
 cursor-plugin-evals red-team --report json -o red-team-report.json
@@ -117,7 +117,7 @@ const report: RedTeamReport = await runRedTeam({
   },
   categories: ['jailbreak', 'prompt-injection', 'pii-leakage'],
   countPerCategory: 10,
-  model: 'gpt-4o',
+  model: 'gpt-5.4',
 });
 
 console.log(`Passed: ${report.passed}/${report.totalAttacks}`);

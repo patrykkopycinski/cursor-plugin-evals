@@ -55,7 +55,7 @@ With `--smart`, the LLM also generates edge case prompts that test:
 cursor-plugin-evals gen-tests -o tests.yaml
 
 # Single tool only
-cursor-plugin-evals gen-tests --tool elasticsearch_api -o es-tests.yaml
+cursor-plugin-evals gen-tests --tool search_tool -o search-tests.yaml
 
 # Smart mode with all features
 cursor-plugin-evals gen-tests --smart \
@@ -76,16 +76,16 @@ suites:
       - name: novice-search-0
         prompt: "How do I look for stuff in my data?"
         expected:
-          tools: [elasticsearch_api]
+          tools: [search_tool]
         evaluators:
           - tool-selection
           - response-quality
         difficulty: simple
 
       - name: expert-search-0
-        prompt: "Execute a bool query with must/should clauses against the logs-* index pattern"
+        prompt: "Execute a bool query with must/should clauses against the logs-* data pattern"
         expected:
-          tools: [elasticsearch_api]
+          tools: [search_tool]
         evaluators:
           - tool-selection
           - response-quality
@@ -94,7 +94,7 @@ suites:
       - name: multilingual-search-es-0
         prompt: "Buscar documentos sobre errores en el último hora"
         expected:
-          tools: [elasticsearch_api]
+          tools: [search_tool]
         evaluators:
           - tool-selection
           - response-quality

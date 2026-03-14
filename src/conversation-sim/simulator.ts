@@ -30,7 +30,7 @@ export interface SimulatedConversation {
 }
 
 const DEFAULT_MAX_TURNS = 5;
-const DEFAULT_MODEL = 'gpt-4o';
+const DEFAULT_MODEL = 'gpt-5.4';
 
 function mcpToLlmTools(tools: McpToolDefinition[]): LlmToolDefinition[] {
   return tools.map((t) => ({

@@ -20,11 +20,11 @@ suites:
     tests:
       - name: basic-search
         prompt: "Search for documents about testing"
-        system: "You are a helpful Elasticsearch assistant"
+        system: "You are a helpful assistant"
         expected:
-          tools: [elasticsearch_api]
+          tools: [search_tool]
           toolArgs:
-            elasticsearch_api:
+            search_tool:
               method: GET
           responseContains: ["results", "documents"]
         evaluators:
@@ -34,11 +34,11 @@ suites:
         maxTurns: 15
 
       - name: multi-tool-workflow
-        prompt: "Create an index called test-idx, add a document, then search for it"
+        prompt: "Create a new record, update it, then search for it"
         expected:
-          tools: [elasticsearch_api]
-          toolSequence: [elasticsearch_api, elasticsearch_api, elasticsearch_api]
-          goldenPath: [elasticsearch_api, elasticsearch_api, elasticsearch_api]
+          tools: [search_tool]
+          toolSequence: [search_tool, search_tool, search_tool]
+          goldenPath: [search_tool, search_tool, search_tool]
         evaluators:
           - tool-selection
           - tool-sequence
@@ -52,20 +52,20 @@ Run the same tests against multiple LLM providers:
 
 ```yaml
       - name: cross-model-test
-        prompt: "List all indices"
+        prompt: "List all items"
         expected:
-          tools: [elasticsearch_api]
+          tools: [search_tool]
         evaluators: [tool-selection, response-quality]
         models:
-          - gpt-4o
-          - claude-sonnet-4-20250514
-          - gpt-4o-mini
+          - gpt-5.4
+          - claude-opus-4-6
+          - gpt-5.4-mini
 ```
 
 Or override from the CLI:
 
 ```bash
-cursor-plugin-evals run -l llm -m gpt-4o claude-sonnet-4-20250514
+cursor-plugin-evals run -l llm -m gpt-5.4 claude-opus-4-6
 ```
 
 Supported providers: OpenAI, Azure OpenAI, Anthropic, and any LiteLLM-compatible endpoint.
@@ -109,7 +109,7 @@ Test whether the agent stays focused when irrelevant tools are available:
       - name: focused-search
         prompt: "Search for error logs"
         expected:
-          tools: [elasticsearch_api]
+          tools: [search_tool]
         evaluators: [tool-selection]
         distractors:
           mode: random    # random | targeted | none
@@ -128,7 +128,7 @@ Specify the ideal tool call sequence and use the `path-efficiency` evaluator to 
 
 ```yaml
         expected:
-          goldenPath: [elasticsearch_api, elasticsearch_api, elasticsearch_api]
+          goldenPath: [search_tool, search_tool, search_tool]
         evaluators: [path-efficiency]
 ```
 
@@ -165,13 +165,13 @@ Mock mode replays previously recorded tool call responses. See [record-fixtures]
 cursor-plugin-evals run -l llm
 
 # Specific suite, specific model, 5 repetitions
-cursor-plugin-evals run -l llm -s llm-e2e -m gpt-4o -r 5
+cursor-plugin-evals run -l llm -s llm-e2e -m gpt-5.4 -r 5
 
 # Watch mode — re-run on file changes
 cursor-plugin-evals run -l llm -w
 
 # Compare models side by side
-cursor-plugin-evals compare -m gpt-4o -m claude-sonnet-4-20250514 -l llm
+cursor-plugin-evals compare -m gpt-5.4 -m claude-opus-4-6 -l llm
 ```
 
 ## Programmatic API
@@ -182,7 +182,7 @@ import { loadConfig, runEvaluation } from 'cursor-plugin-evals';
 const config = loadConfig('./plugin-eval.yaml');
 const result = await runEvaluation(config, {
   layers: ['llm'],
-  models: ['gpt-4o'],
+  models: ['gpt-5.4'],
   repeat: 3,
 });
 

@@ -25,7 +25,7 @@ Each line is a JSON object representing a span:
   "startTimeUnixNano": 1710000000000000000,
   "endTimeUnixNano": 1710000000500000000,
   "attributes": [
-    { "key": "tool.name", "value": { "stringValue": "elasticsearch_api" } }
+    { "key": "tool.name", "value": { "stringValue": "search_tool" } }
   ]
 }
 ```

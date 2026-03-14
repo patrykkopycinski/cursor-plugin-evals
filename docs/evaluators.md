@@ -1,6 +1,6 @@
 # Evaluators Reference
 
-Complete reference for all 22 evaluators. Each evaluator scores a specific quality dimension from 0 to 1.
+Complete reference for all 24 evaluators. Each evaluator scores a specific quality dimension from 0 to 1.
 
 Evaluators are divided into two kinds:
 - **CODE** — deterministic, rule-based scoring (fast, no LLM call)
@@ -19,7 +19,7 @@ Checks whether the agent called the correct tools.
 ```yaml
 evaluators: [tool-selection]
 expected:
-  tools: [elasticsearch_api, esql_query]
+  tools: [search_tool, query_tool]
 ```
 
 ### tool-args
@@ -34,7 +34,7 @@ Validates that tool calls used correct arguments.
 evaluators: [tool-args]
 expected:
   toolArgs:
-    elasticsearch_api:
+    search_tool:
       method: GET
 ```
 
@@ -49,7 +49,7 @@ Checks the order of tool calls.
 ```yaml
 evaluators: [tool-sequence]
 expected:
-  toolSequence: [elasticsearch_api, elasticsearch_api, esql_query]
+  toolSequence: [search_tool, search_tool, query_tool]
 ```
 
 ### response-quality
@@ -76,12 +76,12 @@ Measures how closely the agent's tool call path matches the golden (ideal) path.
 ```yaml
 evaluators: [path-efficiency]
 expected:
-  goldenPath: [elasticsearch_api, elasticsearch_api]
+  goldenPath: [search_tool, search_tool]
 ```
 
 ### cluster-state
 
-Verifies external state (e.g., Elasticsearch cluster) after tool calls.
+Verifies external state (e.g., a backend service) after tool calls.
 
 - **Scores:** Fraction of state assertions that pass
 - **Default threshold:** `0.9`
@@ -164,7 +164,7 @@ Checks for the presence of expected keywords in the response.
 ```yaml
 evaluators: [keywords]
 expected:
-  responseContains: ["index", "mapping", "document"]
+  responseContains: ["item", "mapping", "record"]
 ```
 
 ### rag
@@ -306,9 +306,9 @@ const evaluator = createEvaluator('tool-selection');
 const result = await evaluator.evaluate({
   testName: 'my-test',
   prompt: 'Search for errors',
-  toolCalls: [{ tool: 'elasticsearch_api', args: { method: 'GET', path: '/_search' }, result: { content: [] }, latencyMs: 100 }],
+  toolCalls: [{ tool: 'search_tool', args: { query: 'errors' }, result: { content: [] }, latencyMs: 100 }],
   finalOutput: 'Found 10 errors',
-  expected: { tools: ['elasticsearch_api'] },
+  expected: { tools: ['search_tool'] },
 });
 
 console.log(`${result.evaluator}: ${result.score} (${result.pass ? 'PASS' : 'FAIL'})`);

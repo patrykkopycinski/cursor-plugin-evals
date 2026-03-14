@@ -66,7 +66,7 @@ jobs:
     needs: static-unit
     services:
       elasticsearch:
-        image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+        image: docker.elastic.co/elasticsearch/elasticsearch:9.4.0-SNAPSHOT
         ports:
           - 9220:9200
         env:
@@ -79,7 +79,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
       kibana:
-        image: docker.elastic.co/kibana/kibana:8.17.0
+        image: docker.elastic.co/kibana/kibana:9.4.0-SNAPSHOT
         ports:
           - 5620:5601
         env:
@@ -131,7 +131,7 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     services:
       elasticsearch:
-        image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+        image: docker.elastic.co/elasticsearch/elasticsearch:9.4.0-SNAPSHOT
         ports:
           - 9220:9200
         env:

@@ -44,5 +44,37 @@ When evaluation result files are created or updated, IMMEDIATELY analyze them an
 
 ## When to Stay Silent
 
-- Pass rate is above 95% and no regressions — just note "all looks good"
 - Don't re-analyze the same result file if no changes occurred
+
+## When Pass Rate is High — Calibrate Thresholds
+
+When pass rate is above 90%, **don't just say "all looks good"**. Analyze whether the
+CI thresholds are properly calibrated:
+
+1. **Compute headroom** for each CI gate:
+   - `headroom = actual_score - threshold`
+   - `headroom_pct = headroom / threshold * 100`
+
+2. **Flag over-generous thresholds**:
+   - Headroom > 20%: threshold is stale — **recommend bumping** to `actual - 5%`
+   - Headroom > 10%: threshold could be tighter — recommend review
+   - Headroom < 5%: well calibrated — leave alone
+
+3. **Identify weakest tests** dragging the average down:
+   - If suite average is 0.95 but one test scores 0.72, that test is the bottleneck
+   - Recommend fixing the weak test rather than keeping thresholds low to accommodate it
+
+4. **Check for always-perfect scores**:
+   - If a test scores 1.0 every time across 3+ runs, it may be too easy
+   - Consider increasing difficulty or adding more challenging variants
+
+5. **Report threshold calibration suggestions**:
+   ```
+   ## Threshold Calibration Suggestions
+   - score.avg: 0.80 → 0.89 (actual: 0.94, headroom was 17.5%)
+   - tool-selection.avg: 0.80 → 0.92 (actual: 0.97, headroom was 21.3%)
+   - Weakest test: esql-complex-query (0.72) — consider improving prompt
+   ```
+
+6. **Apply the suggestions autonomously** — update `plugin-eval.yaml` CI section,
+   re-run `--ci` to verify the tighter thresholds pass, then commit.

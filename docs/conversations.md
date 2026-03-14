@@ -11,21 +11,21 @@ suites:
     tests:
       - name: multi-step-workflow
         type: conversation
-        prompt: "Find all indices in my cluster"
-        system: "You are an Elasticsearch assistant"
+        prompt: "Find all items in my collection"
+        system: "You are a helpful assistant"
         expected:
-          tools: [elasticsearch_api]
+          tools: [search_tool]
         evaluators: [tool-selection, conversation-coherence]
         max_turns: 15
         turns:
-          - prompt: "Now show me the mapping for the largest index"
+          - prompt: "Now show me the details for the largest item"
             expected:
-              tools: [elasticsearch_api]
-              response_contains: ["mapping"]
+              tools: [search_tool]
+              response_contains: ["details"]
             evaluators: [tool-selection, response-quality]
-          - prompt: "Delete that index"
+          - prompt: "Delete that item"
             expected:
-              tools: [elasticsearch_api]
+              tools: [search_tool]
             evaluators: [conversation-coherence]
 ```
 
@@ -68,7 +68,7 @@ const test: LlmTestConfig = {
 };
 
 const result = await runConversationTest(
-  test, 'my-suite', pluginConfig, tools, mcpClient, defaults, 'gpt-4o', evaluatorRegistry,
+  test, 'my-suite', pluginConfig, tools, mcpClient, defaults, 'gpt-5.4', evaluatorRegistry,
 );
 
 console.log(result.metadata); // { type: 'conversation', turnCount: 2, turns: [...] }

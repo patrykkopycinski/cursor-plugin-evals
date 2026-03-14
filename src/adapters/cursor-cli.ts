@@ -7,6 +7,9 @@ import type {
   ToolResult,
 } from '../core/types.js';
 import { resolve, join, dirname } from 'path';
+import fs from 'fs';
+import { createRequire } from 'module';
+import { execSync } from 'child_process';
 import {
   createIsolatedWorkspace,
   findSkillsRoot,
@@ -192,7 +195,6 @@ function normalizeCursorModel(model?: string): string | undefined {
 }
 
 function resolveCursorAgentCli(): string {
-  const fs = require('fs') as typeof import('fs');
 
   const localVersionsDir = join(
     process.env.HOME ?? '',
@@ -221,7 +223,6 @@ function resolveCursorAgentCli(): string {
   }
 
   try {
-    const { createRequire } = require('module') as typeof import('module');
     const req = createRequire(import.meta.url);
     const sdkPkg = req.resolve('@nothumanwork/cursor-agents-sdk/package.json');
     const sdkRoot = dirname(sdkPkg);
@@ -234,7 +235,6 @@ function resolveCursorAgentCli(): string {
   }
 
   try {
-    const { execSync } = require('child_process') as typeof import('child_process');
     return execSync('which agent', { encoding: 'utf-8' }).trim();
   } catch {
     throw new Error(

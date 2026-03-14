@@ -5,12 +5,13 @@ End-to-end testing framework for Cursor plugins — static analysis, MCP tool te
 ## Getting Started
 
 - [Getting Started](./getting-started.md) — Install, configure, and run your first eval
+- [**Framework Assistant**](./framework-assistant.md) — Autonomous AI agent that handles your entire eval lifecycle
 - [Configuration Reference](./configuration.md) — Complete `plugin-eval.yaml` reference
 
 ## Core Concepts
 
-- [Evaluators](./evaluators.md) — All 22 evaluators (CODE + LLM) with scoring details
-- [Task Adapters](./adapters.md) — mcp, plain-llm, headless-coder, gemini-cli, claude-sdk
+- [Evaluators](./evaluators.md) — All 24 evaluators (CODE + LLM) with scoring details
+- [Task Adapters](./adapters.md) — mcp, plain-llm, headless-coder, gemini-cli, claude-sdk, cursor-cli
 
 ## Testing Layers
 
@@ -20,6 +21,7 @@ End-to-end testing framework for Cursor plugins — static analysis, MCP tool te
 - [Performance Layer](./layers/performance.md) — Latency percentiles, concurrency, and memory
 - [LLM Eval Layer](./layers/llm.md) — Agent loop evaluation with multi-model and mock support
 - [Skill Eval Layer](./layers/skill.md) — Dataset-driven skill evaluation with adapters
+- [Conformance Layer](./layers/conformance.md) — MCP protocol spec compliance (25 checks, tier scoring)
 
 ## Features
 

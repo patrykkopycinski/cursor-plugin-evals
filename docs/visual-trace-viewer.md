@@ -48,9 +48,9 @@ For LLM tests, the trace view shows the full agent loop:
 
 ```
 [0ms]   User → "Search for error logs"
-[50ms]  LLM → tool_call: elasticsearch_api({method: "GET", path: "/_search", ...})
+[50ms]  LLM → tool_call: search_tool({query: "error logs", ...})
 [200ms] Tool → {content: [{text: "..."}]}
-[250ms] LLM → tool_call: elasticsearch_api({method: "GET", path: "/_search", ...})
+[250ms] LLM → tool_call: search_tool({query: "error logs last hour", ...})
 [400ms] Tool → {content: [{text: "..."}]}
 [450ms] LLM → "I found 42 error logs in the last hour..."
 [500ms] Evaluators: tool-selection: 0.95 ✅, response-quality: 0.88 ✅

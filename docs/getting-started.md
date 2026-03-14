@@ -5,7 +5,7 @@ Install cursor-plugin-evals and run your first evaluation in under five minutes.
 ## Prerequisites
 
 - **Node.js 20+** — required
-- **Docker** — optional, needed only if your plugin connects to services like Elasticsearch
+- **Docker** — optional, needed only if your plugin connects to external services
 
 Check your environment with the built-in doctor command:
 
@@ -110,6 +110,7 @@ npx cursor-plugin-evals run --report markdown -o results.md
 
 ## Next Steps
 
+- **[Framework Assistant](./framework-assistant.md)** — let the autonomous AI agent set up and maintain your evals
 - [Configuration Reference](./configuration.md) — tune thresholds, scoring weights, and guardrails
 - [Static Layer](./layers/static.md) — validate plugin structure without running the server
 - [Integration Layer](./layers/integration.md) — test individual tool calls with assertions

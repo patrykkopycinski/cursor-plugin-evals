@@ -147,7 +147,7 @@ import type { AdapterConfig } from 'cursor-plugin-evals';
 
 const config: AdapterConfig = {
   name: 'mcp',
-  model: 'gpt-4o',
+  model: 'gpt-5.4',
   timeout: 30000,
 };
 

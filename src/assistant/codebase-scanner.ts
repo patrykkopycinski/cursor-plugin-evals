@@ -285,7 +285,7 @@ function computeLayerCoverage(evalFiles: EvalFileInfo[]): Record<Layer, number> 
   return counts as Record<Layer, number>;
 }
 
-function checkConfigQuality(evalFiles: EvalFileInfo[], hasCI: boolean, hasCiThresholds: boolean): ConfigQualityIssue[] {
+function checkConfigQuality(evalFiles: EvalFileInfo[], hasCI: boolean, hasCiThresholds: boolean, manifest: PluginManifest | null): ConfigQualityIssue[] {
   const issues: ConfigQualityIssue[] = [];
 
   if (evalFiles.length === 0) {
@@ -318,6 +318,49 @@ function checkConfigQuality(evalFiles: EvalFileInfo[], hasCI: boolean, hasCiThre
       message: 'Missing tool-selection and tool-args evaluators — tool usage quality is not measured',
       fix: 'Add "tool-selection" and "tool-args" evaluators to LLM layer tests',
     });
+  }
+
+  if (manifest) {
+    const skillCount = manifest.skills.length;
+    const ruleCount = manifest.rules.length;
+    const agentCount = manifest.agents.length;
+    const commandCount = manifest.commands.length;
+
+    if (skillCount > 0 && !allEvaluators.has('skill-trigger')) {
+      issues.push({
+        severity: 'warning',
+        category: 'evaluators',
+        message: `Plugin has ${skillCount} skills but no skill-trigger evaluator — skill activation quality is not measured`,
+        fix: 'Add skill activation tests with "skill-trigger" evaluator for each skill',
+      });
+    }
+
+    if (ruleCount > 0) {
+      issues.push({
+        severity: 'info',
+        category: 'coverage',
+        message: `Plugin has ${ruleCount} rules — ensure each has frontmatter validation tests`,
+        fix: 'Add static layer tests with check: rule_frontmatter for each rule',
+      });
+    }
+
+    if (agentCount > 0) {
+      issues.push({
+        severity: 'info',
+        category: 'coverage',
+        message: `Plugin has ${agentCount} agents — ensure each has behavior tests`,
+        fix: 'Add static frontmatter tests + LLM behavior tests for each agent',
+      });
+    }
+
+    if (commandCount > 0) {
+      issues.push({
+        severity: 'info',
+        category: 'coverage',
+        message: `Plugin has ${commandCount} commands — ensure each has execution tests`,
+        fix: 'Add static frontmatter tests + LLM execution tests for each command',
+      });
+    }
   }
 
   if (!hasCI) {
@@ -390,7 +433,7 @@ export async function scanCodebase(rootDir: string): Promise<CodebaseProfile> {
   const hasFixtures = await exists(join(rootDir, '.cursor-plugin-evals', 'fixtures'));
   const hasFingerprints = await exists(join(rootDir, '.cursor-plugin-evals', 'fingerprints'));
 
-  const configIssues = checkConfigQuality(evalFiles, hasCI, hasCiThresholds);
+  const configIssues = checkConfigQuality(evalFiles, hasCI, hasCiThresholds, manifest);
 
   return {
     projectKind,
@@ -424,6 +467,13 @@ export function formatCodebaseReport(profile: CodebaseProfile): string {
 
   lines.push('## Plugin Components');
   lines.push(`- Skills: ${profile.skills.length}`);
+  if (profile.skills.length > 0) {
+    const skillNames = profile.skills.map((s) => s.name || s.path);
+    const display = skillNames.length <= 10
+      ? skillNames.join(', ')
+      : `${skillNames.slice(0, 10).join(', ')} (+${skillNames.length - 10} more)`;
+    lines.push(`  ${display}`);
+  }
   lines.push(`- MCP Tools: ${profile.mcpTools.length}`);
   if (profile.mcpTools.length > 0) {
     const toolList = profile.mcpTools.map((t) => t.name);
@@ -433,9 +483,25 @@ export function formatCodebaseReport(profile: CodebaseProfile): string {
     lines.push(`  ${display}`);
   }
   if (profile.manifest) {
-    if (profile.manifest.rules.length > 0) lines.push(`- Rules: ${profile.manifest.rules.length}`);
-    if (profile.manifest.agents.length > 0) lines.push(`- Agents: ${profile.manifest.agents.length}`);
-    if (profile.manifest.commands.length > 0) lines.push(`- Commands: ${profile.manifest.commands.length}`);
+    if (profile.manifest.rules.length > 0) {
+      lines.push(`- Rules: ${profile.manifest.rules.length}`);
+      const ruleDescs = profile.manifest.rules.map((r) => r.description || r.path);
+      const display = ruleDescs.length <= 10
+        ? ruleDescs.join(', ')
+        : `${ruleDescs.slice(0, 10).join(', ')} (+${ruleDescs.length - 10} more)`;
+      lines.push(`  ${display}`);
+    }
+    if (profile.manifest.agents.length > 0) {
+      lines.push(`- Agents: ${profile.manifest.agents.length}`);
+      const agentNames = profile.manifest.agents.map((a) => a.name || a.path);
+      lines.push(`  ${agentNames.join(', ')}`);
+    }
+    if (profile.manifest.commands.length > 0) {
+      lines.push(`- Commands: ${profile.manifest.commands.length}`);
+      const cmdNames = profile.manifest.commands.map((c) => c.name || c.description || c.path);
+      lines.push(`  ${cmdNames.join(', ')}`);
+    }
+    if (profile.manifest.hooks.length > 0) lines.push(`- Hooks: ${profile.manifest.hooks.length}`);
     if (profile.manifest.mcpServers.length > 0) lines.push(`- MCP Servers: ${profile.manifest.mcpServers.length}`);
   }
   lines.push('');

@@ -39,8 +39,8 @@ plugin:
     client_secret: ${OAUTH_CLIENT_SECRET}
     scopes: [read, write]
   env:
-    ES_URL: ${ES_URL}
-    ES_API_KEY: ${ES_API_KEY}
+    MY_SERVICE_URL: ${MY_SERVICE_URL}
+    MY_API_KEY: ${MY_API_KEY}
 ```
 
 | Field | Type | Default | Description |
@@ -64,7 +64,7 @@ Default settings applied to all suites unless overridden.
 defaults:
   timeout: 30000
   repetitions: 3
-  judge_model: gpt-4o
+  judge_model: gpt-5.4
   thresholds:
     tool-selection: 0.8
     tool-args: 0.7
@@ -75,7 +75,7 @@ defaults:
 |-------|------|---------|-------------|
 | `timeout` | number | `30000` | Max milliseconds per test |
 | `repetitions` | number | `1` | How many times to repeat each test |
-| `judge_model` | string | `gpt-4o` | LLM model used by LLM evaluators |
+| `judge_model` | string | `gpt-5.4` | LLM model used by LLM evaluators |
 | `thresholds` | map | — | Per-evaluator pass/fail thresholds (0–1) |
 
 ## scoring
@@ -185,16 +185,16 @@ suites:
 
   - name: tool-calls
     layer: integration
-    require_env: [ES_URL]
+    require_env: [MY_SERVICE_URL]
     adapter: mcp
     tests:
       - name: search
-        tool: elasticsearch_api
-        args: { method: GET, path: /_cat/indices }
+        tool: search_tool
+        args: { query: "list items" }
         assert:
           - field: content[0].text
             op: contains
-            value: "index"
+            value: "item"
 ```
 
 | Field | Type | Description |
@@ -215,7 +215,7 @@ Use `${VAR_NAME}` syntax anywhere in the YAML to reference environment variables
 ```yaml
 plugin:
   env:
-    ES_URL: ${ES_URL}
+    SERVICE_URL: ${SERVICE_URL}
     API_KEY: ${MY_API_KEY}
 ```
 
