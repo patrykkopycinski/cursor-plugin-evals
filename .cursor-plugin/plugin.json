@@ -108,6 +108,9 @@
     },
     {
       "path": ".cursor/rules/framework-conventions.mdc"
+    },
+    {
+      "path": ".cursor/rules/proactive-coverage.mdc"
     }
   ]
 }

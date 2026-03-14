@@ -1,32 +1,81 @@
 ---
-description: Suggest tests when new tools or skills are added to the plugin
+description: >-
+  When new tools, skills, or components are added, AUTOMATICALLY write evaluation
+  tests for them. Do NOT suggest — write the tests directly into plugin-eval.yaml.
 globs:
   - ".cursor-plugin/**/*.md"
   - "**/SKILL.md"
   - "src/**/tools/**/*.ts"
   - "src/**/skills/**/*.ts"
+  - "packages/**/src/**/*.ts"
+  - "**/mcp-server/**/*.ts"
 ---
 
-# New Tool/Skill Detection
+# New Tool/Skill Detection — Auto-Generate Tests
 
-When new tools, skills, or MCP server endpoints are added to the project, proactively suggest evaluation tests.
+When new tools, skills, or MCP server endpoints are added to the project, IMMEDIATELY write evaluation tests for them. Do NOT just suggest — write the YAML directly.
 
 ## What to Do
 
-1. When a new SKILL.md file is created or a new tool handler is added:
-   - Note the tool/skill name and its purpose
-   - Check if evaluation tests already exist for it
-   - If not, suggest running the **eval-generator** to create tests
+When a new `registerTool()`, `server.tool()`, or `SKILL.md` is created:
 
-2. Recommend the minimum test coverage for a new tool:
-   - Unit test: schema validation
-   - Integration test: happy path with assertions
-   - LLM test: natural language prompt with tool-selection + correctness evaluators
-   - Negative test: error handling for invalid inputs
+1. **Read the tool/skill** to understand its purpose, parameters, and required env vars
+2. **Check if tests exist** in `plugin-eval.yaml` for this component
+3. **If no tests exist, WRITE THEM** by appending to `plugin-eval.yaml`:
 
-3. Provide a concrete YAML snippet the user can add to their eval config
+### Minimum Coverage for a New Tool (write ALL of these):
+
+**Unit test** — add to the registration test's `expectedTools` list:
+```yaml
+- name: new-tool-registers
+  check: registration
+  expectedTools: [new_tool_name]
+```
+
+**Integration test** — happy path with assertions:
+```yaml
+- name: new-tool-happy-path
+  tool: new_tool_name
+  difficulty: simple
+  args: {realistic args based on schema}
+  assert:
+    - field: content[0].text
+      op: exists
+```
+
+**LLM test** — natural language prompt:
+```yaml
+- name: new-tool-selection
+  difficulty: simple
+  prompt: "Natural language that should trigger this tool"
+  expected:
+    tools: [new_tool_name]
+  evaluators:
+    - tool-selection
+    - correctness
+    - mcp-protocol
+    - security
+```
+
+**Negative test** — error handling:
+```yaml
+- name: new-tool-invalid-args
+  tool: new_tool_name
+  difficulty: moderate
+  args: {intentionally invalid args}
+  expectError: true
+```
+
+### Minimum Coverage for a New Skill:
+
+**Static test** — frontmatter validation:
+```yaml
+- name: new-skill-frontmatter
+  check: skill_frontmatter
+  components: [skill-directory-name]
+```
 
 ## When to Stay Silent
 
-- If the tool already has eval tests
-- If the file is a minor edit to an existing tool (not a new one)
+- If the tool/skill already has eval tests covering all 4 categories above
+- If the change is a minor edit to an existing tool (parameter rename, description update)

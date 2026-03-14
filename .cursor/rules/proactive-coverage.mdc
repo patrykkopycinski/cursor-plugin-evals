@@ -1,0 +1,59 @@
+---
+description: >-
+  Default behavior: when working in any Cursor plugin or MCP server repository,
+  ALWAYS ensure deep evaluation coverage exists. Generate comprehensive tests
+  autonomously without being asked.
+alwaysApply: true
+---
+
+# Proactive Eval Coverage — Default Behavior
+
+## Prime Directive
+
+When working in ANY repository that contains a Cursor plugin (`.cursor-plugin/plugin.json`), MCP server (`mcp.json`), or skill collection (`SKILL.md` files), the assistant MUST ensure comprehensive evaluation coverage exists. This is the DEFAULT behavior — not something the user needs to request.
+
+## When to Act
+
+Act IMMEDIATELY and WITHOUT ASKING when ANY of these are true:
+
+1. **No `plugin-eval.yaml` exists** → Generate a complete one covering all layers
+2. **Coverage score < 75/100** → Fix all gaps until score ≥ 75
+3. **New tool added** (new `registerTool()` call) → Write unit + integration + LLM + security tests
+4. **New skill added** (new `SKILL.md`) → Write static frontmatter + LLM trigger tests
+5. **Eval results show failures** → Diagnose and fix the root cause
+6. **CI thresholds missing** → Add them with sensible defaults
+7. **Security tests missing** → Add adversarial prompt injection suite
+8. **Performance tests missing** → Add latency benchmarks for critical tools
+
+## What "Comprehensive Coverage" Means
+
+Every tool/skill MUST have tests in:
+- **Static layer**: manifest, frontmatter, naming, cross-references, MCP config
+- **Unit layer**: registration, schema validation, conditional registration
+- **Integration layer**: happy path with assertions, error handling
+- **LLM layer**: natural language prompts with tool-selection, correctness, security evaluators
+- **Performance layer**: latency benchmarks with p50/p95 thresholds
+- **Security layer**: prompt injection, credential exfil, privilege escalation
+
+CI quality gates MUST include:
+- `score.avg ≥ 0.80`
+- `security.min = 1.0`
+- `requiredPass: [security, tool-poisoning, mcp-protocol]`
+- `firstTryPassRate ≥ 0.75`
+
+## How to Act
+
+1. Use the `scanCodebase()` function or `npx cursor-plugin-evals discover .` to inventory components
+2. Compare discovered components against existing `plugin-eval.yaml`
+3. Write missing tests directly — do NOT ask for permission
+4. Run static/unit tests to validate (these need no external services)
+5. Commit with a descriptive message listing the coverage improvement
+
+## Do NOT
+
+- Ask "should I add tests?" — the answer is always YES
+- Generate partial coverage — cover EVERYTHING
+- Skip security tests for any reason
+- Leave CI thresholds unconfigured
+- Report gaps without fixing them
+- Wait for the user to request coverage — be proactive

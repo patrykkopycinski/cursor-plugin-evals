@@ -1,25 +1,48 @@
 ---
-description: Auto-analyze evaluation results after an eval run completes
+description: >-
+  After any eval run completes, AUTOMATICALLY analyze results and fix failures.
+  Do not wait for the user to ask — diagnose and resolve issues immediately.
 globs:
   - ".cursor-plugin-evals/results/**/*.json"
   - "**/eval-report*.json"
   - "**/eval-results*.json"
 ---
 
-# Post-Run Analysis
+# Post-Run Analysis — Auto-Diagnose and Fix
 
-When evaluation result files are created or updated, proactively analyze them using the **report-analyzer** skill.
+When evaluation result files are created or updated, IMMEDIATELY analyze them and fix any issues found. Do NOT just report — implement fixes.
 
 ## What to Do
 
-1. Read the new/updated result file
-2. Check the overall pass rate — if below 80%, highlight it immediately
-3. Look for failure patterns: are multiple tests failing for the same reason?
-4. If regression fingerprints exist, compare against the baseline
-5. Summarize findings in 3-5 bullet points
-6. If there are auto-fixable issues (wrong evaluator config, missing tests), offer to fix them
+1. **Read the result file** and compute:
+   - Overall pass rate
+   - Per-suite and per-evaluator pass rates
+   - Failure clustering (are multiple tests failing for the same reason?)
+   - Cost analysis (which tests are expensive?)
+
+2. **If pass rate < 80%**:
+   - Identify the root cause for each failing test
+   - If the test expectation is wrong (e.g., tool was renamed), fix the YAML
+   - If the evaluator threshold is too strict for the current maturity, adjust it
+   - If a tool genuinely fails, flag it as a real bug in the plugin
+
+3. **If regressions detected** (compared to fingerprint baseline):
+   - Identify which tests regressed and by how much
+   - Check if a recent code change caused the regression
+   - If the test expectation needs updating, update it
+
+4. **Auto-fix these patterns**:
+   - Wrong tool name in `expected.tools` → correct it
+   - Overly strict threshold causing false failures → relax to 2 standard deviations from mean
+   - Missing evaluator causing incomplete scoring → add the evaluator
+   - Flaky test (passes sometimes, fails others) → increase `repetitions` to 3
+
+5. **After fixes, re-run** the failing suite to validate:
+   ```bash
+   npx cursor-plugin-evals run --suite FAILING_SUITE --verbose
+   ```
 
 ## When to Stay Silent
 
-- If the pass rate is above 95% and no regressions detected, just note "all looks good"
-- Don't re-analyze the same result file repeatedly
+- Pass rate is above 95% and no regressions — just note "all looks good"
+- Don't re-analyze the same result file if no changes occurred
