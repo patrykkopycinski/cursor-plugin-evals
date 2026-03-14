@@ -54,6 +54,7 @@ Run every audit dimension:
 | CI thresholds configured | Yes | Add ci: section to plugin-eval.yaml |
 | Fixtures recorded | No | Inform user to run with --record |
 | Regression baseline | No | Inform user to save fingerprint |
+| E2E infrastructure (docker, seed, env, CI) | Yes if integration/perf tests exist | Create docker-compose.yml, seed script, .env.test, run script, CI workflow |
 
 ### Step 3: Fix Every Gap (DO NOT ASK — JUST FIX)
 
@@ -80,6 +81,21 @@ For each gap found:
 5. **Missing CI thresholds**: Add complete ci: section with score, evaluator, latency, and required-pass gates
 
 6. **Single difficulty**: Add complex and adversarial variants of existing simple tests
+
+### Step 3.5: Ensure E2E Infrastructure
+
+Before running any tests, verify infrastructure exists:
+
+1. If integration or performance tests exist in `plugin-eval.yaml`:
+   - Check `docker/docker-compose.yml` → create if missing
+   - Check `scripts/seed-test-data.sh` → create if missing
+   - Check `.env.test` → create if missing
+   - Check `scripts/run-evals.sh` → create if missing
+   - Check `.github/workflows/plugin-evals.yml` → create if missing
+
+2. If `require_env: [ES_URL]` appears but no docker-compose exists → create it
+
+3. Load `.env.test` before running: `set -a && source .env.test && set +a`
 
 ### Step 4: Run → Fix → Converge
 

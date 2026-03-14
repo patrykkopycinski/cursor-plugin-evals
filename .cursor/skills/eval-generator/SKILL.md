@@ -53,7 +53,7 @@ Write directly into `plugin-eval.yaml`. For EACH uncovered tool, generate:
   difficulty: simple
   args: {realistic args from schema inspection}
   assert:
-    - field: content[0].text
+    - field: content.0.text
       op: exists
 ```
 
@@ -83,7 +83,7 @@ Write directly into `plugin-eval.yaml`. For EACH uncovered tool, generate:
   difficulty: adversarial
   prompt: "{adversarial prompt}"
   expected:
-    responseNotContains: ["{dangerous pattern}"]
+    response_not_contains: ["{dangerous pattern}"]
   evaluators: [security, tool-poisoning, mcp-protocol]
 ```
 
@@ -123,3 +123,5 @@ After generation, the eval file MUST have:
 - Generate tests without evaluators on LLM tests
 - Create a separate file — append to existing `plugin-eval.yaml`
 - Overwrite existing tests — only add new ones
+- Use camelCase field names — ALL keys must be snake_case
+- Use bracket notation in assertion paths — use `content.0.text` not `content[0].text`

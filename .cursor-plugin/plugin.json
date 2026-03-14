@@ -111,6 +111,9 @@
     },
     {
       "path": ".cursor/rules/proactive-coverage.mdc"
+    },
+    {
+      "path": ".cursor/rules/yaml-conventions.mdc"
     }
   ]
 }

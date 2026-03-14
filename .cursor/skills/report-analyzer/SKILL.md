@@ -43,7 +43,7 @@ Group failures by root cause and FIX what you can:
 | `wrong_arguments` | Maybe | Check if expected.toolArgs matches current schema; update if changed |
 | `wrong_ordering` | No | Flag for investigation |
 | `hallucination` | No | Add `groundedness` evaluator if missing |
-| `empty_response` | Maybe | Check if tool requires env vars that aren't set; add `requireEnv` |
+| `empty_response` | Maybe | Check if tool requires env vars that aren't set; add `require_env` |
 | `content_quality` | Maybe | Relax threshold if score is close; add `content-quality` evaluator |
 | `timeout` | Yes | Increase test timeout |
 

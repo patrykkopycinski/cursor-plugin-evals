@@ -29,7 +29,10 @@ Automatically debug, fix, and verify failing plugin evaluation tests. Does NOT j
    | wrong-args | Correct tool, wrong arguments | Yes — update expected.toolArgs |
    | assertion-fail | Integration assertion mismatch | Yes — update assertion to match actual |
    | timeout | Call exceeded time limit | Yes — increase timeout |
-   | mcp-error | Connection/protocol error | Maybe — check build, add requireEnv |
+   | mcp-error | Connection/protocol error | Maybe — check build, add require_env |
+   | yaml-convention | camelCase keys silently ignored | Yes — convert to snake_case |
+   | infra-missing | No ES/Kibana for integration tests | Yes — create docker-compose + seed |
+   | assertion-path | content[0] returns undefined | Yes — change to content.0.text |
    | security-leak | Sensitive data in output | Yes — update expected response |
    | schema-drift | Tool schema changed | Yes — update schema assertions |
    | flaky | Inconsistent results | Yes — increase repetitions |
@@ -58,8 +61,23 @@ Automatically debug, fix, and verify failing plugin evaluation tests. Does NOT j
 
    **mcp-error:**
    - Check if plugin builds: `cd $PLUGIN_DIR && npm run build`
-   - If env var missing, add `requireEnv` to the test/suite
+   - If env var missing, add `require_env` to the test/suite
+   - Check if docker infrastructure exists — if not, create it
+   - Ensure `.env.test` is loaded: `set -a && source .env.test && set +a`
    - Apply fix to plugin-eval.yaml
+
+   **yaml-convention:**
+   - Convert ALL camelCase field names to snake_case
+   - Convert `content[0].text` assertion paths to `content.0.text`
+   - Ensure scoring weights ≤ 1.0
+   - Remove `${VAR:-default}` env syntax — use plain `${VAR}`
+   - Apply ALL fixes to plugin-eval.yaml
+
+   **infra-missing:**
+   - Create `docker/docker-compose.yml` with ES + Kibana + setup container
+   - Create `scripts/seed-test-data.sh` with domain-specific data
+   - Create `.env.test` with test credentials
+   - Create `scripts/run-evals.sh` orchestration script
 
    **schema-drift:**
    - Re-read the current tool schema from source

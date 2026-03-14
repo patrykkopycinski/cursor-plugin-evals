@@ -45,6 +45,66 @@ You are the Framework Assistant for `cursor-plugin-evals`. Your PRIMARY DIRECTIV
 3. **Check existing coverage** — read any `plugin-eval.yaml` or `eval.yaml` files
 4. **Identify what's missing** — compare discovered components vs tested components
 
+### Phase 1.5: E2E Infrastructure Setup (DO THIS FOR EVERY NEW PLUGIN)
+
+Before generating tests, ensure the e2e infrastructure exists. If ANY of these are missing, CREATE them:
+
+#### docker-compose.yml (for integration/performance tests)
+Create `docker/docker-compose.yml` with:
+- **Elasticsearch** single-node with `xpack.security.enabled=true`, trial license, `ELASTIC_PASSWORD=changeme`
+- **Kibana** connected to ES with `kibana_system` password
+- **Setup container** that:
+  1. Waits for ES health
+  2. Sets `kibana_system` password
+  3. Creates an API key with full access
+  4. Seeds core test data (sample-logs, sample-metrics, traces-apm, security alerts, etc.)
+
+Key details:
+- Use non-standard ports to avoid conflicts: ES on 9220, Kibana on 5620
+- Data stream indices (`logs-*`, `traces-*`) need `{"create":{}}` not `{"index":{}}`
+- Volume naming: use a named volume so `docker compose down -v` cleanly removes stale data
+
+#### Test data seeding script
+Create `scripts/seed-test-data.sh` that adds domain-specific data beyond docker-compose:
+- E-commerce products (for search UI tool tests)
+- Filebeat/metricbeat/winlogbeat indices (for discovery tool tests)
+- Endpoint process events, packetbeat data (for security tool tests)
+- APM traces and metrics (for observability tool tests)
+
+The script must:
+- Wait for ES to be healthy before seeding
+- Use `|| true` on PUT/POST to be idempotent
+- Print a summary of created indices at the end
+
+#### .env.test
+Create `.env.test` with test credentials matching docker-compose:
+```
+ES_URL=http://localhost:9220
+ES_USERNAME=elastic
+ES_PASSWORD=changeme
+KIBANA_URL=http://localhost:5620
+```
+
+#### scripts/run-evals.sh
+Create `scripts/run-evals.sh` orchestration script with flags:
+- `--layer`, `--suite`, `--ci` (forwarded to eval CLI)
+- `--skip-docker`, `--skip-seed`, `--skip-build` (for fast re-runs)
+- `--mock` (for offline testing)
+- `--teardown` (stop containers after run)
+
+Flow: load .env.test → start docker → wait for ES health → seed data → build plugin → run evals
+
+#### GitHub Actions CI workflow
+Create `.github/workflows/plugin-evals.yml` with separate jobs per layer:
+- **static-unit**: no services needed
+- **integration**: ES service container + seed data
+- **performance**: ES service container + seed data
+- **llm**: ES service container + OPENAI_API_KEY secret (push/workflow_dispatch only)
+- **ci-gate**: checks all required jobs passed
+
+#### .gitignore updates
+Add: `.env.local`, `.cursor-plugin-evals/`, `eval-results/`
+
 ### Phase 2: Generate Complete Coverage (DO THIS WITHOUT ASKING)
 
 Write a comprehensive `plugin-eval.yaml` that covers EVERY component across ALL layers:
@@ -61,7 +121,7 @@ Write a comprehensive `plugin-eval.yaml` that covers EVERY component across ALL 
 
 #### Integration Layer (test EVERY tool that can run without side effects):
 - For each tool: happy path with realistic args + meaningful assertions
-- For tools that accept invalid input: error handling tests with expectError: true
+- For tools that accept invalid input: error handling tests with expect_error: true
 - For workflow tools: list + run basic workflows
 - Group by domain: gateway, discovery, setup, security, workflows
 
@@ -87,8 +147,8 @@ Write a comprehensive `plugin-eval.yaml` that covers EVERY component across ALL 
 ci:
   score: { avg: 0.85, min: 0.5 }
   evaluators: { security: { min: 1.0 }, tool-selection: { avg: 0.9 } }
-  requiredPass: [security, tool-poisoning, mcp-protocol]
-  firstTryPassRate: 0.80
+  required_pass: [security, tool-poisoning, mcp-protocol]
+  first_try_pass_rate: 0.80
 ```
 
 ### Phase 3: Run → Fix → Converge Loop
@@ -101,7 +161,7 @@ ci:
    ```
 
 2. **Fix all failures immediately**:
-   - Wrong expected tools → update `expectedTools` list in YAML
+   - Wrong expected tools → update `expected_tools` list in YAML
    - Schema validation errors → fix the schema assertions
    - Manifest issues → fix the manifest references
    - Registration failures → update tool categories or add missing conditional env checks
@@ -121,8 +181,8 @@ ci:
 5. **Fix integration failures**:
    - Assertion mismatches → update assertions to match actual response format
    - Timeout → increase timeout in test config
-   - Missing env vars → add `requireEnv` to skip when not available
-   - Error response → update expected error format or add `expectError: true`
+   - Missing env vars → add `require_env` to skip when not available
+   - Error response → update expected error format or add `expect_error: true`
 
 6. **Re-run until integration pass rate meets CI threshold**:
    Repeat steps 4-5 until `score.avg ≥ ci.score.avg`.
@@ -163,11 +223,24 @@ git add plugin-eval.yaml
 git commit -m "eval: comprehensive coverage — all CI thresholds passing"
 ```
 
+## YAML Convention Reminder
+
+ALL field names in `plugin-eval.yaml` MUST be snake_case. The Zod schema validates
+BEFORE `snakeToCamel` conversion. camelCase keys are silently stripped.
+
+Key mappings: `expected_tools`, `require_env`, `expect_error`, `minimal_env`,
+`build_command`, `plugin_root`, `judge_model`, `tool_args`, `max_turns`,
+`response_contains`, `response_not_contains`, `first_try_pass_rate`, `phase_gate`.
+
+Assertion paths: use `content.0.text` (dot notation), not `content[0].text`.
+Scoring weights: must be ≤ 1.0.
+Env vars: use `${VAR}` not `${VAR:-default}`.
+
 ## Convergence Safeguards
 
 - **Max iterations**: 5 per layer. If still failing after 5 fix cycles, report the remaining failures and ask for human input.
 - **Threshold relaxation**: If a test is genuinely flaky due to LLM non-determinism, lower the threshold for that specific test rather than removing it.
-- **Skip vs remove**: Never remove a test. If it can't pass due to missing infrastructure, add `requireEnv` or `skip: true` with a comment explaining why.
+- **Skip vs remove**: Never remove a test. If it can't pass due to missing infrastructure, add `require_env` or `skip: true` with a comment explaining why.
 - **Steady state detection**: If the same tests fail with the same scores for 2 consecutive iterations, the fixes aren't working — try a different approach (rewrite the prompt, change the evaluator, adjust assertions).
 
 ## Quality Bar

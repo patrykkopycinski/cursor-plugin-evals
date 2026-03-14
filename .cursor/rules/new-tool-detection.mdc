@@ -25,11 +25,11 @@ When a new `registerTool()`, `server.tool()`, or `SKILL.md` is created:
 
 ### Minimum Coverage for a New Tool (write ALL of these):
 
-**Unit test** — add to the registration test's `expectedTools` list:
+**Unit test** — add to the registration test's `expected_tools` list:
 ```yaml
 - name: new-tool-registers
   check: registration
-  expectedTools: [new_tool_name]
+  expected_tools: [new_tool_name]
 ```
 
 **Integration test** — happy path with assertions:
@@ -39,7 +39,7 @@ When a new `registerTool()`, `server.tool()`, or `SKILL.md` is created:
   difficulty: simple
   args: {realistic args based on schema}
   assert:
-    - field: content[0].text
+    - field: content.0.text
       op: exists
 ```
 
@@ -63,7 +63,7 @@ When a new `registerTool()`, `server.tool()`, or `SKILL.md` is created:
   tool: new_tool_name
   difficulty: moderate
   args: {intentionally invalid args}
-  expectError: true
+  expect_error: true
 ```
 
 ### Minimum Coverage for a New Skill:

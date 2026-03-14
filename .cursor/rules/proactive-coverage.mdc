@@ -45,7 +45,7 @@ REPEAT (max 5 iterations per layer):
      b. Classify: config issue vs plugin bug vs infrastructure issue
      c. For config issues → fix YAML immediately (assertions, expected, thresholds)
      d. For plugin bugs → flag to user (don't modify plugin source)
-     e. For infra issues → add requireEnv/skip with reason
+     e. For infra issues → add require_env/skip with reason
   4. Go to step 1
 
 AFTER all layers pass individually:
@@ -59,10 +59,10 @@ AFTER all layers pass individually:
 | Failure | Fix |
 |---------|-----|
 | Wrong expected tool name | Update `expected.tools` in YAML |
-| Tool not registered | Add to `expectedTools` or check conditional env |
+| Tool not registered | Add to `expected_tools` or check conditional env |
 | Assertion mismatch | Update assertion to match actual response format |
 | Timeout | Increase test `timeout` value |
-| Missing env var | Add `requireEnv` to skip test when env absent |
+| Missing env var | Add `require_env` to skip test when env absent |
 | LLM picks wrong tool | Make prompt more specific, add hints |
 | LLM wrong arguments | Update `expected.toolArgs` or relax matching |
 | Security test fails | Ensure test expectation is correct (should tools NOT trigger?) |
@@ -75,6 +75,40 @@ AFTER all layers pass individually:
 - **Never remove tests** — skip with reason if infrastructure is missing
 - **Steady state detection** — if same tests fail with same scores 2x in a row, change approach
 - **Threshold relaxation is last resort** — fix the test first, only relax if genuinely too strict
+
+## E2E Infrastructure — MANDATORY for Integration/Performance
+
+When generating coverage for a plugin, you MUST also create the supporting infrastructure
+if it doesn't exist. This is NOT optional — integration and performance tests CANNOT run
+without it.
+
+### Required Files
+
+1. **`docker/docker-compose.yml`** — ES + Kibana + setup container with test data seeding
+2. **`scripts/seed-test-data.sh`** — Domain-specific test data (logs, metrics, APM, security events)
+3. **`.env.test`** — Test credentials matching docker-compose (ES_URL, ES_USERNAME, ES_PASSWORD, KIBANA_URL)
+4. **`scripts/run-evals.sh`** — Orchestration: docker up → seed → build → run evals
+5. **`.github/workflows/plugin-evals.yml`** — CI with ES service containers per layer
+
+### Docker Compose Requirements
+
+- ES: single-node, trial license, security enabled, `ELASTIC_PASSWORD=changeme`
+- Ports: ES on 9220, Kibana on 5620 (avoid conflicts with dev clusters)
+- Setup container: sets kibana_system password, creates API key, seeds base data
+- Named volume for ES data (so `docker compose down -v` works cleanly)
+
+### Test Data Requirements
+
+Each tool category needs realistic data to test against:
+- **Gateway tools**: any index with documents (sample-logs, sample-metrics)
+- **Discovery tools**: APM traces, filebeat/metricbeat indices, log streams
+- **Security tools**: security alerts, winlogbeat events, endpoint process events
+- **Workflow tools**: enough data for workflows to produce meaningful output
+
+### YAML Convention Reminder
+
+ALL field names MUST be snake_case. Assertion paths use dot notation.
+See the `yaml-conventions` rule for the complete reference.
 
 ## What "Comprehensive Coverage" Means
 

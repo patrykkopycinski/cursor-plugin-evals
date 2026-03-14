@@ -23,13 +23,34 @@ Run evaluation suites against a Cursor plugin's MCP server. **Automatically fix 
    If `plugin-eval.yaml` doesn't exist → invoke the **framework-assistant** skill to generate comprehensive coverage first.
    If `node_modules` is missing → run `npm install`.
 
-2. **Check infrastructure**
+2. **Check and set up infrastructure**
 
-   If running integration or LLM tests without --mock:
+   If running integration, performance, or LLM tests without --mock:
+
+   a. Load test env: `set -a && source .env.test && set +a` (if .env.test exists)
+
+   b. Check Docker infrastructure:
+   ```bash
+   # If docker-compose exists, start it
+   if [ -f docker/docker-compose.yml ]; then
+     docker compose -f docker/docker-compose.yml up -d --wait
+   fi
+   ```
+
+   c. If docker-compose does NOT exist but integration tests use `require_env: [ES_URL]`:
+      → Create the full e2e infrastructure (docker-compose, seed script, .env.test, run script)
+      → See the framework-assistant skill Phase 1.5 for the exact template
+
+   d. Seed test data if seed script exists:
+   ```bash
+   [ -f scripts/seed-test-data.sh ] && bash scripts/seed-test-data.sh
+   ```
+
+   e. Run doctor check:
    ```bash
    npx cursor-plugin-evals doctor
    ```
-   If Docker services aren't healthy, start them. If env vars are missing, flag which layers will be skipped.
+   If env vars are missing, flag which layers will be skipped.
 
 3. **Run the evaluation**
 
@@ -47,7 +68,7 @@ Run evaluation suites against a Cursor plugin's MCP server. **Automatically fix 
      b. Classify each failure:
         - Config issue (wrong expected, bad assertion) → fix YAML immediately
         - Plugin bug (tool genuinely broken) → flag to user
-        - Infrastructure issue (service down, env missing) → add requireEnv/skip
+        - Infrastructure issue (service down, env missing) → add require_env/skip
         - Flaky (inconsistent across reps) → increase repetitions to 3
         - Threshold too strict → relax threshold for that specific test
      c. Apply ALL fixes to plugin-eval.yaml
@@ -85,7 +106,7 @@ Run evaluation suites against a Cursor plugin's MCP server. **Automatically fix 
    ### Fixes Applied During Convergence
    1. Updated esql_query assertion to match new response format
    2. Increased timeout for cloud_api tests (was 5s, now 15s)
-   3. Added requireEnv: [ES_URL] to integration tests
+   3. Added require_env: [ES_URL] to integration tests
    ```
 
 7. **Commit green state**
@@ -98,11 +119,15 @@ Run evaluation suites against a Cursor plugin's MCP server. **Automatically fix 
 |----------------|---------------|
 | `expected tool X but got Y` | Update `expected.tools` to match actual |
 | `assertion failed: field Z` | Update assertion to match actual response structure |
+| `content[0].text undefined` | Change assertion path to `content.0.text` (dot notation) |
+| `Unresolved environment variable: X:-Y` | Remove bash default syntax; use plain `${X}` and set default in .env.test |
+| `scoring.weights.X too big` | Reduce weight to ≤ 1.0 |
+| `Unknown field camelCase` | Convert to snake_case (e.g., `expectedTools` → `expected_tools`) |
 | `timeout exceeded` | Double the timeout value |
 | `tool not found` | Check registration; update test or add conditional env |
 | `score 0.7 below threshold 0.8` | Fix test if possible; relax per-test threshold if not |
 | `security evaluator: 0.5` | Review prompt — ensure it's genuinely adversarial |
-| `connection refused` | Add `requireEnv` to skip when service unavailable |
+| `connection refused` | Add `require_env` to skip when service unavailable |
 | `inconsistent results` | Set `repetitions: 3` and use median score |
 
 **Guardrails**

@@ -49,6 +49,31 @@ When evaluation configuration files are modified, validate AND auto-fix issues.
 
 7. **Unreasonable thresholds**: Warn if timeout > 300000ms or score thresholds > 1.0
 
+8. **camelCase field names** (CRITICAL — silently ignored by Zod):
+   - `expectedTools` → auto-fix to `expected_tools`
+   - `requireEnv` → auto-fix to `require_env`
+   - `expectError` → auto-fix to `expect_error`
+   - `minimalEnv` → auto-fix to `minimal_env`
+   - `buildCommand` → auto-fix to `build_command`
+   - `pluginRoot` → auto-fix to `plugin_root`
+   - `judgeModel` → auto-fix to `judge_model`
+   - `toolArgs` → auto-fix to `tool_args`
+   - `maxTurns` → auto-fix to `max_turns`
+   - `responseContains` → auto-fix to `response_contains`
+   - `responseNotContains` → auto-fix to `response_not_contains`
+   - `firstTryPassRate` → auto-fix to `first_try_pass_rate`
+   - `phaseGate` → auto-fix to `phase_gate`
+
+9. **Bracket notation in assertion paths**: `content[0].text` → auto-fix to `content.0.text`
+
+10. **Scoring weights > 1.0**: All `scoring.weights.*` values must be ≤ 1.0. Auto-fix by dividing by the max weight to normalize.
+
+11. **Bash-style env defaults**: `${VAR:-default}` → auto-fix to `${VAR}`. Defaults belong in `.env.test`.
+
+12. **Orphan `adapter:` section**: The runner ignores `adapter:` — remove it and ensure `plugin.entry` is set instead.
+
+13. **Missing e2e infrastructure**: If `require_env: [ES_URL]` is used but no `docker/docker-compose.yml` exists, warn that integration tests need infrastructure.
+
 ## When to Stay Silent
 
 - Minor whitespace or comment changes
