@@ -1,5 +1,9 @@
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -773,6 +777,18 @@ export function createEvalServer(): Server {
         description: 'Last 50 evaluation runs summary',
         mimeType: 'application/json',
       },
+      {
+        uri: 'eval://quickstart',
+        name: 'Agent Quickstart Guide',
+        description: 'Step-by-step guide for agents to evaluate a Cursor plugin from scratch',
+        mimeType: 'text/markdown',
+      },
+      {
+        uri: 'eval://evaluators',
+        name: 'Evaluator Catalog',
+        description: 'All available evaluators with config options and scoring formulas',
+        mimeType: 'text/markdown',
+      },
     ],
   }));
 
@@ -881,6 +897,105 @@ export function createEvalServer(): Server {
                 text: JSON.stringify({
                   error: `Failed to read history: ${err instanceof Error ? err.message : String(err)}`,
                 }),
+              },
+            ],
+          };
+        }
+      }
+
+      case 'eval://quickstart': {
+        const guide = `# Agent Quickstart: Evaluating a Cursor Plugin
+
+## Step 1 — Discover the plugin
+Call \`discover_plugin\` with \`{ dir: "." }\` to find all skills, rules, agents, commands, and MCP servers.
+
+## Step 2 — Check prerequisites
+Call \`doctor\` to verify Node.js, Docker, and API keys are available.
+
+## Step 3 — Validate config (if exists)
+Call \`load_config\` to parse plugin-eval.yaml. If no config exists, skip to Step 4.
+
+## Step 4 — Detect coverage gaps
+Call \`detect_gaps\` with \`{ plugin_dir: "." }\` to find what's missing.
+
+## Step 5 — Generate fixes
+Call \`generate_fixes\` with \`{ plugin_dir: "." }\` to auto-generate YAML tests.
+
+## Step 6 — Run evaluations
+Call \`run_evals\` with \`{ ci: true }\` to run all suites with CI threshold enforcement.
+
+## Step 7 — Analyze results
+Call \`list_runs\` then \`get_run_detail\` with the latest run ID.
+Or read the \`eval://latest-run\` resource directly.
+
+## Step 8 — Iterate
+For failures: read test details, fix config or plugin, re-run.
+For regressions: call \`regression_check\` against a known-good baseline.
+
+## Available Tools (14)
+| Tool | Purpose |
+|------|---------|
+| discover_plugin | Find all plugin components |
+| doctor | Check environment prerequisites |
+| load_config | Parse and validate config |
+| audit_coverage | Coverage matrix with gaps |
+| detect_gaps | Missing tests with severity |
+| generate_fixes | Auto-generate test YAML |
+| run_evals | Execute evaluation suites |
+| list_runs | Browse run history |
+| get_run_detail | Inspect a specific run |
+| analyze_collisions | Detect skill overlaps |
+| security_audit | 3-pass security audit |
+| regression_check | Statistical regression detection |
+| compare_models | Multi-model comparison |
+| cost_report | Token usage optimization |
+
+## Available Resources (6)
+| URI | Content |
+|-----|---------|
+| eval://config | Current parsed config |
+| eval://latest-run | Most recent run result |
+| eval://coverage | Coverage matrix |
+| eval://history | Last 50 runs |
+| eval://quickstart | This guide |
+| eval://evaluators | All evaluator configs |
+`;
+        return {
+          contents: [{ uri, mimeType: 'text/markdown', text: guide }],
+        };
+      }
+
+      case 'eval://evaluators': {
+        try {
+          const { readFileSync } = await import('fs');
+          const catalogPath = resolve(__dirname, '../../.cursor-plugin/references/evaluator-catalog.md');
+          try {
+            const content = readFileSync(catalogPath, 'utf-8');
+            return {
+              contents: [{ uri, mimeType: 'text/markdown', text: content }],
+            };
+          } catch {
+            const fallback = `# Evaluator Catalog
+
+Available evaluators: keywords, regex, json-schema, response-contains,
+response-not-contains, tool-use, correctness (LLM judge), content-quality
+(LLM judge), security (LLM judge), schema-compliance, frontmatter,
+component-references, naming-conventions, mcp-protocol, tool-poisoning,
+response-time, latency-p95, code-quality, relevance.
+
+Use \`load_config\` to see which evaluators are configured for each test suite.
+`;
+            return {
+              contents: [{ uri, mimeType: 'text/markdown', text: fallback }],
+            };
+          }
+        } catch (err) {
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: 'text/markdown',
+                text: `Error loading evaluator catalog: ${err instanceof Error ? err.message : String(err)}`,
               },
             ],
           };

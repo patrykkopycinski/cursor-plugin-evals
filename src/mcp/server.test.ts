@@ -630,7 +630,9 @@ describe('createEvalServer', () => {
       expect(uris).toContain('eval://latest-run');
       expect(uris).toContain('eval://coverage');
       expect(uris).toContain('eval://history');
-      expect(result.resources).toHaveLength(4);
+      expect(uris).toContain('eval://quickstart');
+      expect(uris).toContain('eval://evaluators');
+      expect(result.resources).toHaveLength(6);
     });
   });
 
@@ -727,6 +729,28 @@ describe('createEvalServer', () => {
       await readResource(server, 'eval://history');
 
       expect(getLatestRuns).toHaveBeenCalledWith(mockDb, 50);
+    });
+  });
+
+  describe('resource: eval://quickstart', () => {
+    it('returns markdown guide with tool table', async () => {
+      const result = await readResource(server, 'eval://quickstart');
+      const text = result.contents[0].text;
+
+      expect(result.contents[0].mimeType).toBe('text/markdown');
+      expect(text).toContain('Agent Quickstart');
+      expect(text).toContain('discover_plugin');
+      expect(text).toContain('run_evals');
+    });
+  });
+
+  describe('resource: eval://evaluators', () => {
+    it('returns evaluator content', async () => {
+      const result = await readResource(server, 'eval://evaluators');
+      const text = result.contents[0].text;
+
+      expect(result.contents[0].mimeType).toBe('text/markdown');
+      expect(text).toContain('Evaluator');
     });
   });
 

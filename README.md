@@ -88,7 +88,7 @@ npx cursor-plugin-evals serve          # Start stdio MCP server
 | `compare_models` | Multi-model comparison matrix |
 | `cost_report` | Token usage and cost optimization |
 
-**4 resources:** `eval://config`, `eval://latest-run`, `eval://coverage`, `eval://history`
+**6 resources:** `eval://config`, `eval://latest-run`, `eval://coverage`, `eval://history`, `eval://quickstart`, `eval://evaluators`
 
 Auto-registers when you install the Cursor plugin (via `.mcp.json`).
 
@@ -141,7 +141,7 @@ Auto-registers when you install the Cursor plugin (via `.mcp.json`).
 - Coverage analysis with CLI, API, dashboard, and SVG badge
 - Test sharding (`--shard`) and last-failed mode (`--lf`, `--ff`)
 - Post-run hooks (webhooks, scripts) with template interpolation
-- MCP server with 14 tools and 4 resources for native agent integration
+- MCP server with 14 tools and 6 resources for native agent integration
 
 </td></tr>
 <tr><td>
