@@ -102,6 +102,29 @@ npx cursor-plugin-evals run --ci
 ```
 Iterate until exit 0. Only then declare done.
 
+### Step 7.5: Content Audit (When Plugin Content Was Modified)
+
+If any fixes in Steps 2-6 required modifying **plugin source content** (skill scripts, SKILL.md
+files, reference docs, shared modules) rather than just eval YAML, you MUST run the Content
+Audit Convergence Loop before declaring done. A single pass of content fixes is never sufficient.
+
+```
+REPEAT (max 5 passes):
+  1. Re-scan files changed by your fixes + their blast radius:
+     - Sibling copies of modified shared modules
+     - SKILL.md files whose scripts were changed
+     - Reference docs that mention changed APIs/flags
+  2. Classify findings by severity (CRITICAL/HIGH/MEDIUM/LOW/INFO)
+  3. If ZERO HIGH/MEDIUM → DONE
+     If same findings 2x in a row → change approach or report
+     If pass >= 5 → report remaining issues
+  4. Fix all CRITICAL + HIGH + MEDIUM
+  5. Validate: node --check, prettier --check, eslint
+  6. Go to step 1
+```
+
+This step is only needed when the analysis required content fixes, not for pure eval YAML changes.
+
 ## Output Format
 
 ```markdown

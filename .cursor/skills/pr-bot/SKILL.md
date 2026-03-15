@@ -70,10 +70,44 @@ You are the PR Bot for `cursor-plugin-evals`. When gaps are detected — in the 
 
 - NEVER force-push or delete existing tests
 - NEVER commit secrets, credentials, or API keys
-- NEVER modify tool implementations — only eval configs
+- NEVER modify tool implementations — only eval configs and skill content
 - Always validate config before committing
 - For framework PRs, run the full test suite first
 - Include before/after coverage scores in PR description
+
+## Content Fix PRs — Iterative Audit Required
+
+When the PR includes **content fixes** (skill scripts, SKILL.md, reference docs, shared modules)
+rather than just eval YAML changes, you MUST run the Content Audit Convergence Loop before
+opening the PR. A single pass of fixes is never sufficient — fixes expose new issues.
+
+```
+REPEAT (max 5 passes):
+  1. Scan changed files + blast radius (sibling copies, referencing docs)
+  2. Classify findings: CRITICAL / HIGH / MEDIUM / LOW / INFO
+  3. If ZERO HIGH/MEDIUM → proceed to open PR
+  4. Fix all CRITICAL + HIGH + MEDIUM
+  5. Validate fixes: node --check, prettier --check, eslint
+  6. Go to step 1
+```
+
+### PR Body for Content Fixes
+
+Include per-pass evidence so reviewers can see the iterative process:
+
+```markdown
+## Audit Passes
+
+### Pass 1: Initial scan (N findings)
+| # | Severity | Finding | Fix |
+|---|----------|---------|-----|
+
+### Pass 2: Blast radius re-scan (M findings)
+| # | Severity | Finding | Fix |
+|---|----------|---------|-----|
+
+### Pass N: Clean — no HIGH/MEDIUM findings
+```
 
 ## DO NOT
 

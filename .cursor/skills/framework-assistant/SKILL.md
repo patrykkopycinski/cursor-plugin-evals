@@ -478,6 +478,109 @@ These are REAL bottlenecks that were hit and should have triggered this phase:
 | cursor-cli race condition on config file | Lowered concurrency to 1 | Configurable retry with exponential backoff |
 | No way to express "this test only runs on cursor-cli" | Duplicated eval.yaml files | `metadata.adapters` filter + `test_filter.adapters` |
 
+## Phase 3.7: Content Audit Convergence Loop (DURING EVERY CONTENT FIX SESSION)
+
+When auditing or fixing **content** (skill scripts, SKILL.md files, reference docs, shared modules) — as
+opposed to eval YAML — you MUST iterate until no HIGH or MEDIUM severity issues remain. A single scan
+pass is NEVER sufficient. Fixes expose new issues, create drift between file copies, and invalidate
+documentation. The loop catches what a single pass cannot.
+
+### Severity Classification
+
+Every finding MUST be classified before deciding whether to iterate:
+
+| Severity | Convergence Rule | Examples |
+|----------|-----------------|----------|
+| CRITICAL | Must fix, blocks PR | Syntax errors, missing function calls, data loss, broken imports |
+| HIGH | Must fix before declaring done | API contract violations, resource leaks, security vulnerabilities, missing required headers |
+| MEDIUM | Must fix, triggers re-scan | NaN propagation, missing safety guards, copy drift between shared modules, broken doc references |
+| LOW | Fix if easy, do NOT re-loop for these alone | Style inconsistencies, missing optional frontmatter, orphaned test scripts |
+| INFO | Report only | Version notes, design observations, improvement suggestions |
+
+### The Content Audit Loop
+
+```
+pass = 1
+findings_by_pass = {}
+
+REPEAT (max 5 passes):
+  1. SCAN — run ALL content-level checks:
+     a. Script logic: parseInt/NaN guards, error handling, resource cleanup (try/finally)
+     b. API contracts: correct headers, response status checks, endpoint paths
+     c. Cross-file drift: diff ALL copies of shared modules (kibana-client.js, es-client.js)
+     d. Reference accuracy: SKILL.md examples vs actual CLI arg parsers
+     e. Security: command injection, credential logging, path traversal, TLS bypass
+     f. Documentation: env var tables match actual usage, broken links, stale flags
+     g. Frontmatter: required fields present and consistent across skills
+
+     On pass 2+, FOCUS the scan on:
+     - Files touched by previous pass fixes (blast radius)
+     - Sibling copies of modified shared modules
+     - SKILL.md files whose scripts were changed
+     - NEW patterns exposed by the fixes (e.g., adding extraHeaders reveals callers need updating)
+
+  2. CLASSIFY — assign severity to every finding
+
+  3. CHECK CONVERGENCE:
+     - If ZERO HIGH or MEDIUM findings → EXIT loop, proceed to PR/commit
+     - If same findings with same severity appeared in previous pass → CHANGE APPROACH
+       (different fix strategy) or EXIT and report as unresolvable
+     - If pass >= 5 → EXIT and report remaining HIGH/MEDIUM findings
+
+  4. FIX — apply fixes for ALL CRITICAL + HIGH + MEDIUM findings
+     - Run syntax validation after fixes: node --check, prettier --check, eslint
+     - If fixes fail validation → fix the fix before proceeding
+
+  5. Record: findings_by_pass[pass] = { findings, fixes_applied, files_changed }
+     pass += 1
+     GO TO step 1
+```
+
+### Blast Radius Re-Scan (Pass 2+ Targeting)
+
+After fixing files in pass N, pass N+1 MUST check:
+
+| What changed in pass N | What to re-check in pass N+1 |
+|------------------------|------------------------------|
+| Modified `kibana-client.js` in 3 skills | Diff against remaining 5 copies — are they in sync? |
+| Changed a script's CLI arg parser | Does the SKILL.md example still match? |
+| Added a helper function to a script | Do sibling scripts that need it also have it? |
+| Fixed an API endpoint path | Are the same stale paths in reference docs? |
+| Removed a flag (e.g., `--index`) | Grep all SKILL.md files for references to the removed flag |
+| Added error handling to one catch block | Are there other bare `catch {}` blocks in the same file or siblings? |
+
+### Convergence Safeguards
+
+- **Max 5 passes** — if HIGH/MEDIUM findings persist after 5 passes, report them and stop
+- **Steady state detection** — if the exact same findings appear in 2 consecutive passes with no
+  score improvement, the current approach is not working. Change strategy or escalate.
+- **Never remove findings** — if a finding can't be fixed, document why in the PR body
+- **Validation gate** — every pass MUST end with syntax/lint validation. Fixes that break syntax
+  are bugs themselves and count as new CRITICAL findings in the next pass.
+
+### Per-Pass Evidence (for PR body)
+
+When opening a PR after the loop completes, include a per-pass summary so reviewers can see
+the iterative process and understand why each fix was necessary:
+
+```markdown
+## Audit Passes
+
+### Pass 1: Known pattern propagation (8 findings)
+| # | Severity | Finding | Fix |
+|---|----------|---------|-----|
+| 1 | HIGH | acknowledge-alert.js uses ES update on data streams | Migrated to Kibana Detection Engine API |
+| ... | ... | ... | ... |
+
+### Pass 2: Deep structural audit (9 findings)
+| # | Severity | Finding | Fix |
+|---|----------|---------|-----|
+| 9 | HIGH | kibana-client.js copy drift — extraHeaders missing in 7/8 copies | Propagated to all copies |
+| ... | ... | ... | ... |
+
+### Pass 3: Clean — no HIGH/MEDIUM findings
+```
+
 ## External Workspace Mode
 
 When the user wants to evaluate a plugin in another repository **without committing eval files** to that repo,

@@ -43,7 +43,59 @@ Use the codebase scanner to build a complete profile:
 - All hooks (from hooks.json or manifest)
 - All existing eval files and their coverage per component type
 
-### Step 2: Identify ALL Gaps
+### Step 2: Identify ALL Gaps (Iterative Deep Scan)
+
+This step runs in a loop — NOT a single pass. Fixes expose new issues, create drift
+between file copies, and invalidate documentation. Re-scanning after fixes is mandatory.
+
+#### Severity Classification
+
+Every finding is classified to decide whether to re-loop:
+
+| Severity | Convergence Rule | Examples |
+|----------|-----------------|----------|
+| CRITICAL | Must fix, blocks commit | Syntax errors, missing function calls, data loss, broken imports |
+| HIGH | Must fix before declaring done | API contract violations, resource leaks, security vulnerabilities, missing required headers |
+| MEDIUM | Must fix, triggers re-scan | NaN propagation, missing safety guards, copy drift between shared modules, broken doc references |
+| LOW | Fix if easy, do NOT re-loop for these alone | Style inconsistencies, missing optional frontmatter, orphaned test scripts |
+| INFO | Report only | Version notes, design observations, improvement suggestions |
+
+#### The Iterative Scan Loop
+
+```
+pass = 1
+
+REPEAT (max 5 passes):
+  1. Run ALL audit dimensions (the table below)
+  2. ALSO run content-level checks:
+     a. Script logic: parseInt/NaN guards, error handling, resource cleanup (try/finally)
+     b. API contracts: correct headers, response status checks, endpoint paths
+     c. Cross-file drift: diff ALL copies of shared modules (kibana-client.js, es-client.js, etc.)
+     d. Reference accuracy: SKILL.md examples vs actual CLI arg parsers
+     e. Security: command injection (exec vs execFile), credential logging, path traversal
+     f. Documentation: env var tables match actual usage, broken links, stale flags
+
+     On pass 2+, FOCUS on:
+     - Files touched by previous pass fixes (blast radius)
+     - Sibling copies of modified shared modules
+     - SKILL.md files whose scripts were changed
+     - New patterns exposed by the fixes
+
+  3. Classify ALL findings by severity
+
+  4. CHECK CONVERGENCE:
+     - If ZERO HIGH or MEDIUM findings → EXIT loop, proceed to Step 3 (Fix Eval Gaps)
+     - If same findings appeared in previous pass → CHANGE APPROACH or EXIT with report
+     - If pass >= 5 → EXIT and report remaining HIGH/MEDIUM findings
+
+  5. FIX all CRITICAL + HIGH + MEDIUM content findings immediately
+     - Run syntax validation after fixes: node --check, prettier --check, eslint
+     - If fixes fail validation → fix the fix before proceeding
+
+  6. pass += 1 → GO TO step 1
+```
+
+#### Eval Coverage Audit Dimensions
 
 Run every audit dimension:
 

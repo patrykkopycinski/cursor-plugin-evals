@@ -17,7 +17,10 @@ When working in ANY repository that contains a Cursor plugin (`.cursor-plugin/pl
 3. **Fix any failures**
 4. **Re-run until all CI thresholds pass**
 
-This is the DEFAULT behavior — not something the user needs to request. **The job is not done until `npx cursor-plugin-evals run --ci` exits 0.**
+This is the DEFAULT behavior — not something the user needs to request. **The job is not done until BOTH:**
+
+1. **`npx cursor-plugin-evals run --ci` exits 0** (eval convergence)
+2. **Content audit shows no HIGH/MEDIUM issues** after up to 5 iterative passes (content convergence)
 
 ## When to Act
 
@@ -35,6 +38,7 @@ Act IMMEDIATELY and WITHOUT ASKING when ANY of these are true:
 10. **Security tests missing** → Add them, run them, fix until they pass
 11. **Performance tests missing** → Add benchmarks, run them, calibrate thresholds
 12. **Component has no tests at all** → Generate ALL required tests for that component type
+13. **Content fixes applied** → Run content audit convergence loop until no HIGH/MEDIUM remain
 
 ## The Run → Fix → Converge Loop
 
@@ -104,6 +108,52 @@ pass reliably with ~5% headroom.
 - Set p50 to `actual_p50 * 1.2` (20% buffer)
 - Set p95 to `actual_p95 * 1.3` (30% buffer for tail latency)
 - Never use static values (200ms, 1000ms) without measuring first
+
+### Content Audit Convergence — MANDATORY for Content Fixes
+
+When auditing or fixing **content** (skill scripts, SKILL.md files, reference docs, shared modules),
+a single scan pass is NEVER sufficient. You MUST iterate until no HIGH/MEDIUM issues remain.
+
+#### Audit Severity Classification
+
+| Severity | Convergence Rule | Examples |
+|----------|-----------------|----------|
+| CRITICAL | Must fix, blocks PR | Syntax errors, missing function calls, data loss, broken imports |
+| HIGH | Must fix before declaring done | API contract violations, resource leaks, security vulnerabilities, missing required headers |
+| MEDIUM | Must fix, triggers re-scan | NaN propagation, missing safety guards, copy drift between shared modules, broken doc references |
+| LOW | Fix if easy, do NOT re-loop for these alone | Style inconsistencies, missing optional frontmatter, orphaned test scripts |
+| INFO | Report only | Version notes, design observations, improvement suggestions |
+
+#### The Content Audit Loop
+
+```
+REPEAT (max 5 passes):
+  1. Deep scan: script logic, API contracts, cross-file drift, reference accuracy, security, docs
+     On pass 2+: focus on blast radius of previous fixes + sibling file copies
+  2. Classify all findings by severity
+  3. If ZERO HIGH/MEDIUM → DONE
+     If same findings 2x in a row → change approach or report as unresolvable
+     If pass >= 5 → report remaining issues
+  4. Fix all CRITICAL + HIGH + MEDIUM
+  5. Validate fixes: node --check, prettier --check, eslint
+  6. Go to step 1
+```
+
+#### Content Audit Safeguards
+
+- **Max 5 passes** — if HIGH/MEDIUM findings persist, report and stop
+- **Steady state detection** — same findings 2 consecutive passes → change approach
+- **Never delete findings** — if unfixable, document in PR body
+- **Validation gate** — every pass ends with syntax/lint checks; broken fixes are CRITICAL in the next pass
+
+#### Dual Convergence Requirement
+
+The job is not done until BOTH gates pass:
+
+| Gate | Criteria | Max Iterations |
+|------|----------|----------------|
+| Eval CI | `npx cursor-plugin-evals run --ci` exits 0 | 5 per layer |
+| Content Audit | No HIGH/MEDIUM findings in latest scan pass | 5 passes |
 
 ## E2E Infrastructure — MANDATORY for Integration/Performance
 
@@ -198,3 +248,4 @@ Every command MUST have:
 - Remove failing tests — fix them or skip with documented reason
 - Give up after one failed attempt — iterate up to 5 times
 - **Silently work around framework limitations** — if the framework is the bottleneck (evaluator scores wrong, config can't express what's needed, adapter lacks context), STOP and propose a framework fix before continuing
+- **Stop after a single content audit pass** — content fixes expose new issues; iterate until no HIGH/MEDIUM remain (max 5 passes)

@@ -42,6 +42,12 @@ When evaluation result files are created or updated, IMMEDIATELY analyze them an
    npx cursor-plugin-evals run --suite FAILING_SUITE --verbose
    ```
 
+6. **If content was modified** (skill scripts, SKILL.md, reference docs — not just eval YAML),
+   run a targeted content audit on the changed files before declaring done:
+   - Check blast radius: sibling copies of modified shared modules, referencing docs
+   - Classify findings by severity (CRITICAL/HIGH/MEDIUM/LOW/INFO)
+   - Fix all HIGH+ issues, re-check, repeat until no HIGH/MEDIUM remain (max 5 passes)
+
 ## When to Stay Silent
 
 - Don't re-analyze the same result file if no changes occurred
