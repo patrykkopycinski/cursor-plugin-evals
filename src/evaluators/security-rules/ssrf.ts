@@ -26,11 +26,14 @@ export class SsrfRule implements SecurityRule {
 
   scan(text: string, location: string): SecurityFinding[] {
     const findings: SecurityFinding[] = [];
+    const isToolResult = location.includes('.result');
 
     for (const { pattern, label } of INTERNAL_IP_PATTERNS) {
       const match = pattern.exec(text);
       if (match) {
         const isMetadata = METADATA_ENDPOINT.test(match[0]);
+        if (isToolResult && !isMetadata) continue;
+
         findings.push({
           rule: this.name,
           category: this.category,

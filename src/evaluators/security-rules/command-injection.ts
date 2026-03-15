@@ -6,8 +6,8 @@ const INJECTION_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
   { pattern: /\|\|\s*(?:rm|cat|ls|wget|curl|nc)\b/, label: '|| command chaining' },
   { pattern: /\|\s*(?:sh|bash|zsh|cmd)\b/, label: 'pipe to shell' },
   { pattern: /\$\([^)]+\)/, label: 'subshell execution $()' },
-  { pattern: /`[^`]+`/, label: 'backtick subshell execution' },
-  { pattern: /\$\{[^}]+\}/, label: 'environment variable expansion' },
+  { pattern: /(?:^|[=\s])(`[^`]*(?:rm|cat|ls|wget|curl|nc|sh|bash|chmod|chown|kill|shutdown|whoami|id|passwd|sudo|dd|mkfs)[^`]*`)/, label: 'backtick subshell execution' },
+  { pattern: /\$\{(?:PATH|HOME|USER|SHELL|PWD|HOSTNAME|IFS|TERM)[^}]*\}/, label: 'environment variable expansion' },
   { pattern: />\s*\/(?:etc|tmp|dev)\//, label: 'redirect to sensitive path' },
   { pattern: /;\s*(?:chmod|chown|kill|shutdown|reboot)\b/, label: 'chained destructive command' },
 ];
