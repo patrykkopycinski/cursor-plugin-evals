@@ -18,6 +18,7 @@
   - [Task Adapters](adapters.md)
 
 - Features
+  - [Coverage Analysis](coverage.md)
   - [Test Auto-Generation](gen-tests.md)
   - [Smart Test Generation](smart-gen.md)
   - [Conversations](conversations.md)
@@ -32,6 +33,7 @@
   - [Multimodal Eval](multimodal.md)
 
 - Advanced
+  - [Web Dashboard](dashboard.md)
   - [Trace Ingestion](trace-import.md)
   - [Production Monitoring](monitoring.md)
   - [Visual Trace Viewer](visual-trace-viewer.md)

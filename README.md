@@ -113,7 +113,8 @@ Every Cursor plugin component is covered — not just MCP tools:
 - **Prompt optimization** — hill-climbing to improve eval scores
 - **Production monitoring** — OTel trace scoring with anomaly detection
 - **154 community tests** for 15 popular MCP servers
-- **12-page web dashboard** with dark mode, live SSE, and interactive charts
+- **13-page web dashboard** with dark mode, live SSE, and interactive charts
+- **Coverage analysis** — static analysis of component x layer coverage with CLI, API, dashboard, and badge
 - **Cost optimization** — find the cheapest model per test that meets quality thresholds
 - **Threshold auto-calibration** — tighten CI gates when scores exceed thresholds
 - **Typed evaluator configs** — type-safe configuration for token-usage, workflow, security, groundedness
@@ -165,6 +166,65 @@ docker compose -f docker/docker-compose.yml up -d    # Full test environment
 docker compose -f docker/docker-compose.lite.yml up -d  # Lightweight (mock mode)
 ```
 
+## Web Dashboard
+
+A 13-page web UI for visualizing evaluation results, trends, coverage, security, and model comparisons.
+
+```bash
+npx cursor-plugin-evals dashboard          # Start on default port
+npx cursor-plugin-evals dashboard --port 8080  # Custom port
+```
+
+<p align="center">
+  <img src="docs/screenshots/dashboard-overview.png" alt="Dashboard overview showing total runs, pass rate, grade, and trend chart" width="90%" />
+</p>
+
+<p align="center"><em>Dashboard overview — at-a-glance plugin health with stat cards and pass rate trend.</em></p>
+
+Drill into any run to see suite-level breakdown with individual test results:
+
+<p align="center">
+  <img src="docs/screenshots/dashboard-run-detail.png" alt="Run detail view with suite-level breakdown and test results" width="90%" />
+</p>
+
+<p align="center"><em>Run detail — suite pass rates, test-level status, and timing data.</em></p>
+
+Track quality over time with pass rate and quality score trend charts:
+
+<p align="center">
+  <img src="docs/screenshots/dashboard-trends.png" alt="Trend charts showing pass rate and quality score over time" width="90%" />
+</p>
+
+<p align="center"><em>Trends — pass rate and quality score trajectories across evaluation history.</em></p>
+
+Security findings from the latest run:
+
+<p align="center">
+  <img src="docs/screenshots/dashboard-security.png" alt="Security findings with prompt injection and privilege escalation test results" width="90%" />
+</p>
+
+<p align="center"><em>Security — prompt injection, privilege escalation, and OWASP-aligned test results.</em></p>
+
+See [Dashboard docs](docs/dashboard.md) for the full page reference.
+
+## Coverage Analysis
+
+Analyze which test layers cover each plugin component — without running any evals.
+
+```bash
+npx cursor-plugin-evals coverage                         # Terminal matrix
+npx cursor-plugin-evals coverage --report markdown        # Markdown table
+npx cursor-plugin-evals coverage --report badge -o badge.svg  # SVG badge
+```
+
+<p align="center">
+  <img src="docs/screenshots/dashboard-coverage.png" alt="Coverage matrix showing component × layer test coverage" width="90%" />
+</p>
+
+<p align="center"><em>Coverage matrix — depth coverage across tools, skills, rules, agents, and commands.</em></p>
+
+Two metrics: **Component Coverage** (% with any test) and **Depth Coverage** (% of applicable layer slots filled). See [Coverage docs](docs/coverage.md) for details.
+
 ## Documentation
 
 Full documentation at **[patrykkopycinski.github.io/cursor-plugin-evals](https://patrykkopycinski.github.io/cursor-plugin-evals)**:
@@ -174,6 +234,8 @@ Full documentation at **[patrykkopycinski.github.io/cursor-plugin-evals](https:/
 - [Testing Layers](docs/layers/static.md) (static, unit, integration, performance, LLM, skill, conformance)
 - [Evaluators](docs/evaluators.md) (27 evaluators with scoring details)
 - [Task Adapters](docs/adapters.md) (MCP, cursor-cli, claude-sdk, etc.)
+- [Coverage Analysis](docs/coverage.md)
+- [Web Dashboard](docs/dashboard.md)
 - [Security & Red-Teaming](docs/red-teaming.md)
 - [CI/CD Integration](docs/ci-cd.md)
 - [API Reference](docs/api-reference.md)
