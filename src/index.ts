@@ -548,3 +548,5 @@ export {
   generateCoverageBadge,
 } from './coverage/index.js';
 export type { CoverageReport, ComponentCoverage } from './coverage/analyzer.js';
+
+export { createEvalServer, startStdioServer } from './mcp/server.js';

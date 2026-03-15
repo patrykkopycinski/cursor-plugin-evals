@@ -2373,6 +2373,16 @@ datasetCmd
     }
   });
 
+program
+  .command('serve')
+  .description('Start the MCP server for agent integration')
+  .option('--transport <type>', 'Transport type: stdio or http', 'stdio')
+  .option('--port <port>', 'Port for HTTP transport', '6281')
+  .action(async () => {
+    const { startStdioServer } = await import('../mcp/server.js');
+    await startStdioServer();
+  });
+
 async function main(): Promise<void> {
   try {
     await program.parseAsync(process.argv);

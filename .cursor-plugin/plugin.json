@@ -6,6 +6,9 @@
   "author": "patrykkopycinski",
   "license": "MIT",
   "repository": "https://github.com/patrykkopycinski/cursor-plugin-evals",
+  "homepage": "https://github.com/patrykkopycinski/cursor-plugin-evals#readme",
+  "keywords": ["evaluation", "testing", "mcp", "plugin-quality", "coverage", "security"],
+  "mcpServers": ".mcp.json",
   "skills": [
     {
       "name": "Framework Assistant",
@@ -88,6 +91,38 @@
     {
       "name": "eval:doctor",
       "path": ".cursor/commands/eval-doctor.md"
+    }
+  ],
+  "agents": [
+    {
+      "name": "eval-debugger",
+      "path": ".cursor-plugin/agents/eval-debugger.md"
+    },
+    {
+      "name": "coverage-watcher",
+      "path": ".cursor-plugin/agents/coverage-watcher.md"
+    },
+    {
+      "name": "report-interpreter",
+      "path": ".cursor-plugin/agents/report-interpreter.md"
+    }
+  ],
+  "references": [
+    {
+      "name": "Evaluator Catalog",
+      "path": ".cursor-plugin/references/evaluator-catalog.md"
+    },
+    {
+      "name": "YAML Schema Reference",
+      "path": ".cursor-plugin/references/yaml-reference.md"
+    },
+    {
+      "name": "Adapter Guide",
+      "path": ".cursor-plugin/references/adapter-guide.md"
+    },
+    {
+      "name": "Troubleshooting",
+      "path": ".cursor-plugin/references/troubleshooting.md"
     }
   ],
   "rules": [

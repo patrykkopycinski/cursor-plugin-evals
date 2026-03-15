@@ -32,6 +32,8 @@
   "license": "Elastic-2.0",
   "files": [
     "dist",
+    ".mcp.json",
+    ".cursor-plugin",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
