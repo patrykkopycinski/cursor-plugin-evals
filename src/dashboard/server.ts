@@ -393,7 +393,7 @@ function dashboardHtml(): string {
   </style>
 </head>
 <body>
-  <button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">\\u2630</button>
+  <button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#x2630;</button>
   <aside class="sidebar">
     <div class="logo">
       <h1>Plugin Evals</h1>
@@ -401,22 +401,22 @@ function dashboardHtml(): string {
     </div>
     <nav>
       <div class="section">Overview</div>
-      <a href="#/" data-nav><span class="icon">\\u2302</span> Dashboard</a>
-      <a href="#/runs" data-nav><span class="icon">\\u25B6</span> Runs</a>
-      <a href="#/suites" data-nav><span class="icon">\\u2630</span> Suites</a>
+      <a href="#/" data-nav><span class="icon">&#x2302;</span> Dashboard</a>
+      <a href="#/runs" data-nav><span class="icon">&#x25B6;</span> Runs</a>
+      <a href="#/suites" data-nav><span class="icon">&#x2630;</span> Suites</a>
       <div class="section">Analytics</div>
-      <a href="#/trends" data-nav><span class="icon">\\u2197</span> Trends</a>
-      <a href="#/comparison" data-nav><span class="icon">\\u2194</span> Comparison</a>
-      <a href="#/leaderboard" data-nav><span class="icon">\\u2605</span> Leaderboard</a>
+      <a href="#/trends" data-nav><span class="icon">&#x2197;</span> Trends</a>
+      <a href="#/comparison" data-nav><span class="icon">&#x2194;</span> Comparison</a>
+      <a href="#/leaderboard" data-nav><span class="icon">&#x2605;</span> Leaderboard</a>
       <div class="section">Quality</div>
-      <a href="#/security" data-nav><span class="icon">\\u26A0</span> Security</a>
-      <a href="#/conformance" data-nav><span class="icon">\\u2713</span> Conformance</a>
-      <a href="#/coverage" data-nav><span class="icon">\\u25A3</span> Coverage</a>
+      <a href="#/security" data-nav><span class="icon">&#x26A0;</span> Security</a>
+      <a href="#/conformance" data-nav><span class="icon">&#x2713;</span> Conformance</a>
+      <a href="#/coverage" data-nav><span class="icon">&#x25A3;</span> Coverage</a>
       <div class="section">Resources</div>
-      <a href="#/collections" data-nav><span class="icon">\\u2750</span> Collections</a>
-      <a href="#/live" data-nav><span class="icon">\\u26A1</span> Live Feed</a>
+      <a href="#/collections" data-nav><span class="icon">&#x2750;</span> Collections</a>
+      <a href="#/live" data-nav><span class="icon">&#x26A1;</span> Live Feed</a>
       <div class="section">System</div>
-      <a href="#/settings" data-nav><span class="icon">\\u2699</span> Settings</a>
+      <a href="#/settings" data-nav><span class="icon">&#x2699;</span> Settings</a>
     </nav>
   </aside>
   <div class="main">
