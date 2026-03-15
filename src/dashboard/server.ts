@@ -216,6 +216,97 @@ export function createApp(dbPath: string): { app: Hono; db: Database.Database } 
     return c.json({ events });
   });
 
+  app.get('/api/runs/:id/tests/:suiteName/:testName', (c) => {
+    const data = getRun(db, c.req.param('id'));
+    if (!data) return c.json({ error: 'Run not found' }, 404);
+    const suiteName = decodeURIComponent(c.req.param('suiteName'));
+    const testName = decodeURIComponent(c.req.param('testName'));
+    const suite = data.suites.find((s) => s.name === suiteName);
+    if (!suite) return c.json({ error: 'Suite not found' }, 404);
+    const details = JSON.parse(suite.results_json);
+    const test = (details.tests ?? []).find((t: { name: string }) => t.name === testName);
+    if (!test) return c.json({ error: 'Test not found' }, 404);
+    return c.json({
+      ...test,
+      suite: suiteName,
+      layer: suite.layer,
+      runId: c.req.param('id'),
+    });
+  });
+
+  app.get('/api/config/tree', async (c) => {
+    try {
+      const configPath = resolve(process.cwd(), 'plugin-eval.yaml');
+      if (!existsSync(configPath)) {
+        const latestRuns = getLatestRuns(db, 1);
+        if (!latestRuns.length) return c.json({ suites: [] });
+        const latest = getRun(db, latestRuns[0].id);
+        if (!latest) return c.json({ suites: [] });
+        const suites = latest.suites.map((s) => {
+          const details = JSON.parse(s.results_json);
+          return {
+            name: s.name,
+            layer: s.layer,
+            tests: (details.tests ?? []).map((t: { name: string }) => ({ name: t.name })),
+          };
+        });
+        return c.json({ suites });
+      }
+      const { loadConfig } = await import('../core/config.js');
+      const config = loadConfig(configPath);
+      const suites = config.suites.map((s) => ({
+        name: s.name,
+        layer: s.layer,
+        tests: s.tests.map((t) => ({ name: t.name })),
+      }));
+      return c.json({ suites });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return c.json({ error: message }, 500);
+    }
+  });
+
+  app.post('/api/rerun', async (c) => {
+    try {
+      const body = await c.req.json<{ suite?: string; test?: string; layer?: string }>();
+      const configPath = resolve(process.cwd(), 'plugin-eval.yaml');
+      if (!existsSync(configPath)) {
+        return c.json({ error: 'plugin-eval.yaml not found' }, 404);
+      }
+      const { loadConfig } = await import('../core/config.js');
+      const { runEvaluation } = await import('../core/runner.js');
+      const config = loadConfig(configPath);
+
+      const options: { suites?: string[]; layers?: string[] } = {};
+      if (body.suite) options.suites = [body.suite];
+      if (body.layer) options.layers = [body.layer];
+
+      const result = await runEvaluation(config, options);
+
+      const { saveRun } = await import('./db.js');
+      saveRun(db, result);
+
+      return c.json({
+        runId: result.runId,
+        passRate: result.overall.passRate,
+        passed: result.overall.passed,
+        failed: result.overall.failed,
+        total: result.overall.total,
+        duration: result.overall.duration,
+        suites: result.suites.map((s) => ({
+          name: s.name,
+          layer: s.layer,
+          passRate: s.passRate,
+          duration: s.duration,
+          tests: s.tests,
+        })),
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return c.json({ error: message }, 500);
+    }
+  });
+
   app.get('/api/coverage', async (c) => {
     try {
       const { analyzeCoverage } = await import('../coverage/analyzer.js');
@@ -382,6 +473,60 @@ function dashboardHtml(): string {
     .toggle-switch.on { background: var(--accent); }
     .toggle-switch .knob { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: transform 0.3s; }
     .toggle-switch.on .knob { transform: translateX(20px); }
+    .trace-timeline { position: relative; padding-left: 28px; }
+    .trace-timeline::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+    .trace-step { position: relative; margin-bottom: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; transition: border-color 0.2s; }
+    .trace-step:hover { border-color: var(--border-hover); }
+    .trace-step::before { content: ''; position: absolute; left: -22px; top: 18px; width: 10px; height: 10px; border-radius: 50%; background: var(--border); border: 2px solid var(--bg-deep); z-index: 1; }
+    .trace-step.step-pass::before { background: var(--green); }
+    .trace-step.step-fail::before { background: var(--red); }
+    .trace-step.step-info::before { background: var(--accent); }
+    .trace-step-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; cursor: pointer; user-select: none; gap: 12px; }
+    .trace-step-header:hover { background: var(--bg-surface); border-radius: 10px; }
+    .trace-step-header .step-type { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: var(--bg-surface); color: var(--text-muted); }
+    .trace-step-header .step-type.type-prompt { color: var(--accent); background: rgba(79,142,255,0.1); }
+    .trace-step-header .step-type.type-tool { color: var(--accent-secondary); background: rgba(139,92,246,0.1); }
+    .trace-step-header .step-type.type-evaluator { color: var(--green); background: rgba(52,211,153,0.1); }
+    .trace-step-header .step-title { flex: 1; font-size: 13px; font-weight: 600; }
+    .trace-step-header .step-meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 12px; align-items: center; }
+    .trace-step-header .chevron { transition: transform 0.2s; color: var(--text-dim); }
+    .trace-step-header .chevron.open { transform: rotate(90deg); }
+    .trace-step-body { padding: 0 16px 16px; display: none; }
+    .trace-step-body.open { display: block; }
+    .trace-step-body pre { background: var(--bg-deep); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 12px; overflow-x: auto; line-height: 1.5; font-family: 'SF Mono', Consolas, 'Liberation Mono', monospace; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; max-height: 400px; overflow-y: auto; }
+    .trace-summary { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+    .trace-summary .tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 6px 12px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); }
+    .trace-summary .tag .tag-label { color: var(--text-dim); }
+    .explorer-layout { display: grid; grid-template-columns: 300px 1fr; gap: 0; min-height: calc(100vh - 100px); }
+    .explorer-tree { background: var(--bg); border-right: 1px solid var(--border); border-radius: 10px 0 0 10px; overflow-y: auto; max-height: calc(100vh - 140px); }
+    .explorer-tree .tree-search { padding: 12px; border-bottom: 1px solid var(--border); }
+    .explorer-tree .tree-search input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-surface); color: var(--text); font-size: 13px; outline: none; transition: border-color 0.2s; }
+    .explorer-tree .tree-search input:focus { border-color: var(--accent); }
+    .explorer-tree .tree-filters { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+    .explorer-tree .tree-filters label { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); cursor: pointer; }
+    .explorer-tree .tree-filters input[type="checkbox"] { accent-color: var(--accent); }
+    .tree-node { padding: 0; }
+    .tree-node .tree-suite { display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text); transition: background 0.15s; border-bottom: 1px solid var(--border); }
+    .tree-node .tree-suite:hover { background: var(--bg-surface); }
+    .tree-node .tree-suite .expand-icon { font-size: 10px; color: var(--text-dim); transition: transform 0.2s; min-width: 12px; }
+    .tree-node .tree-suite .expand-icon.expanded { transform: rotate(90deg); }
+    .tree-node .tree-tests { display: none; }
+    .tree-node .tree-tests.expanded { display: block; }
+    .tree-node .tree-test { display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 32px; cursor: pointer; font-size: 12px; color: var(--text-muted); transition: background 0.15s; border-bottom: 1px solid var(--border); }
+    .tree-node .tree-test:hover { background: var(--bg-surface); color: var(--text); }
+    .tree-node.active > .tree-suite, .tree-node .tree-test.active { background: var(--bg-surface); color: var(--accent); border-left: 3px solid var(--accent); }
+    .tree-node .tree-test .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .tree-node .tree-test .dot.pass { background: var(--green); }
+    .tree-node .tree-test .dot.fail { background: var(--red); }
+    .tree-node .tree-test .dot.unknown { background: var(--text-dim); }
+    .explorer-detail { background: var(--bg-deep); border-radius: 0 10px 10px 0; overflow-y: auto; max-height: calc(100vh - 140px); padding: 20px; }
+    .explorer-detail .detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+    .rerun-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 20px; background: linear-gradient(135deg, var(--accent), var(--accent-secondary)); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.2s, transform 0.1s; }
+    .rerun-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .rerun-btn:active { transform: translateY(0); }
+    .rerun-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .rerun-btn .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
     @media (max-width: 768px) {
       .sidebar { transform: translateX(-100%); }
       .sidebar.open { transform: translateX(0); }
@@ -389,6 +534,9 @@ function dashboardHtml(): string {
       .main { margin-left: 0; }
       .stat-cards { grid-template-columns: 1fr; }
       th, td { padding: 8px 8px; font-size: 12px; }
+      .explorer-layout { grid-template-columns: 1fr; }
+      .explorer-tree { max-height: 300px; border-radius: 10px; border-right: none; border-bottom: 1px solid var(--border); }
+      .explorer-detail { border-radius: 10px; }
     }
   </style>
 </head>
@@ -413,6 +561,7 @@ function dashboardHtml(): string {
       <a href="#/conformance" data-nav><span class="icon">&#x2713;</span> Conformance</a>
       <a href="#/coverage" data-nav><span class="icon">&#x25A3;</span> Coverage</a>
       <div class="section">Resources</div>
+      <a href="#/explorer" data-nav><span class="icon">&#x1F50D;</span> Explorer</a>
       <a href="#/collections" data-nav><span class="icon">&#x2750;</span> Collections</a>
       <a href="#/live" data-nav><span class="icon">&#x26A1;</span> Live Feed</a>
       <div class="section">System</div>
@@ -457,6 +606,7 @@ function dashboardHtml(): string {
     const routes = [
       [/^#\\/$|^#$|^$/, pageOverview],
       [/^#\\/runs$/, pageRuns],
+      [/^#\\/runs\\/([^/]+)\\/trace\\/([^/]+)\\/(.+)$/, pageTrace],
       [/^#\\/runs\\/(.+)$/, pageRunDetail],
       [/^#\\/suites$/, pageSuites],
       [/^#\\/trends$/, pageTrends],
@@ -465,6 +615,7 @@ function dashboardHtml(): string {
       [/^#\\/conformance$/, pageConformance],
       [/^#\\/coverage$/, pageCoverage],
       [/^#\\/collections$/, pageCollections],
+      [/^#\\/explorer$/, pageExplorer],
       [/^#\\/live$/, pageLive],
       [/^#\\/leaderboard$/, pageLeaderboard],
       [/^#\\/settings$/, pageSettings],
@@ -530,7 +681,7 @@ function dashboardHtml(): string {
           html+='<div class="card"><h3>'+s.name+'<span class="layer-tag">'+s.layer+'</span></h3>';
           html+='<div style="margin-bottom:8px;color:var(--text-muted);font-size:13px">'+(s.passRate*100).toFixed(1)+'% \\u00B7 '+fmtD(s.duration)+'</div>';
           html+=scoreBar(s.passRate);
-          if(s.tests&&s.tests.length) { for(const t of s.tests) { html+='<div class="test-row"><span class="'+(t.pass?'test-pass':'test-fail')+'">'+(t.pass?'\\u2713':'\\u2717')+' '+t.name+'</span><span class="duration">'+fmtD(t.latencyMs)+'</span></div>'; } }
+          if(s.tests&&s.tests.length) { for(const t of s.tests) { html+='<div class="test-row" style="cursor:pointer" onclick="location.hash=\\'#/runs/'+id+'/trace/'+encodeURIComponent(s.name)+'/'+encodeURIComponent(t.name)+'\\'"><span class="'+(t.pass?'test-pass':'test-fail')+'">'+(t.pass?'\\u2713':'\\u2717')+' '+t.name+'</span><span class="duration">'+fmtD(t.latencyMs)+'</span></div>'; } }
           html+='</div>';
         }
         html+='</div>';
@@ -745,6 +896,270 @@ function dashboardHtml(): string {
         app.innerHTML=html;
       } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed: '+e.message+'</div></div>';}
     }
+
+    function renderTraceTimeline(data) {
+      let html='<div class="trace-timeline">';
+      let stepIdx=0;
+      // Prompt step
+      html+='<div class="trace-step step-info"><div class="trace-step-header" onclick="toggleStep('+stepIdx+')"><span class="step-type type-prompt">Prompt</span><span class="step-title">Test Input</span><span class="step-meta"><span class="chevron" id="chev-'+stepIdx+'">\\u25B6</span></span></div><div class="trace-step-body" id="step-'+stepIdx+'"><pre>'+(data.prompt||data.name||'(no prompt recorded)')+'</pre></div></div>';
+      stepIdx++;
+      // Tool call steps
+      if(data.toolCalls&&data.toolCalls.length){
+        for(const tc of data.toolCalls){
+          const cls=tc.result&&tc.result.isError?'step-fail':'step-pass';
+          html+='<div class="trace-step '+cls+'"><div class="trace-step-header" onclick="toggleStep('+stepIdx+')"><span class="step-type type-tool">Tool Call</span><span class="step-title">'+tc.tool+'</span><span class="step-meta"><span class="duration">'+fmtD(tc.latencyMs||0)+'</span><span class="chevron" id="chev-'+stepIdx+'">\\u25B6</span></span></div><div class="trace-step-body" id="step-'+stepIdx+'">';
+          html+='<div style="margin-bottom:8px;font-size:12px;color:var(--text-dim)">Arguments</div><pre>'+JSON.stringify(tc.args,null,2)+'</pre>';
+          if(tc.result){
+            html+='<div style="margin:12px 0 8px;font-size:12px;color:var(--text-dim)">Response'+(tc.result.isError?' <span style="color:var(--red)">(error)</span>':'')+'</div><pre>';
+            if(tc.result.content){
+              for(const c of tc.result.content){
+                html+=c.text||'(blob: '+c.type+')';
+              }
+            } else { html+=JSON.stringify(tc.result,null,2); }
+            html+='</pre>';
+          }
+          html+='</div></div>';
+          stepIdx++;
+        }
+      }
+      // Evaluator steps
+      if(data.evaluatorResults&&data.evaluatorResults.length){
+        for(const ev of data.evaluatorResults){
+          const cls=ev.pass?'step-pass':'step-fail';
+          const scoreColor=ev.score>=0.9?'var(--green)':ev.score>=0.6?'var(--yellow)':'var(--red)';
+          html+='<div class="trace-step '+cls+'"><div class="trace-step-header" onclick="toggleStep('+stepIdx+')"><span class="step-type type-evaluator">Evaluator</span><span class="step-title">'+ev.evaluator+(ev.label?' ('+ev.label+')':'')+'</span><span class="step-meta"><span style="color:'+scoreColor+';font-weight:700">'+(ev.score*100).toFixed(0)+'%</span><span class="'+(ev.pass?'test-pass':'test-fail')+'" style="font-weight:600">'+(ev.pass?'PASS':'FAIL')+'</span><span class="chevron" id="chev-'+stepIdx+'">\\u25B6</span></span></div><div class="trace-step-body" id="step-'+stepIdx+'">';
+          if(ev.explanation) html+='<div style="font-size:13px;margin-bottom:8px">'+ev.explanation+'</div>';
+          if(ev.metadata) html+='<div style="margin-top:8px;font-size:12px;color:var(--text-dim)">Metadata</div><pre>'+JSON.stringify(ev.metadata,null,2)+'</pre>';
+          html+='</div></div>';
+          stepIdx++;
+        }
+      }
+      html+='</div>';
+      return html;
+    }
+
+    window.toggleStep=function(idx){
+      const body=document.getElementById('step-'+idx);
+      const chev=document.getElementById('chev-'+idx);
+      if(body){body.classList.toggle('open');if(chev)chev.classList.toggle('open');}
+    };
+
+    async function pageTrace(m) {
+      const runId=m[1], suiteName=decodeURIComponent(m[2]), testName=decodeURIComponent(m[3]);
+      app.innerHTML='<div class="page"><div class="breadcrumb"><a href="#/runs">Runs</a> / <a href="#/runs/'+runId+'">Detail</a> / Trace</div>'+skeleton(8)+'</div>';
+      try {
+        const data=await fetch('/api/runs/'+runId+'/tests/'+encodeURIComponent(suiteName)+'/'+encodeURIComponent(testName)).then(r=>r.json());
+        if(data.error){app.innerHTML='<div class="page"><div class="breadcrumb"><a href="#/runs">Runs</a> / <a href="#/runs/'+runId+'">Detail</a> / Trace</div><div class="empty">'+data.error+'</div></div>';return;}
+        let html='<div class="page"><div class="breadcrumb"><a href="#/runs">Runs</a> / <a href="#/runs/'+runId+'">Detail</a> / '+suiteName+' / '+testName+'</div>';
+        html+='<h1 class="page-title">'+testName+'</h1>';
+        html+='<div class="trace-summary">';
+        html+='<div class="tag"><span class="tag-label">Suite</span> '+suiteName+'</div>';
+        html+='<div class="tag"><span class="tag-label">Layer</span> <span class="layer-tag">'+data.layer+'</span></div>';
+        html+='<div class="tag"><span class="tag-label">Status</span> <span class="'+(data.pass?'test-pass':'test-fail')+'" style="font-weight:600">'+(data.pass?'\\u2713 Pass':'\\u2717 Fail')+'</span></div>';
+        html+='<div class="tag"><span class="tag-label">Latency</span> '+fmtD(data.latencyMs||0)+'</div>';
+        if(data.tokenUsage){html+='<div class="tag"><span class="tag-label">Tokens</span> '+(data.tokenUsage.input||0)+' in / '+(data.tokenUsage.output||0)+' out'+(data.tokenUsage.cached?' / '+data.tokenUsage.cached+' cached':'')+'</div>';}
+        if(data.model){html+='<div class="tag"><span class="tag-label">Model</span> '+data.model+'</div>';}
+        if(data.error){html+='<div class="tag" style="border-color:var(--red)"><span class="tag-label">Error</span> <span style="color:var(--red)">'+data.error+'</span></div>';}
+        html+='</div>';
+        html+=renderTraceTimeline(data);
+        html+='</div>';
+        app.innerHTML=html;
+      } catch(e){app.innerHTML='<div class="page"><div class="breadcrumb"><a href="#/runs">Runs</a> / Trace</div><div class="empty">Failed to load trace: '+e.message+'</div></div>';}
+    }
+
+    let explorerState={selected:null,selectedType:null,treeData:null,latestTests:{},searchFilter:'',layerFilters:new Set()};
+
+    async function pageExplorer() {
+      app.innerHTML='<div class="page"><h1 class="page-title">Explorer</h1><p class="page-subtitle">Browse and re-run test suites</p>'+skeleton(8)+'</div>';
+      try {
+        const [treeData,runsData]=await Promise.all([
+          fetch('/api/config/tree').then(r=>r.json()),
+          api('/api/runs')
+        ]);
+        explorerState.treeData=treeData;
+        const allLayers=new Set();
+        for(const s of treeData.suites||[]) allLayers.add(s.layer);
+        if(explorerState.layerFilters.size===0) explorerState.layerFilters=new Set(allLayers);
+
+        // load latest test results
+        explorerState.latestTests={};
+        if(runsData&&runsData.length){
+          const latest=await api('/api/runs/'+runsData[0].id);
+          if(latest&&latest.suites){
+            for(const s of latest.suites){
+              if(s.tests){for(const t of s.tests){explorerState.latestTests[s.name+'::'+t.name]=t.pass;}}
+            }
+          }
+        }
+
+        renderExplorer();
+      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed to load explorer: '+e.message+'</div></div>';}
+    }
+
+    function renderExplorer(){
+      const td=explorerState.treeData;
+      if(!td)return;
+      const suites=(td.suites||[]).filter(s=>{
+        if(!explorerState.layerFilters.has(s.layer))return false;
+        if(explorerState.searchFilter){
+          const q=explorerState.searchFilter.toLowerCase();
+          if(s.name.toLowerCase().includes(q))return true;
+          return s.tests.some(t=>t.name.toLowerCase().includes(q));
+        }
+        return true;
+      });
+      const allLayers=new Set();
+      for(const s of td.suites||[]) allLayers.add(s.layer);
+
+      let treeHtml='<div class="explorer-tree"><div class="tree-search"><input type="text" placeholder="Filter tests..." value="'+explorerState.searchFilter+'" oninput="explorerSearch(this.value)"/></div>';
+      treeHtml+='<div class="tree-filters">';
+      for(const l of allLayers){
+        treeHtml+='<label><input type="checkbox" '+(explorerState.layerFilters.has(l)?'checked':'')+' onchange="explorerToggleLayer(\\''+l+'\\',this.checked)"> '+l+'</label>';
+      }
+      treeHtml+='</div>';
+      for(const s of suites){
+        const isActive=explorerState.selectedType==='suite'&&explorerState.selected===s.name;
+        treeHtml+='<div class="tree-node '+(isActive?'active':'')+'">';
+        treeHtml+='<div class="tree-suite" onclick="explorerSelectSuite(\\''+s.name.replace(/'/g,"\\\\'")+'\\')">';
+        treeHtml+='<span class="expand-icon" onclick="event.stopPropagation();explorerToggleSuite(this)">\\u25B6</span>';
+        treeHtml+='<span class="layer-tag">'+s.layer+'</span><span style="flex:1">'+s.name+'</span>';
+        treeHtml+='</div><div class="tree-tests">';
+        const filteredTests=explorerState.searchFilter?s.tests.filter(t=>t.name.toLowerCase().includes(explorerState.searchFilter.toLowerCase())):s.tests;
+        for(const t of filteredTests){
+          const key=s.name+'::'+t.name;
+          const passed=explorerState.latestTests[key];
+          const dotCls=passed===true?'pass':passed===false?'fail':'unknown';
+          const isTestActive=explorerState.selectedType==='test'&&explorerState.selected===key;
+          treeHtml+='<div class="tree-test '+(isTestActive?'active':'')+'" onclick="explorerSelectTest(\\''+s.name.replace(/'/g,"\\\\'")+'\\'  ,\\''+t.name.replace(/'/g,"\\\\'")+'\\')">';
+          treeHtml+='<span class="dot '+dotCls+'"></span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+t.name+'</span></div>';
+        }
+        treeHtml+='</div></div>';
+      }
+      treeHtml+='</div>';
+
+      let detailHtml='<div class="explorer-detail">';
+      if(!explorerState.selected){
+        detailHtml+='<div class="empty" style="padding:60px 20px"><div class="empty-icon">\\u1F50D</div>Select a suite or test from the tree to view details.</div>';
+      } else {
+        detailHtml+='<div class="detail-header"><div><h2 style="font-size:18px;font-weight:700">'+explorerState.selected.split('::').pop()+'</h2><span style="font-size:12px;color:var(--text-muted)">'+explorerState.selectedType+'</span></div>';
+        detailHtml+='<button class="rerun-btn" id="rerun-btn" onclick="explorerRerun()">\\u25B6 Re-run</button></div>';
+        detailHtml+='<div id="explorer-detail-content"><div class="loading">'+skeleton(5)+'</div></div>';
+      }
+      detailHtml+='</div>';
+
+      app.innerHTML='<div class="page" style="max-width:1400px"><h1 class="page-title">Explorer</h1><p class="page-subtitle">Browse and re-run test suites</p><div class="explorer-layout">'+treeHtml+detailHtml+'</div></div>';
+
+      if(explorerState.selected) loadExplorerDetail();
+    }
+
+    async function loadExplorerDetail(){
+      const container=document.getElementById('explorer-detail-content');
+      if(!container)return;
+      try {
+        if(explorerState.selectedType==='test'){
+          const parts=explorerState.selected.split('::');
+          const suiteName=parts[0],testName=parts[1];
+          const runs=await api('/api/runs');
+          if(!runs||!runs.length){container.innerHTML='<div class="empty">No runs available.</div>';return;}
+          const data=await fetch('/api/runs/'+runs[0].id+'/tests/'+encodeURIComponent(suiteName)+'/'+encodeURIComponent(testName)).then(r=>r.json());
+          if(data.error){container.innerHTML='<div class="empty">'+data.error+'</div>';return;}
+          let html='<div class="trace-summary">';
+          html+='<div class="tag"><span class="tag-label">Status</span> <span class="'+(data.pass?'test-pass':'test-fail')+'" style="font-weight:600">'+(data.pass?'\\u2713 Pass':'\\u2717 Fail')+'</span></div>';
+          html+='<div class="tag"><span class="tag-label">Latency</span> '+fmtD(data.latencyMs||0)+'</div>';
+          if(data.tokenUsage){html+='<div class="tag"><span class="tag-label">Tokens</span> '+(data.tokenUsage.input||0)+' in / '+(data.tokenUsage.output||0)+' out</div>';}
+          if(data.model){html+='<div class="tag"><span class="tag-label">Model</span> '+data.model+'</div>';}
+          html+='</div>';
+          html+=renderTraceTimeline(data);
+          container.innerHTML=html;
+        } else {
+          const suiteName=explorerState.selected;
+          const runs=await api('/api/runs');
+          if(!runs||!runs.length){container.innerHTML='<div class="empty">No runs available.</div>';return;}
+          const runData=await api('/api/runs/'+runs[0].id);
+          const suite=(runData.suites||[]).find(s=>s.name===suiteName);
+          if(!suite){container.innerHTML='<div class="empty">Suite not found in latest run.</div>';return;}
+          let html='<div class="trace-summary">';
+          html+='<div class="tag"><span class="tag-label">Pass Rate</span> <span class="pass-rate '+prc(suite.passRate)+'">'+(suite.passRate*100).toFixed(1)+'%</span></div>';
+          html+='<div class="tag"><span class="tag-label">Duration</span> '+fmtD(suite.duration)+'</div>';
+          html+='<div class="tag"><span class="tag-label">Layer</span> <span class="layer-tag">'+suite.layer+'</span></div>';
+          html+='</div>'+scoreBar(suite.passRate);
+          if(suite.tests&&suite.tests.length){
+            html+='<div style="margin-top:16px">';
+            for(const t of suite.tests){
+              html+='<div class="test-row" style="cursor:pointer" onclick="explorerSelectTest(\\''+suiteName.replace(/'/g,"\\\\'")+'\\'  ,\\''+t.name.replace(/'/g,"\\\\'")+'\\')">';
+              html+='<span class="'+(t.pass?'test-pass':'test-fail')+'">'+(t.pass?'\\u2713':'\\u2717')+' '+t.name+'</span>';
+              html+='<span class="duration">'+fmtD(t.latencyMs)+'</span></div>';
+            }
+            html+='</div>';
+          }
+          container.innerHTML=html;
+        }
+      } catch(e){container.innerHTML='<div class="empty">Failed to load detail: '+e.message+'</div>';}
+    }
+
+    window.explorerSearch=function(val){
+      explorerState.searchFilter=val;
+      renderExplorer();
+    };
+
+    window.explorerToggleLayer=function(layer,checked){
+      if(checked)explorerState.layerFilters.add(layer);else explorerState.layerFilters.delete(layer);
+      renderExplorer();
+    };
+
+    window.explorerToggleSuite=function(el){
+      el.classList.toggle('expanded');
+      const testsDiv=el.closest('.tree-node').querySelector('.tree-tests');
+      if(testsDiv)testsDiv.classList.toggle('expanded');
+    };
+
+    window.explorerSelectSuite=function(name){
+      explorerState.selected=name;
+      explorerState.selectedType='suite';
+      renderExplorer();
+    };
+
+    window.explorerSelectTest=function(suite,test){
+      explorerState.selected=suite+'::'+test;
+      explorerState.selectedType='test';
+      renderExplorer();
+    };
+
+    window.explorerRerun=async function(){
+      const btn=document.getElementById('rerun-btn');
+      if(!btn)return;
+      btn.disabled=true;
+      btn.innerHTML='<span class="spinner"></span> Running...';
+      const container=document.getElementById('explorer-detail-content');
+      try {
+        const body={};
+        if(explorerState.selectedType==='suite'){
+          body.suite=explorerState.selected;
+        } else if(explorerState.selectedType==='test'){
+          body.suite=explorerState.selected.split('::')[0];
+        }
+        const res=await fetch('/api/rerun',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        const data=await res.json();
+        if(data.error){
+          if(container)container.innerHTML='<div class="empty" style="color:var(--red)">Re-run failed: '+data.error+'</div>';
+          btn.disabled=false;btn.innerHTML='\\u25B6 Re-run';return;
+        }
+        Object.keys(cache).forEach(k=>delete cache[k]);
+        // Update latest tests
+        if(data.suites){
+          for(const s of data.suites){
+            if(s.tests){for(const t of s.tests){explorerState.latestTests[s.name+'::'+t.name]=t.pass;}}
+          }
+        }
+        btn.disabled=false;btn.innerHTML='\\u2713 Done';
+        setTimeout(()=>{btn.innerHTML='\\u25B6 Re-run';},2000);
+        loadExplorerDetail();
+        renderExplorer();
+      } catch(e){
+        if(container)container.innerHTML='<div class="empty" style="color:var(--red)">Re-run failed: '+e.message+'</div>';
+        btn.disabled=false;btn.innerHTML='\\u25B6 Re-run';
+      }
+    };
 
     function pageSettings() {
       const isDark=document.documentElement.getAttribute('data-theme')!=='light';

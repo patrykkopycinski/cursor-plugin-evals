@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { log } from '../cli/logger.js';
-import type { RunResult, SuiteResult, TestResult, Difficulty } from '../core/types.js';
+import type { RunResult, SuiteResult, TestResult, Difficulty, DerivedMetricResult } from '../core/types.js';
 import { formatDuration } from '../core/utils.js';
 
 const DIFFICULTY_LABELS: Record<Difficulty, string> = {
@@ -150,6 +150,32 @@ function printConfidenceIntervals(result: RunResult): void {
   log.info('');
 }
 
+function printDerivedMetrics(metrics: DerivedMetricResult[]): void {
+  log.divider();
+  log.info(chalk.bold('  Derived Metrics'));
+  log.info('');
+
+  const rows: string[][] = [['Metric', 'Value', 'Threshold', 'Status']];
+  for (const m of metrics) {
+    const status = m.error
+      ? chalk.red('ERROR')
+      : m.pass
+        ? chalk.green('PASS')
+        : chalk.red('FAIL');
+    rows.push([
+      m.name,
+      m.value.toFixed(3),
+      m.threshold != null ? m.threshold.toFixed(3) : '—',
+      status,
+    ]);
+    if (m.error) {
+      log.info(`    ${chalk.gray(m.error)}`);
+    }
+  }
+  log.table(rows);
+  log.info('');
+}
+
 export function printTerminalReport(result: RunResult): void {
   log.header(`Eval Run: ${result.runId}`);
   log.info(`  Config: ${result.config}`);
@@ -162,6 +188,10 @@ export function printTerminalReport(result: RunResult): void {
 
   printFailureDetails(result);
   printConfidenceIntervals(result);
+
+  if (result.derivedMetrics?.length) {
+    printDerivedMetrics(result.derivedMetrics);
+  }
 
   log.summary(
     result.overall.total,

@@ -49,6 +49,10 @@ npx cursor-plugin-evals setup
 npx cursor-plugin-evals init          # Scaffold config from your plugin
 npx cursor-plugin-evals run           # Run all layers
 npx cursor-plugin-evals run --ci      # Enforce CI quality gates
+npx cursor-plugin-evals run --lf      # Re-run only last-failed tests
+npx cursor-plugin-evals run --ff      # Run failed tests first, then the rest
+npx cursor-plugin-evals run --shard 1/4  # Shard tests for CI parallelism
+npx cursor-plugin-evals merge-reports shard-*.json --ci  # Merge sharded reports
 npx cursor-plugin-evals score         # Quality score with badge
 ```
 
@@ -113,7 +117,9 @@ Every Cursor plugin component is covered — not just MCP tools:
 - **Prompt optimization** — hill-climbing to improve eval scores
 - **Production monitoring** — OTel trace scoring with anomaly detection
 - **154 community tests** for 15 popular MCP servers
-- **13-page web dashboard** with dark mode, live SSE, and interactive charts
+- **15-page web dashboard** with dark mode, live SSE, trace viewer, interactive explorer, and re-run from UI
+- **Trace viewer** — drill into any test to replay the full conversation, tool calls, and evaluator results as a timeline
+- **Interactive explorer** — browse suites/tests in a tree, filter by layer, and re-run individual tests from the dashboard
 - **Coverage analysis** — static analysis of component x layer coverage with CLI, API, dashboard, and badge
 - **Cost optimization** — find the cheapest model per test that meets quality thresholds
 - **Threshold auto-calibration** — tighten CI gates when scores exceed thresholds
@@ -121,6 +127,12 @@ Every Cursor plugin component is covered — not just MCP tools:
 - **Configurable adapter retry** — exponential backoff with pattern-based retry for CLI race conditions
 - **Token input estimation** — estimates input tokens for adapters that don't report them
 - **Conversation preview** — full conversation transcripts (messages, tool calls, results) in HTML reports for manual review
+- **Universal assertion negation** — prefix any assertion op with `not_` to invert it (e.g. `not_eq`, `not_matches`, `not_starts_with`)
+- **Matrix parametrization** — declarative cross-product testing across models, temperatures, or any custom dimension
+- **Derived metrics** — compose evaluator scores with math expressions (e.g. `0.4 * accuracy + 0.3 * speed`) with CI thresholds
+- **Test sharding** — `--shard=x/y` splits suites across CI runners with `merge-reports` to combine results
+- **Last-failed mode** — `--last-failed` re-runs only previously failed tests; `--failed-first` prioritizes them
+- **Post-run hooks** — trigger webhooks or scripts after eval runs with template interpolation
 
 ## Model Defaults
 
@@ -142,20 +154,55 @@ ci:
   required_pass: [security, tool-poisoning, mcp-protocol]
   first_try_pass_rate: 0.80
 
+# Derived metrics — compose evaluator scores with custom formulas:
+derived_metrics:
+  - name: composite_quality
+    formula: "0.4 * tool_selection + 0.3 * correctness + 0.2 * groundedness + 0.1 * response_quality"
+    threshold: 0.75
+
+# Matrix — test across models and temperatures in one suite:
+suites:
+  - name: tool-selection
+    matrix:
+      model: [gpt-5.4, claude-opus-4-6]
+      temperature: [0.0, 0.7]
+    tests: [...]
+
+# Post-run hooks — notify Slack, trigger scripts:
+post_run:
+  - type: webhook
+    url: https://hooks.slack.com/services/...
+    template: "Eval {{runId}}: {{passRate}}% pass rate ({{passed}}/{{total}})"
+  - type: script
+    command: node scripts/post-eval.js
+
 # Per-adapter evaluator overrides — different adapters, different evaluators:
 suites:
   - name: cli-behavior
     adapter: cursor-cli
     evaluators:
-      add: [groundedness, workflow]  # Only cursor-cli supports tool calls
+      add: [groundedness, workflow]
   - name: llm-behavior
     adapter: plain-llm
     evaluators:
-      remove: [groundedness, workflow]  # Skip tool-dependent evaluators
+      remove: [groundedness, workflow]
 ```
 
 ```bash
 npx cursor-plugin-evals run --ci   # Exit non-zero if any gate fails
+```
+
+### CI Parallelism with Sharding
+
+```bash
+# Split across 4 CI runners:
+npx cursor-plugin-evals run --shard 1/4 --report json -o shard-1.json
+npx cursor-plugin-evals run --shard 2/4 --report json -o shard-2.json
+npx cursor-plugin-evals run --shard 3/4 --report json -o shard-3.json
+npx cursor-plugin-evals run --shard 4/4 --report json -o shard-4.json
+
+# Merge and enforce thresholds:
+npx cursor-plugin-evals merge-reports shard-*.json --ci -o merged.json
 ```
 
 GitHub Action, GitLab CI, and shell script examples in [docs/ci-cd.md](docs/ci-cd.md).
@@ -169,7 +216,7 @@ docker compose -f docker/docker-compose.lite.yml up -d  # Lightweight (mock mode
 
 ## Web Dashboard
 
-A 13-page web UI for visualizing evaluation results, trends, coverage, security, and model comparisons.
+A 15-page web UI for visualizing evaluation results, trends, coverage, security, model comparisons, trace inspection, and interactive test exploration.
 
 ```bash
 npx cursor-plugin-evals dashboard          # Start on default port
@@ -299,7 +346,7 @@ The Framework Assistant is an always-on AI agent embedded in the Cursor plugin. 
 ```bash
 npm install
 npm run typecheck    # TypeScript check
-npm test             # Run framework tests (1163 tests)
+npm test             # Run framework tests (1268 tests)
 npm run build        # Build CLI binary
 npm run lint:fix     # Fix linting issues
 ```

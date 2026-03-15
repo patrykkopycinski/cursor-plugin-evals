@@ -20,6 +20,7 @@ import { runSkillSuite } from '../layers/skill/index.js';
 import { createEvaluator, EVALUATOR_NAMES } from '../evaluators/index.js';
 import { createTracer, withRunSpan, withSuiteSpan } from '../tracing/spans.js';
 import { mergeDefaults, buildConnectConfig } from './utils.js';
+import { expandMatrix } from './matrix.js';
 import { loadLastFailed, saveLastRun } from './last-run.js';
 import { discoverPlugin } from '../plugin/discovery.js';
 import { log } from '../cli/logger.js';
@@ -28,7 +29,9 @@ import { computeQualityScore, DEFAULT_WEIGHTS } from '../scoring/composite.js';
 import { aggregateConfidence } from '../scoring/confidence.js';
 import { evaluateCi } from '../ci/index.js';
 import { evaluateDerivedMetrics } from '../scoring/derived.js';
+import { shardSuites } from './shard.js';
 import type { ScoreEntry } from '../scoring/confidence.js';
+import type { ShardConfig } from './shard.js';
 
 export interface RunOptions {
   layers?: string[];
@@ -40,6 +43,7 @@ export interface RunOptions {
   concurrency?: number;
   lastFailed?: boolean;
   failedFirst?: boolean;
+  shard?: ShardConfig;
 }
 
 function buildEvaluatorRegistry(): Map<string, Evaluator> {
@@ -214,7 +218,7 @@ export async function runEvaluation(
   const evaluatorRegistry = buildEvaluatorRegistry();
   const tracer = createTracer('cursor-plugin-evals');
 
-  let filteredSuites = config.suites;
+  let filteredSuites = config.suites.flatMap(expandMatrix);
 
   if (options.layers && options.layers.length > 0) {
     const layerSet = new Set(options.layers);
@@ -259,6 +263,13 @@ export async function runEvaluation(
     } else if (options.lastFailed) {
       log.info('No previously failed tests found — running all suites');
     }
+  }
+
+  if (options.shard) {
+    filteredSuites = shardSuites(filteredSuites, options.shard);
+    log.info(
+      `  Shard ${options.shard.index}/${options.shard.total}: ${filteredSuites.length} suite(s)`,
+    );
   }
 
   if (filteredSuites.length === 0) {
@@ -340,9 +351,29 @@ export async function runEvaluation(
     confidenceIntervals,
   };
 
+  if (config.derivedMetrics?.length) {
+    const evalSummary: Record<string, { mean: number; min: number; max: number; pass: number; total: number }> = {};
+    for (const suite of suiteResults) {
+      for (const [name, summary] of Object.entries(suite.evaluatorSummary)) {
+        if (!evalSummary[name]) {
+          evalSummary[name] = { mean: 0, min: Infinity, max: -Infinity, pass: 0, total: 0 };
+        }
+        const e = evalSummary[name];
+        const totalBefore = e.total;
+        e.total += summary.total;
+        e.pass += summary.pass;
+        e.mean = (e.mean * totalBefore + summary.mean * summary.total) / e.total;
+        e.min = Math.min(e.min, summary.min);
+        e.max = Math.max(e.max, summary.max);
+      }
+    }
+    runResult.derivedMetrics = evaluateDerivedMetrics(config.derivedMetrics, evalSummary);
+  }
+
   if (options.ci && config.ci) {
     runResult.ciResult = evaluateCi(allTests, config.ci, {
       firstTryPassRate: runResult.overall.passRate,
+      derivedMetrics: runResult.derivedMetrics,
     });
   }
 

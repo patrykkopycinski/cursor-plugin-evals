@@ -161,11 +161,8 @@ describe('executePostRunHooks', () => {
   });
 
   it('executes script hook with env vars', async () => {
-    const { execSync } = await import('child_process');
-    const execSyncSpy = vi.spyOn(
-      await import('child_process'),
-      'execSync',
-    ).mockReturnValue(Buffer.from(''));
+    const execSyncMock = vi.mocked(execSync);
+    execSyncMock.mockReturnValue(Buffer.from(''));
 
     const hooks: PostRunHook[] = [
       { type: 'script', command: 'node scripts/post-eval.js' },
@@ -173,8 +170,8 @@ describe('executePostRunHooks', () => {
 
     await executePostRunHooks(hooks, MOCK_RESULT);
 
-    expect(execSyncSpy).toHaveBeenCalledOnce();
-    const [cmd, opts] = execSyncSpy.mock.calls[0];
+    expect(execSyncMock).toHaveBeenCalledOnce();
+    const [cmd, opts] = execSyncMock.mock.calls[0];
     expect(cmd).toBe('node scripts/post-eval.js');
     expect(opts?.env).toEqual(
       expect.objectContaining({
@@ -191,10 +188,7 @@ describe('executePostRunHooks', () => {
   });
 
   it('logs warning on script failure without throwing', async () => {
-    vi.spyOn(
-      await import('child_process'),
-      'execSync',
-    ).mockImplementation(() => {
+    vi.mocked(execSync).mockImplementation(() => {
       throw new Error('command not found');
     });
 

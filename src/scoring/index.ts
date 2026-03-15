@@ -9,3 +9,4 @@ export {
   confidenceGatingPass,
 } from './confidence.js';
 export type { AggregatedConfidence, ScoreEntry } from './confidence.js';
+export { evaluateDerivedMetrics } from './derived.js';

@@ -1,4 +1,4 @@
-import type { CiThresholds, CiViolation, CiResult, TestResult } from '../core/types.js';
+import type { CiThresholds, CiViolation, CiResult, TestResult, DerivedMetricResult } from '../core/types.js';
 
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;
@@ -41,6 +41,7 @@ function checkStatThresholds(
 
 export interface EvaluateCiOptions {
   firstTryPassRate?: number;
+  derivedMetrics?: DerivedMetricResult[];
 }
 
 export function evaluateCi(
@@ -158,6 +159,18 @@ export function evaluateCi(
           metric: 'phase_gate.e2e_completion_rate',
           actual: passRate,
           threshold: gate.e2e_completion_rate,
+        });
+      }
+    }
+  }
+
+  if (options?.derivedMetrics) {
+    for (const dm of options.derivedMetrics) {
+      if (!dm.pass && dm.threshold != null) {
+        violations.push({
+          metric: `derived.${dm.name}`,
+          actual: dm.value,
+          threshold: dm.threshold,
         });
       }
     }

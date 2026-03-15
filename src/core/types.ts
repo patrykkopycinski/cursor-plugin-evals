@@ -111,6 +111,7 @@ export interface DerivedMetricResult {
   value: number;
   threshold?: number;
   pass: boolean;
+  error?: string;
 }
 
 export interface QualityScoreResult {
@@ -417,6 +418,8 @@ export interface SuiteConfig {
     adapters?: string[];
   };
   tests: TestConfig[];
+  matrix?: Record<string, (string | number)[]>;
+  matrixValues?: Record<string, string | number>;
 }
 
 export type { TransportConfig, TransportType } from '../transports/types.js';

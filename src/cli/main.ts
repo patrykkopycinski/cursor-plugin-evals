@@ -13,7 +13,10 @@ import { generateJunitXmlReport } from '../reporting/junit-xml.js';
 import { discoverPlugin } from '../plugin/discovery.js';
 import { generateBadgeSvg } from '../scoring/badge.js';
 import { listCollections } from '../core/collections.js';
+import { parseShardArg } from '../core/shard.js';
+import { mergeReports } from '../reporting/merge.js';
 import type { RunResult } from '../core/types.js';
+import type { ShardConfig } from '../core/shard.js';
 import { log, setLogLevel, setNoColor } from './logger.js';
 import { watchAndRun } from './watch.js';
 import { initCommand } from './init.js';
@@ -65,6 +68,7 @@ async function runCommand(opts: {
   watch?: boolean;
   lastFailed?: boolean;
   failedFirst?: boolean;
+  shard?: ShardConfig;
 }): Promise<void> {
   if (opts.noColor) setNoColor(true);
   if (opts.verbose) setLogLevel('debug');
@@ -107,6 +111,7 @@ async function runCommand(opts: {
       ci: opts.ci,
       lastFailed: opts.lastFailed,
       failedFirst: opts.failedFirst,
+      shard: opts.shard,
     });
   } catch (err) {
     log.error('Evaluation failed', err);
@@ -373,6 +378,7 @@ program
   .option('--ci', 'CI mode: enforce thresholds, exit non-zero on failure')
   .option('--lf, --last-failed', 'only re-run tests that failed in the last run')
   .option('--ff, --failed-first', 'run previously failed tests first, then the rest')
+  .option('--shard <spec>', 'run only shard x of y (e.g. --shard 1/4)', parseShardArg)
   .option('-w, --watch', 'watch mode: re-run on file changes')
   .option('--verbose', 'debug logging')
   .option('--no-color', 'disable colors')
@@ -556,6 +562,108 @@ program
   .option('--verbose', 'debug logging')
   .option('--no-color', 'disable colors')
   .action(scoreCommand);
+
+program
+  .command('merge-reports')
+  .description('Merge JSON reports from sharded CI runs into a single report')
+  .argument('<files...>', 'JSON report files to merge (supports globs)')
+  .option('-o, --output <path>', 'output merged report file')
+  .option('--ci', 'enforce CI thresholds on merged result')
+  .option('-c, --config <path>', 'config file path (required with --ci)', './plugin-eval.yaml')
+  .option('--report <format>', 'output format', 'terminal')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (
+      files: string[],
+      opts: {
+        output?: string;
+        ci?: boolean;
+        config: string;
+        report: string;
+        verbose?: boolean;
+        noColor?: boolean;
+      },
+    ) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+
+      const { readFileSync, readdirSync, statSync } = await import('fs');
+
+      const resolvedFiles: string[] = [];
+      for (const pattern of files) {
+        const absPattern = resolve(process.cwd(), pattern);
+        try {
+          const stat = statSync(absPattern);
+          if (stat.isFile()) {
+            resolvedFiles.push(absPattern);
+          }
+        } catch {
+          // Not a direct file — treat as a directory glob or skip
+          log.warn(`File not found: ${pattern}`);
+        }
+      }
+
+      if (resolvedFiles.length === 0) {
+        log.error('No report files matched the provided patterns');
+        process.exitCode = EXIT_CONFIG_ERROR;
+        return;
+      }
+
+      log.header('Merge Reports');
+      log.info(`  Merging ${resolvedFiles.length} report file(s)`);
+
+      const reports: RunResult[] = [];
+      for (const file of resolvedFiles) {
+        try {
+          const raw = readFileSync(file, 'utf-8');
+          reports.push(JSON.parse(raw) as RunResult);
+        } catch (err) {
+          log.error(`Failed to read ${file}`, err);
+          process.exitCode = EXIT_CONFIG_ERROR;
+          return;
+        }
+      }
+
+      const merged = mergeReports(reports);
+
+      if (opts.ci) {
+        try {
+          const config = loadConfig(opts.config);
+          if (config.ci) {
+            const { evaluateCi } = await import('../ci/index.js');
+            const allTests = merged.suites.flatMap((s) => s.tests);
+            merged.ciResult = evaluateCi(allTests, config.ci, {
+              firstTryPassRate: merged.overall.passRate,
+              derivedMetrics: merged.derivedMetrics,
+            });
+          }
+        } catch (err) {
+          log.error('Configuration error', err);
+          process.exitCode = EXIT_CONFIG_ERROR;
+          return;
+        }
+      }
+
+      const report = formatReport(merged, opts.report);
+      if (report !== null) {
+        console.log(report);
+      }
+
+      if (opts.output) {
+        const outPath = resolve(process.cwd(), opts.output);
+        mkdirSync(dirname(outPath), { recursive: true });
+        const outputContent = report ?? generateJsonReport(merged);
+        writeFileSync(outPath, outputContent, 'utf-8');
+        log.success(`Merged report written to ${outPath}`);
+      }
+
+      if (opts.ci && merged.ciResult && !merged.ciResult.passed) {
+        log.error(merged.ciResult.summary);
+        process.exitCode = EXIT_FAIL;
+      }
+    },
+  );
 
 program
   .command('ci-init')

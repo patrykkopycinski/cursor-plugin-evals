@@ -183,6 +183,7 @@ const SuiteSchema = z.object({
   require_env: z.array(z.string()).optional(),
   evaluators: SuiteEvaluatorOverridesSchema,
   test_filter: TestFilterSchema,
+  matrix: z.record(z.string(), z.array(z.union([z.string(), z.number()]))).optional(),
 });
 
 const AuthSchema = z.discriminatedUnion('type', [
@@ -392,7 +393,7 @@ function snakeToCamel(obj: unknown, preserveKey = false): unknown {
       ? key
       : key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
     const shouldPreserveChildren =
-      preserveKey || key === 'args' || key === 'env' || key === 'minimal_env' || key === 'minimalEnv' || key === 'thresholds';
+      preserveKey || key === 'args' || key === 'env' || key === 'minimal_env' || key === 'minimalEnv' || key === 'thresholds' || key === 'matrix' || key === 'matrix_values' || key === 'matrixValues';
     result[camelKey] = snakeToCamel(value, shouldPreserveChildren);
   }
   return result;
