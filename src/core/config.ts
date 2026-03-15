@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
 import { resolve, dirname, isAbsolute } from 'path';
 import { parse as parseYaml } from 'yaml';
+import fg from 'fast-glob';
 import { z } from 'zod';
 import type { EvalConfig } from './types.js';
 import { BASE_ASSERTION_OPS } from './types.js';
@@ -258,6 +259,18 @@ const SuiteEntrySchema = z.union([
       /\.(ts|js|mts|mjs)$/,
       'TypeScript/JavaScript suite file path must end with .ts, .js, .mts, or .mjs',
     ),
+  z
+    .string()
+    .regex(
+      /\.(ya?ml)$/,
+      'YAML suite file path must end with .yaml or .yml',
+    ),
+  z
+    .string()
+    .refine(
+      (s) => s.includes('*') || s.includes('?'),
+      'Glob pattern must contain * or ?',
+    ),
 ]);
 
 const ScoringSchema = z
@@ -399,6 +412,67 @@ function snakeToCamel(obj: unknown, preserveKey = false): unknown {
   return result;
 }
 
+function isGlobPattern(s: string): boolean {
+  return s.includes('*') || s.includes('?');
+}
+
+function isYamlPath(s: string): boolean {
+  return /\.(ya?ml)$/.test(s);
+}
+
+function isTsJsPath(s: string): boolean {
+  return /\.(ts|js|mts|mjs)$/.test(s);
+}
+
+function loadYamlSuiteFile(filePath: string): z.infer<typeof SuiteSchema>[] {
+  let raw: string;
+  try {
+    raw = readFileSync(filePath, 'utf-8');
+  } catch (err) {
+    throw new Error(`Suite file not found: ${filePath}`, { cause: err });
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = parseYaml(raw);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`Invalid YAML in suite file ${filePath}: ${message}`, { cause: err });
+  }
+
+  const entries = Array.isArray(parsed) ? parsed : [parsed];
+  return entries.map((entry, i) => {
+    try {
+      return SuiteSchema.parse(entry);
+    } catch (err) {
+      const label = Array.isArray(parsed) ? ` (entry ${i})` : '';
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`Invalid suite in ${filePath}${label}: ${message}`, { cause: err });
+    }
+  });
+}
+
+function resolveYamlSuitePaths(patterns: string[], configDir: string): z.infer<typeof SuiteSchema>[] {
+  const suites: z.infer<typeof SuiteSchema>[] = [];
+
+  for (const pattern of patterns) {
+    if (isGlobPattern(pattern)) {
+      const matches = fg.sync(pattern, { cwd: configDir, absolute: true }).sort();
+      if (matches.length === 0) {
+        throw new Error(`Glob pattern "${pattern}" matched no files (resolved from ${configDir})`);
+      }
+      for (const match of matches) {
+        suites.push(...loadYamlSuiteFile(match));
+      }
+    } else {
+      const absPath = isAbsolute(pattern) ? pattern : resolve(configDir, pattern);
+      suites.push(...loadYamlSuiteFile(absPath));
+    }
+  }
+
+  return suites;
+}
+
 export function loadConfig(configPath: string): EvalConfig {
   const absPath = isAbsolute(configPath) ? configPath : resolve(process.cwd(), configPath);
   const configDir = dirname(absPath);
@@ -424,7 +498,12 @@ export function loadConfig(configPath: string): EvalConfig {
   const inlineSuites = validated.suites.filter(
     (s): s is z.infer<typeof SuiteSchema> => typeof s === 'object' && 'name' in s && 'layer' in s,
   );
-  const tsSuitePaths = validated.suites.filter((s): s is string => typeof s === 'string');
+  const tsSuitePaths = validated.suites.filter(
+    (s): s is string => typeof s === 'string' && isTsJsPath(s),
+  );
+  const yamlSuitePatterns = validated.suites.filter(
+    (s): s is string => typeof s === 'string' && (isYamlPath(s) || isGlobPattern(s)),
+  );
   const collectionEntries = validated.suites.filter(
     (s): s is z.infer<typeof CollectionSuiteSchema> =>
       typeof s === 'object' && 'collection' in s && !('name' in s),
@@ -435,6 +514,8 @@ export function loadConfig(configPath: string): EvalConfig {
     return loadCollectionSuite(collPath);
   });
 
+  const yamlFileSuites = resolveYamlSuitePaths(yamlSuitePatterns, configDir);
+
   if (!validated.plugin.dir) {
     const envDir = process.env.PLUGIN_DIR;
     if (!envDir) {
@@ -443,7 +524,7 @@ export function loadConfig(configPath: string): EvalConfig {
     validated.plugin.dir = envDir;
   }
 
-  const allSuites = [...inlineSuites, ...collectionSuites];
+  const allSuites = [...inlineSuites, ...collectionSuites, ...yamlFileSuites];
   const config = snakeToCamel({ ...validated, suites: allSuites }) as EvalConfig;
   if (tsSuitePaths.length > 0) {
     (config as EvalConfig & { tsSuitePaths: string[] }).tsSuitePaths = tsSuitePaths;

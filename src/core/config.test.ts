@@ -242,4 +242,252 @@ suites:
     const path = writeTempConfig('bad-layer.yaml', yaml);
     expect(() => loadConfig(path)).toThrow();
   });
+
+  describe('YAML file suite references', () => {
+    it('loads a single suite from a YAML file path', () => {
+      mkdirSync(join(TMP_DIR, 'suites'), { recursive: true });
+      writeFileSync(
+        join(TMP_DIR, 'suites', 'unit.yaml'),
+        `
+name: external-unit
+layer: unit
+tests:
+  - name: t1
+    check: registration
+`,
+        'utf-8',
+      );
+
+      const configYaml = `
+plugin:
+  name: test-plugin
+  dir: /some/path
+  entry: index.js
+suites:
+  - ./suites/unit.yaml
+`;
+      const path = writeTempConfig('yaml-ref.yaml', configYaml);
+      const config = loadConfig(path);
+
+      expect(config.suites).toHaveLength(1);
+      expect(config.suites[0].name).toBe('external-unit');
+      expect(config.suites[0].layer).toBe('unit');
+      expect(config.suites[0].tests).toHaveLength(1);
+    });
+
+    it('loads an array of suites from a single YAML file', () => {
+      mkdirSync(join(TMP_DIR, 'suites'), { recursive: true });
+      writeFileSync(
+        join(TMP_DIR, 'suites', 'multi.yaml'),
+        `
+- name: suite-a
+  layer: unit
+  tests:
+    - name: t1
+      check: registration
+
+- name: suite-b
+  layer: static
+  tests:
+    - name: t2
+      check: manifest
+`,
+        'utf-8',
+      );
+
+      const configYaml = `
+plugin:
+  name: test-plugin
+  dir: /some/path
+  entry: index.js
+suites:
+  - ./suites/multi.yaml
+`;
+      const path = writeTempConfig('multi-ref.yaml', configYaml);
+      const config = loadConfig(path);
+
+      expect(config.suites).toHaveLength(2);
+      expect(config.suites[0].name).toBe('suite-a');
+      expect(config.suites[1].name).toBe('suite-b');
+    });
+
+    it('merges inline suites with YAML file suites', () => {
+      mkdirSync(join(TMP_DIR, 'suites'), { recursive: true });
+      writeFileSync(
+        join(TMP_DIR, 'suites', 'external.yaml'),
+        `
+name: from-file
+layer: static
+tests:
+  - name: t2
+    check: manifest
+`,
+        'utf-8',
+      );
+
+      const configYaml = `
+plugin:
+  name: test-plugin
+  dir: /some/path
+  entry: index.js
+suites:
+  - name: inline-suite
+    layer: unit
+    tests:
+      - name: t1
+        check: registration
+  - ./suites/external.yaml
+`;
+      const path = writeTempConfig('mixed.yaml', configYaml);
+      const config = loadConfig(path);
+
+      expect(config.suites).toHaveLength(2);
+      expect(config.suites[0].name).toBe('inline-suite');
+      expect(config.suites[1].name).toBe('from-file');
+    });
+
+    it('resolves glob patterns to discover suite files', () => {
+      mkdirSync(join(TMP_DIR, 'skills', 'alpha'), { recursive: true });
+      mkdirSync(join(TMP_DIR, 'skills', 'beta'), { recursive: true });
+      writeFileSync(
+        join(TMP_DIR, 'skills', 'alpha', 'eval.yaml'),
+        `
+name: alpha-tests
+layer: llm
+tests:
+  - name: alpha-t1
+    prompt: test alpha
+    expected:
+      tools: [tool_a]
+    evaluators: [tool-selection]
+`,
+        'utf-8',
+      );
+      writeFileSync(
+        join(TMP_DIR, 'skills', 'beta', 'eval.yaml'),
+        `
+name: beta-tests
+layer: llm
+tests:
+  - name: beta-t1
+    prompt: test beta
+    expected:
+      tools: [tool_b]
+    evaluators: [tool-selection]
+`,
+        'utf-8',
+      );
+
+      const configYaml = `
+plugin:
+  name: test-plugin
+  dir: /some/path
+  entry: index.js
+suites:
+  - "./skills/**/eval.yaml"
+`;
+      const path = writeTempConfig('glob.yaml', configYaml);
+      const config = loadConfig(path);
+
+      expect(config.suites).toHaveLength(2);
+      const names = config.suites.map((s) => s.name).sort();
+      expect(names).toEqual(['alpha-tests', 'beta-tests']);
+    });
+
+    it('throws when a YAML suite file is not found', () => {
+      const configYaml = `
+plugin:
+  name: test-plugin
+  dir: /some/path
+  entry: index.js
+suites:
+  - ./nonexistent/suite.yaml
+`;
+      const path = writeTempConfig('missing-ref.yaml', configYaml);
+      expect(() => loadConfig(path)).toThrow('Suite file not found');
+    });
+
+    it('throws when a glob pattern matches no files', () => {
+      const configYaml = `
+plugin:
+  name: test-plugin
+  dir: /some/path
+  entry: index.js
+suites:
+  - "./empty-dir/**/eval.yaml"
+`;
+      const path = writeTempConfig('empty-glob.yaml', configYaml);
+      expect(() => loadConfig(path)).toThrow('matched no files');
+    });
+
+    it('throws on malformed YAML in a suite file', () => {
+      mkdirSync(join(TMP_DIR, 'suites'), { recursive: true });
+      writeFileSync(join(TMP_DIR, 'suites', 'bad.yaml'), '{{{{bad yaml', 'utf-8');
+
+      const configYaml = `
+plugin:
+  name: test-plugin
+  dir: /some/path
+  entry: index.js
+suites:
+  - ./suites/bad.yaml
+`;
+      const path = writeTempConfig('bad-suite-ref.yaml', configYaml);
+      expect(() => loadConfig(path)).toThrow('Invalid YAML in suite file');
+    });
+
+    it('throws on invalid suite structure in a YAML file', () => {
+      mkdirSync(join(TMP_DIR, 'suites'), { recursive: true });
+      writeFileSync(
+        join(TMP_DIR, 'suites', 'invalid.yaml'),
+        `
+name: missing-layer
+tests:
+  - name: t1
+    check: registration
+`,
+        'utf-8',
+      );
+
+      const configYaml = `
+plugin:
+  name: test-plugin
+  dir: /some/path
+  entry: index.js
+suites:
+  - ./suites/invalid.yaml
+`;
+      const path = writeTempConfig('invalid-suite.yaml', configYaml);
+      expect(() => loadConfig(path)).toThrow('Invalid suite in');
+    });
+
+    it('supports .yml extension', () => {
+      mkdirSync(join(TMP_DIR, 'suites'), { recursive: true });
+      writeFileSync(
+        join(TMP_DIR, 'suites', 'test.yml'),
+        `
+name: yml-suite
+layer: unit
+tests:
+  - name: t1
+    check: registration
+`,
+        'utf-8',
+      );
+
+      const configYaml = `
+plugin:
+  name: test-plugin
+  dir: /some/path
+  entry: index.js
+suites:
+  - ./suites/test.yml
+`;
+      const path = writeTempConfig('yml-ref.yaml', configYaml);
+      const config = loadConfig(path);
+
+      expect(config.suites).toHaveLength(1);
+      expect(config.suites[0].name).toBe('yml-suite');
+    });
+  });
 });
