@@ -24,7 +24,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Assemble site
-        run: cp -r docs site/docs
+        run: |
+          cp -r docs site/docs
+          mkdir -p site/docs/assets
+          cp assets/icon.svg site/docs/assets/icon.svg
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -5,44 +5,322 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>cursor-plugin-evals — Docs</title>
   <meta name="description" content="Documentation for cursor-plugin-evals — the universal testing framework for Cursor plugins.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple-dark.css">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <style>
     :root {
       --theme-color: #7c3aed;
       --theme-accent: #22d3ee;
-      --sidebar-width: 260px;
-      --sidebar-background: #111827;
-      --sidebar-nav-link-color--active: #7c3aed;
+
+      /* Sidebar */
+      --sidebar-width: 280px;
+      --sidebar-background: #0d1117;
+      --sidebar-border-color: #1e293b;
+      --sidebar-nav-link-color: #94a3b8;
+      --sidebar-nav-link-color--active: #e2e8f0;
       --sidebar-nav-link-border-color--active: #7c3aed;
       --sidebar-nav-link-color--hover: #22d3ee;
+      --sidebar-nav-link-font-weight--active: 600;
+
+      /* Base */
       --base-background-color: #0a0e1a;
-      --base-color: #e2e8f0;
+      --base-color: #cbd5e1;
+      --base-font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      --base-font-size: 15px;
+      --base-line-height: 1.7;
+
+      /* Headings */
       --heading-color: #f1f5f9;
-      --code-theme-background: #1e293b;
-      --code-inline-background: #1e293b;
-      --code-inline-color: #22d3ee;
+      --heading-font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      --heading-h1-font-size: 2rem;
+      --heading-h2-font-size: 1.5rem;
+      --heading-h2-border-color: #1e293b;
+      --heading-h2-border-width: 1px;
+      --heading-h2-margin: 2.5rem 0 1rem;
+      --heading-h2-padding: 0 0 .5rem;
+
+      /* Code */
+      --code-font-family: 'JetBrains Mono', monospace;
+      --code-font-size: 0.85em;
+      --code-theme-background: #111827;
+      --code-inline-background: rgba(124, 58, 237, 0.1);
+      --code-inline-color: #c4b5fd;
+      --code-inline-border-radius: 3px;
+      --code-inline-padding: 2px 6px;
+
+      /* Links */
       --link-color: #22d3ee;
-      --link-color--hover: #7c3aed;
+      --link-color--hover: #a78bfa;
+      --link-text-decoration: none;
+      --link-text-decoration--hover: underline;
+
+      /* Tables */
+      --table-row-even-background: #0d1117;
+      --table-head-background: #111827;
+      --table-head-font-weight: 600;
+      --table-cell-border-color: #1e293b;
+
+      /* Blockquotes */
       --blockquote-border-color: #7c3aed;
-      --table-row-even-background: #111827;
+      --blockquote-background: rgba(124, 58, 237, 0.05);
+
+      /* Notices */
       --notice-tip-border-color: #34d399;
       --notice-important-border-color: #fbbf24;
+
+      /* Cover */
       --cover-background-color: #0a0e1a;
+
+      /* Search */
+      --search-background: #111827;
+      --search-input-background: #0d1117;
+      --search-input-color: #e2e8f0;
+      --search-result-keyword-color: #7c3aed;
     }
-    .sidebar-nav > ul > li > a { font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; color: #94a3b8 !important; }
-    .sidebar-nav > ul > li > ul > li > a { font-weight: 400; text-transform: none; font-size: 0.875rem; letter-spacing: 0; }
-    .app-nav { display: flex; align-items: center; }
-    .app-nav a { margin: 0 0.5rem; font-size: 0.875rem; }
-    .markdown-section h1 { border-bottom: 2px solid #1e293b; padding-bottom: 0.5rem; }
-    .markdown-section table { display: table; width: 100%; }
-    .markdown-section code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+
+    /* Sidebar logo area */
+    .sidebar .app-name-link {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      padding: 1.25rem 1.5rem 1rem;
+      text-decoration: none !important;
+    }
+    .sidebar .app-name-link img {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+    .sidebar .app-name-link span {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: .9rem;
+      letter-spacing: -.02em;
+      color: #e2e8f0;
+      line-height: 1.2;
+    }
+    .sidebar .app-name-link .logo-sub {
+      display: block;
+      font-family: 'Inter', sans-serif;
+      font-weight: 400;
+      font-size: .65rem;
+      letter-spacing: .02em;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    /* Sidebar section headers */
+    .sidebar-nav > ul > li > a {
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: .68rem;
+      letter-spacing: .08em;
+      color: #475569 !important;
+      cursor: default;
+      padding: 1.25rem 0 .35rem;
+      margin-top: .5rem;
+      border: none !important;
+    }
+    .sidebar-nav > ul > li:first-child > a {
+      padding-top: .5rem;
+      margin-top: 0;
+    }
+    .sidebar-nav > ul > li > a:hover {
+      color: #475569 !important;
+      text-decoration: none !important;
+    }
+
+    /* Sidebar nav links */
+    .sidebar-nav > ul > li > ul > li > a {
+      font-weight: 400;
+      text-transform: none;
+      font-size: .85rem;
+      letter-spacing: 0;
+      color: #94a3b8;
+      padding: .3rem 0;
+      transition: color .15s, padding-left .15s;
+    }
+    .sidebar-nav > ul > li > ul > li > a:hover {
+      color: #22d3ee;
+      padding-left: 4px;
+    }
+
+    /* Sidebar divider after logo */
+    .sidebar > .app-name {
+      border-bottom: 1px solid #1e293b;
+      margin-bottom: .5rem;
+    }
+
+    /* Scrollbar */
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 2px; }
+    .sidebar::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+    /* Content area */
+    .markdown-section {
+      max-width: 860px;
+      padding: 2rem 2.5rem 3rem;
+    }
+    .markdown-section h1 {
+      border-bottom: 2px solid #1e293b;
+      padding-bottom: .6rem;
+      margin-bottom: 1.5rem;
+    }
+    .markdown-section h1:first-child {
+      margin-top: 0;
+    }
+    .markdown-section h2 {
+      margin-top: 3rem;
+    }
+    .markdown-section h3 {
+      color: #c4b5fd;
+      margin-top: 2rem;
+    }
+
+    /* Tables */
+    .markdown-section table {
+      display: table;
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.25rem 0;
+      font-size: .88rem;
+    }
+    .markdown-section th {
+      text-align: left;
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: #64748b;
+      padding: .6rem .75rem;
+    }
+    .markdown-section td {
+      padding: .6rem .75rem;
+      vertical-align: top;
+    }
+    .markdown-section tr:hover td {
+      background: rgba(124, 58, 237, 0.03);
+    }
+
+    /* Code blocks */
+    .markdown-section pre {
+      border-radius: .5rem;
+      border: 1px solid #1e293b;
+      margin: 1.25rem 0;
+    }
+    .markdown-section pre > code {
+      font-size: .82rem;
+      line-height: 1.65;
+    }
+
+    /* Inline code */
+    .markdown-section code:not([class*="lang-"]) {
+      border: 1px solid rgba(124, 58, 237, 0.15);
+    }
+
+    /* Blockquotes */
+    .markdown-section blockquote {
+      border-radius: 0 .5rem .5rem 0;
+      padding: .75rem 1rem;
+    }
+
+    /* Lists */
+    .markdown-section ul, .markdown-section ol {
+      padding-left: 1.5rem;
+    }
+    .markdown-section li {
+      margin: .35rem 0;
+    }
+
+    /* Strong text in descriptions */
+    .markdown-section strong {
+      color: #e2e8f0;
+    }
+
+    /* App nav (top-right links) */
+    .app-nav {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .5rem 1.5rem;
+    }
+    .app-nav a {
+      font-size: .82rem;
+      font-weight: 500;
+      color: #94a3b8;
+      padding: .35rem .6rem;
+      border-radius: .35rem;
+      transition: all .15s;
+    }
+    .app-nav a:hover {
+      color: #e2e8f0;
+      background: rgba(124, 58, 237, 0.1);
+    }
+
+    /* Search */
+    .search input {
+      border: 1px solid #1e293b !important;
+      border-radius: .5rem !important;
+      padding: .5rem .75rem !important;
+      font-family: 'Inter', sans-serif !important;
+      font-size: .85rem !important;
+      transition: border-color .2s !important;
+    }
+    .search input:focus {
+      border-color: #7c3aed !important;
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15) !important;
+    }
+    .search .matching-post {
+      border-bottom-color: #1e293b !important;
+    }
+
+    /* Pagination */
+    .docsify-pagination-container {
+      border-top-color: #1e293b !important;
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+    }
+    .pagination-item-label {
+      color: #64748b;
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .pagination-item-title {
+      color: #22d3ee;
+      font-weight: 500;
+    }
+
+    /* GitHub corner */
+    .github-corner svg {
+      fill: #7c3aed;
+    }
+
+    /* Copy code button */
+    .docsify-copy-code-button {
+      font-family: 'Inter', sans-serif !important;
+      font-size: .7rem !important;
+    }
+
+    /* Smooth transitions */
+    .sidebar-nav a,
+    .markdown-section a {
+      transition: color .15s;
+    }
   </style>
 </head>
 <body>
+  <nav>
+    <a href="https://github.com/patrykkopycinski/cursor-plugin-evals" target="_blank">GitHub</a>
+    <a href="../">Home</a>
+  </nav>
   <div id="app"></div>
   <script>
     window.$docsify = {
-      name: 'cursor-plugin-evals',
+      name: '<img src="assets/icon.svg" alt=""/><span>cursor-plugin-evals<span class="logo-sub">Testing Framework</span></span>',
       nameLink: '/',
       repo: 'https://github.com/patrykkopycinski/cursor-plugin-evals',
       loadSidebar: true,
