@@ -24,10 +24,16 @@ export class ContextOversharingRule implements SecurityRule {
 
   scan(text: string, location: string): SecurityFinding[] {
     const findings: SecurityFinding[] = [];
+    const isFinalOutput = location === 'finalOutput' || location.includes('finalOutput');
 
     for (const { pattern, label } of OVERSHARING_PATTERNS) {
       const match = pattern.exec(text);
       if (match) {
+        // In finalOutput, the LLM often quotes or explains dangerous commands
+        // as part of a refusal. Only flag oversharing in tool call arguments
+        // where the LLM is actually *executing* a data exfiltration attempt.
+        if (isFinalOutput) continue;
+
         findings.push({
           rule: this.name,
           category: this.category,

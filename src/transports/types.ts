@@ -1,5 +1,3 @@
-import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
-
 export type TransportType = 'stdio' | 'http' | 'sse' | 'streamable-http';
 
 export interface TransportConfig {
@@ -12,5 +10,3 @@ export interface TransportConfig {
   headers?: Record<string, string>;
   isolateEnv?: boolean;
 }
-
-export type { Transport };

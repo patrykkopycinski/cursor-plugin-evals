@@ -61,7 +61,8 @@ async function checkDocker(): Promise<StepResult> {
   try {
     execSync('docker info', { stdio: 'pipe', timeout: 10_000 });
     return { label: 'Docker', ok: true, detail: 'Running' };
-  } catch {
+  } catch (err) {
+    console.warn('Docker check failed:', (err as Error).message ?? err);
     return {
       label: 'Docker',
       ok: false,
@@ -92,7 +93,8 @@ async function checkDockerServices(): Promise<StepResult> {
       try {
         const svc = JSON.parse(l) as { State: string };
         return svc.State === 'running';
-      } catch {
+      } catch (err) {
+        console.warn('Failed to parse docker service JSON:', (err as Error).message ?? err);
         return l.includes('running');
       }
     });
@@ -111,7 +113,8 @@ async function checkDockerServices(): Promise<StepResult> {
       ok: true,
       detail: `${running.length} service(s) running`,
     };
-  } catch {
+  } catch (err) {
+    console.warn('Docker services check failed:', (err as Error).message ?? err);
     return {
       label: 'Docker services',
       ok: false,
@@ -177,7 +180,8 @@ function tryAutoFix(step: StepResult): boolean {
       try {
         execSync('npm install', { stdio: 'pipe', timeout: 120_000 });
         return true;
-      } catch {
+      } catch (err) {
+        console.warn('Auto-fix npm install failed:', (err as Error).message ?? err);
         return false;
       }
     }
@@ -186,7 +190,8 @@ function tryAutoFix(step: StepResult): boolean {
       try {
         copyFileSync(resolve(process.cwd(), '.env.example'), resolve(process.cwd(), '.env'));
         return true;
-      } catch {
+      } catch (err) {
+        console.warn('Auto-fix copy .env failed:', (err as Error).message ?? err);
         return false;
       }
     }

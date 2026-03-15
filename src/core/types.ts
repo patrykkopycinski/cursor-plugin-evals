@@ -88,6 +88,7 @@ export interface RunResult {
   };
   qualityScore?: QualityScoreResult;
   confidenceIntervals?: import('../scoring/confidence.js').AggregatedConfidence;
+  ciResult?: CiResult;
 }
 
 export interface QualityScoreResult {

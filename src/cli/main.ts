@@ -126,6 +126,11 @@ async function runCommand(opts: {
     process.exitCode = EXIT_FAIL;
   }
 
+  if (opts.ci && result.ciResult && !result.ciResult.passed) {
+    log.error(result.ciResult.summary);
+    process.exitCode = EXIT_FAIL;
+  }
+
   if (result.qualityScore) {
     writeBadge(result);
   }
@@ -280,7 +285,7 @@ async function generateCommand(opts: {
     'defaults:',
     '  timeout: 30000',
     '  repetitions: 3',
-    '  judge_model: gpt-5.2',
+    '  judge_model: gpt-5.4',
     '  thresholds:',
     '    tool-selection: 0.8',
     '    tool-args: 0.7',

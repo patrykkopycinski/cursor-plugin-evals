@@ -54,8 +54,8 @@ function detectPluginEntry(pluginDir: string): string | undefined {
     if (first?.command && first?.args) {
       return `${first.command} ${first.args.join(' ')}`;
     }
-  } catch {
-    // ignore
+  } catch (err) {
+    console.warn(`Failed to parse MCP config at ${configPath}: ${err instanceof Error ? err.message : String(err)}`);
   }
   return undefined;
 }
@@ -81,7 +81,8 @@ export async function externalInitCommand(opts: ExternalInitOptions): Promise<vo
   try {
     manifest = discoverPlugin(externalDir, opts.pluginRoot);
     log.success(`Discovered plugin: ${manifest.name}`);
-  } catch {
+  } catch (err) {
+    console.warn(`Plugin discovery failed: ${err instanceof Error ? err.message : String(err)}`);
     manifest = {
       name: basename(externalDir),
       dir: externalDir,
@@ -360,7 +361,8 @@ export function generatePrFindings(wsDir: string, _opts: PrFindingsOptions): str
           }
         }
       }
-    } catch {
+    } catch (err) {
+      console.warn(`Failed to parse results file: ${err instanceof Error ? err.message : String(err)}`);
       sections.push('> Results file could not be parsed.\n');
     }
   } else {

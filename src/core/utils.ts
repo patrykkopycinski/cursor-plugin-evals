@@ -1,4 +1,5 @@
-import type { DefaultsConfig } from './types.js';
+import type { DefaultsConfig, PluginConfig } from './types.js';
+import type { McpConnectConfig } from '../mcp/client.js';
 
 export function parseEntry(entry: string): { command: string; args: string[] } {
   if (!entry || entry.trim().length === 0) {
@@ -72,4 +73,26 @@ export function getMissingEnvVars(testRequireEnv?: string[], suiteRequireEnv?: s
     }
   }
   return missing;
+}
+
+export function buildConnectConfig(plugin: PluginConfig): McpConnectConfig {
+  const config: McpConnectConfig = {
+    buildCommand: plugin.buildCommand,
+    env: plugin.env,
+  };
+
+  if (plugin.transport && plugin.transport !== 'stdio') {
+    config.transport = {
+      type: plugin.transport,
+      url: plugin.url,
+      headers: plugin.headers,
+    };
+  } else if (plugin.entry) {
+    const { command, args } = parseEntry(plugin.entry);
+    config.command = command;
+    config.args = args;
+    config.cwd = plugin.dir;
+  }
+
+  return config;
 }

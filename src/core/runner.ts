@@ -19,12 +19,13 @@ import { runPerformanceSuite } from '../layers/performance/index.js';
 import { runSkillSuite } from '../layers/skill/index.js';
 import { createEvaluator, EVALUATOR_NAMES } from '../evaluators/index.js';
 import { createTracer, withRunSpan, withSuiteSpan } from '../tracing/spans.js';
-import { parseEntry, mergeDefaults } from './utils.js';
+import { mergeDefaults, buildConnectConfig } from './utils.js';
 import { discoverPlugin } from '../plugin/discovery.js';
 import { log } from '../cli/logger.js';
 import { computeDimensions } from '../scoring/dimensions.js';
 import { computeQualityScore, DEFAULT_WEIGHTS } from '../scoring/composite.js';
 import { aggregateConfidence } from '../scoring/confidence.js';
+import { evaluateCi } from '../ci/index.js';
 import type { ScoreEntry } from '../scoring/confidence.js';
 
 export interface RunOptions {
@@ -154,24 +155,7 @@ async function runSuiteByLayer(
         throw new Error('plugin.entry or plugin.transport is required for integration layer');
       }
 
-      const connectConfig: Parameters<typeof McpPluginClient.connect>[0] = {
-        buildCommand: config.plugin.buildCommand,
-        env: config.plugin.env,
-      };
-
-      if (config.plugin.transport && config.plugin.transport !== 'stdio') {
-        connectConfig.transport = {
-          type: config.plugin.transport,
-          url: config.plugin.url,
-          headers: config.plugin.headers,
-        };
-      } else if (config.plugin.entry) {
-        const { command, args } = parseEntry(config.plugin.entry);
-        connectConfig.command = command;
-        connectConfig.args = args;
-        connectConfig.cwd = config.plugin.dir;
-      }
-
+      const connectConfig = buildConnectConfig(config.plugin);
       const client = await McpPluginClient.connect(connectConfig);
 
       try {
@@ -192,24 +176,7 @@ async function runSuiteByLayer(
         throw new Error('plugin.entry or plugin.transport is required for performance layer');
       }
 
-      const connectConfig: Parameters<typeof McpPluginClient.connect>[0] = {
-        buildCommand: config.plugin.buildCommand,
-        env: config.plugin.env,
-      };
-
-      if (config.plugin.transport && config.plugin.transport !== 'stdio') {
-        connectConfig.transport = {
-          type: config.plugin.transport,
-          url: config.plugin.url,
-          headers: config.plugin.headers,
-        };
-      } else if (config.plugin.entry) {
-        const { command, args } = parseEntry(config.plugin.entry);
-        connectConfig.command = command;
-        connectConfig.args = args;
-        connectConfig.cwd = config.plugin.dir;
-      }
-
+      const connectConfig = buildConnectConfig(config.plugin);
       const client = await McpPluginClient.connect(connectConfig);
 
       try {
@@ -333,6 +300,12 @@ export async function runEvaluation(
     qualityScore,
     confidenceIntervals,
   };
+
+  if (options.ci && config.ci) {
+    runResult.ciResult = evaluateCi(allTests, config.ci, {
+      firstTryPassRate: runResult.overall.passRate,
+    });
+  }
 
   try {
     const dbPath = resolve(process.cwd(), '.cursor-plugin-evals', 'dashboard.db');

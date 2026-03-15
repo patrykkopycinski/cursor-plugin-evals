@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/getting-started"><img src="https://img.shields.io/badge/layers-12-6C5CE7?style=flat-square" alt="12 Layers" /></a>
-  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/evaluators"><img src="https://img.shields.io/badge/evaluators-26-A29BFE?style=flat-square" alt="26 Evaluators" /></a>
+  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/evaluators"><img src="https://img.shields.io/badge/evaluators-27-A29BFE?style=flat-square" alt="27 Evaluators" /></a>
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/adapters"><img src="https://img.shields.io/badge/adapters-6-74B9FF?style=flat-square" alt="6 Adapters" /></a>
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/red-teaming"><img src="https://img.shields.io/badge/security--rules-20-E74C3C?style=flat-square" alt="20 Security Rules" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Elastic--2.0-00E676?style=flat-square" alt="Elastic License 2.0" /></a>
@@ -99,7 +99,7 @@ Every Cursor plugin component is covered — not just MCP tools:
 
 ## Key Features
 
-- **26 evaluators** — 15 deterministic + 9 LLM-as-judge + multi-judge blind panel
+- **27 evaluators** — 15 deterministic + 9 LLM-as-judge + multi-judge blind panel
 - **Evaluator skip/not-applicable** — auto-skips inapplicable evaluators per adapter
 - **Per-adapter evaluator config** — add/remove/override evaluators at the suite level
 - **Adapter-aware context** — evaluators know which adapter is running and its capabilities
@@ -172,7 +172,7 @@ Full documentation at **[patrykkopycinski.github.io/cursor-plugin-evals](https:/
 - [Getting Started](docs/getting-started.md)
 - [Configuration Reference](docs/configuration.md)
 - [Testing Layers](docs/layers/static.md) (static, unit, integration, performance, LLM, skill, conformance)
-- [Evaluators](docs/evaluators.md) (24 evaluators with scoring details)
+- [Evaluators](docs/evaluators.md) (27 evaluators with scoring details)
 - [Task Adapters](docs/adapters.md) (MCP, cursor-cli, claude-sdk, etc.)
 - [Security & Red-Teaming](docs/red-teaming.md)
 - [CI/CD Integration](docs/ci-cd.md)
@@ -211,7 +211,7 @@ The Framework Assistant is an always-on AI agent embedded in the Cursor plugin. 
 ```bash
 npm install
 npm run typecheck    # TypeScript check
-npm test             # Run framework tests (1161 tests)
+npm test             # Run framework tests (1163 tests)
 npm run build        # Build CLI binary
 npm run lint:fix     # Fix linting issues
 ```

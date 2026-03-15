@@ -1,11 +1,10 @@
-import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import type { TransportConfig, TransportType } from './types.js';
 import { createStdioTransport } from './stdio.js';
 import { createHttpTransport } from './http.js';
 import { createSseTransport } from './sse.js';
 import { createStreamableHttpTransport } from './streamable-http.js';
 
-export function createTransport(config: TransportConfig): Transport {
+export function createTransport(config: TransportConfig) {
   const type: TransportType = config.type;
 
   switch (type) {
@@ -24,7 +23,7 @@ export function createTransport(config: TransportConfig): Transport {
   }
 }
 
-export type { TransportConfig, TransportType, Transport };
+export type { TransportConfig, TransportType };
 export { createStdioTransport } from './stdio.js';
 export { createHttpTransport } from './http.js';
 export { createSseTransport } from './sse.js';

@@ -31,7 +31,8 @@ async function exists(path: string): Promise<boolean> {
   try {
     await access(path);
     return true;
-  } catch {
+  } catch (err) {
+    console.warn(`Access check failed for ${path}: ${err instanceof Error ? err.message : String(err)}`);
     return false;
   }
 }
@@ -43,7 +44,8 @@ async function findFiles(dir: string, pattern: RegExp, maxDepth = 5, depth = 0):
   let entries: string[];
   try {
     entries = await readdir(dir);
-  } catch {
+  } catch (err) {
+    console.warn(`Failed to read directory ${dir}: ${err instanceof Error ? err.message : String(err)}`);
     return results;
   }
 
@@ -108,8 +110,8 @@ async function discoverMcpToolNames(rootDir: string, mcpServers: McpServerCompon
         while ((match = toolRegex.exec(content)) !== null) {
           toolNames.add(match[1]);
         }
-      } catch {
-        // skip unreadable files
+      } catch (err) {
+        console.warn(`Failed to read ${file}: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
   }
@@ -146,7 +148,8 @@ async function parseYamlFile(filePath: string): Promise<YamlSuiteStub | null> {
     const { parse } = await import('yaml');
     const raw = await readFile(filePath, 'utf-8');
     return parse(raw) as YamlSuiteStub;
-  } catch {
+  } catch (err) {
+    console.warn(`Failed to parse YAML file ${filePath}: ${err instanceof Error ? err.message : String(err)}`);
     return null;
   }
 }
@@ -398,7 +401,8 @@ export async function scanCodebase(rootDir: string): Promise<CodebaseProfile> {
   let manifest: PluginManifest | null = null;
   try {
     manifest = discoverPlugin(rootDir);
-  } catch {
+  } catch (err) {
+    console.warn(`Plugin discovery failed: ${err instanceof Error ? err.message : String(err)}`);
     manifest = null;
   }
 
@@ -425,8 +429,8 @@ export async function scanCodebase(rootDir: string): Promise<CodebaseProfile> {
     try {
       const raw = await readFile(join(rootDir, mainConfig.path), 'utf-8');
       hasCiThresholds = raw.includes('ci:') && raw.includes('threshold');
-    } catch {
-      // ignore
+    } catch (err) {
+      console.warn(`Failed to check CI thresholds: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 

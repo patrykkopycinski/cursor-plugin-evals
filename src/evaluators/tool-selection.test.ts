@@ -40,7 +40,7 @@ describe('ToolSelectionEvaluator', () => {
     expect(result.pass).toBe(false);
   });
 
-  it('computes correct F1 for partial match', async () => {
+  it('computes correct F-beta for partial match', async () => {
     const ctx = makeContext(
       ['tool_a', 'tool_b'],
       [makeToolCall('tool_a'), makeToolCall('tool_c')],
@@ -50,9 +50,9 @@ describe('ToolSelectionEvaluator', () => {
 
     const precision = 1 / 2;
     const recall = 1 / 2;
-    const expectedF1 = (2 * precision * recall) / (precision + recall);
+    const expectedFbeta = (1 + 4) * precision * recall / (4 * precision + recall);
 
-    expect(result.score).toBeCloseTo(expectedF1, 3);
+    expect(result.score).toBeCloseTo(expectedFbeta, 3);
   });
 
   it('reduces precision when extra tools are present', async () => {
@@ -65,9 +65,9 @@ describe('ToolSelectionEvaluator', () => {
 
     const precision = 1 / 3;
     const recall = 1 / 1;
-    const expectedF1 = (2 * precision * recall) / (precision + recall);
+    const expectedFbeta = (1 + 4) * precision * recall / (4 * precision + recall);
 
-    expect(result.score).toBeCloseTo(expectedF1, 3);
+    expect(result.score).toBeCloseTo(expectedFbeta, 3);
     expect(result.metadata?.precision).toBeCloseTo(precision, 3);
     expect(result.metadata?.recall).toBe(1.0);
   });
@@ -78,9 +78,9 @@ describe('ToolSelectionEvaluator', () => {
 
     const precision = 1 / 1;
     const recall = 1 / 3;
-    const expectedF1 = (2 * precision * recall) / (precision + recall);
+    const expectedFbeta = (1 + 4) * precision * recall / (4 * precision + recall);
 
-    expect(result.score).toBeCloseTo(expectedF1, 3);
+    expect(result.score).toBeCloseTo(expectedFbeta, 3);
     expect(result.metadata?.precision).toBe(1.0);
     expect(result.metadata?.recall).toBeCloseTo(recall, 3);
   });

@@ -20,6 +20,9 @@ const AssertionOpSchema = z.enum([
   'length_lte',
   'type',
   'matches',
+  'one_of',
+  'starts_with',
+  'ends_with',
 ]);
 
 const AssertionConfigSchema = z.object({
@@ -290,6 +293,38 @@ const GuardrailRuleSchema = z.object({
   message: z.string().optional(),
 });
 
+const CiStatThresholdsSchema = z.object({
+  avg: z.number().optional(),
+  min: z.number().optional(),
+  max: z.number().optional(),
+  p50: z.number().optional(),
+  p95: z.number().optional(),
+  p99: z.number().optional(),
+}).optional();
+
+const CiThresholdsSchema = z.object({
+  score: CiStatThresholdsSchema,
+  latency: z.object({
+    avg: z.number().optional(),
+    p95: z.number().optional(),
+  }).optional(),
+  cost: z.object({
+    max: z.number().optional(),
+  }).optional(),
+  evaluators: z.record(z.string(), z.object({
+    avg: z.number().optional(),
+    min: z.number().optional(),
+    max: z.number().optional(),
+  })).optional(),
+  required_pass: z.array(z.string()).optional(),
+  first_try_pass_rate: z.number().optional(),
+  phase_gate: z.object({
+    first_try_pass_rate: z.number().optional(),
+    e2e_completion_rate: z.number().optional(),
+    description: z.string().optional(),
+  }).optional(),
+}).optional();
+
 const EvalConfigSchema = z.object({
   plugin: PluginSchema,
   infrastructure: InfrastructureSchema,
@@ -297,6 +332,7 @@ const EvalConfigSchema = z.object({
   defaults: DefaultsConfigSchema,
   scoring: ScoringSchema,
   plugins: PluginsConfigSchema,
+  ci: CiThresholdsSchema,
   guardrails: z.array(GuardrailRuleSchema).optional(),
   suites: z.array(SuiteEntrySchema),
 });
