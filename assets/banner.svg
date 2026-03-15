@@ -112,5 +112,5 @@
 
   <!-- Bottom accent line -->
   <rect x="280" y="240" width="200" height="2" rx="1" fill="url(#accent)" opacity="0.3"/>
-  <text x="280" y="268" font-family="Courier New, Courier, monospace" font-size="13" fill="#666" letter-spacing="1">MIT | TypeScript | MCP</text>
+  <text x="280" y="268" font-family="Courier New, Courier, monospace" font-size="13" fill="#666" letter-spacing="1">Elastic-2.0 | TypeScript | MCP</text>
 </svg>

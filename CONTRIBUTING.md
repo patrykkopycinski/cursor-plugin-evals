@@ -44,21 +44,21 @@ All of the above must pass before submitting changes.
 
 ```
 src/
-  adapters/       Task adapter implementations (mcp, plain-llm, headless-coder, gemini-cli, claude-sdk)
+  adapters/       Task adapter implementations (mcp, plain-llm, headless-coder, gemini-cli, claude-sdk, cursor-cli)
   analyzers/      Skill collision detection and security lint
   auth/           Authentication providers (API key, bearer, OAuth2)
   cache/          LLM response cache with disk persistence and TTL
   ci/             CI threshold enforcement
-  cli/            CLI commands (18 commands), logger, setup wizard
+  cli/            CLI commands, logger, setup wizard
   comparison/     Model A/B comparison matrix
   core/           Types, config loader, runner, utilities
   dashboard/      Web dashboard (Hono + SQLite)
   dataset/        Dataset generator for programmatic test creation
   docker/         Docker health checks and test cluster setup
-  evaluators/     All 20 evaluators (13 CODE + 7 LLM kinds)
+  evaluators/     All 24 evaluators (13 CODE + 9 LLM + multi-judge)
   expect/         TypeScript Expect API for programmatic suites
   fixtures/       Record/replay/mock-gen for MCP tool calls
-  layers/         Layer implementations (static, unit, integration, llm, performance, skill)
+  layers/         Layer implementations (static, unit, integration, llm, performance, skill, conformance)
   mcp/            MCP client, schema converter, tool discovery
   plugins/        Plugin loader for custom evaluators/reporters/transports
   plugin/         Plugin discovery and frontmatter parsing
@@ -141,9 +141,9 @@ Every non-trivial change **must** update documentation:
 
 | What changed | What to update |
 |---|---|
-| New evaluator | `src/evaluators/index.ts` registration, evaluator table in `README.md`, `CONTRIBUTING.md` counts |
-| New CLI command | `src/cli/main.ts` wiring, CLI Reference in `README.md`, architecture diagram, `CHANGELOG.md` CLI count |
-| New adapter | `src/adapters/index.ts` registration, Task Adapters table in `README.md` |
+| New evaluator | `src/evaluators/index.ts` registration, evaluator docs in `docs/evaluators.md` |
+| New CLI command | `src/cli/main.ts` wiring, `CHANGELOG.md` entry |
+| New adapter | `src/adapters/index.ts` registration, `docs/adapters.md` |
 | New module/directory | `src/index.ts` exports, Project Structure in `CONTRIBUTING.md`, architecture diagram |
 | New env variable | `.env.example`, `src/cli/env.ts` ENV_VARS array |
 | Any feature change | `CHANGELOG.md` entry under appropriate section |

@@ -3,85 +3,68 @@
 </p>
 
 <p align="center">
-  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/getting-started"><img src="https://img.shields.io/badge/layers-12-6C5CE7?style=flat-square" alt="12 Layers" /></a>
-  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/evaluators"><img src="https://img.shields.io/badge/evaluators-27-A29BFE?style=flat-square" alt="27 Evaluators" /></a>
+  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/getting-started"><img src="https://img.shields.io/badge/layers-7-6C5CE7?style=flat-square" alt="7 Layers" /></a>
+  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/evaluators"><img src="https://img.shields.io/badge/evaluators-24-A29BFE?style=flat-square" alt="24 Evaluators" /></a>
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/adapters"><img src="https://img.shields.io/badge/adapters-6-74B9FF?style=flat-square" alt="6 Adapters" /></a>
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/red-teaming"><img src="https://img.shields.io/badge/security--rules-20-E74C3C?style=flat-square" alt="20 Security Rules" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Elastic--2.0-00E676?style=flat-square" alt="Elastic License 2.0" /></a>
 </p>
 
 <p align="center">
-  The most comprehensive testing framework for Cursor &amp; MCP plugins.<br/>
-  Ships with an <strong>autonomous Framework Assistant</strong> that scans, generates, runs, fixes, and calibrates — hands-free.<br/>
-  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals">Documentation</a> · <a href="site/index.html">Landing Page</a> · <a href="showcase/elastic-cursor-plugin/">Showcase</a>
+  <strong>The most comprehensive testing framework for Cursor &amp; MCP plugins.</strong><br/>
+  <sub>Ships with an autonomous <a href="#framework-assistant">Framework Assistant</a> that scans, generates, runs, fixes, and calibrates — hands-free.</sub>
 </p>
 
----
+<p align="center">
+  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals">Documentation</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="site/index.html">Landing Page</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="showcase/elastic-cursor-plugin/">Showcase</a>
+</p>
 
-## Framework Assistant
-
-The killer feature: an **autonomous AI agent** that does the entire eval lifecycle for you. Point it at your plugin and it will:
-
-1. **Deep scan** your plugin — discovers all MCP tools, skills, rules, agents, commands, and hooks
-2. **Set up infrastructure** — creates Docker Compose, test data seeds, `.env.test`, CI workflows
-3. **Generate complete coverage** — writes a comprehensive `plugin-eval.yaml` covering every component across all layers
-4. **Run the tests** — executes all suites and analyzes failures
-5. **Fix what fails** — iterates up to 5 times per layer, fixing YAML, assertions, and prompts
-6. **Calibrate thresholds** — tightens CI gates based on actual scores so quality never regresses
-
-```bash
-# Just say "evaluate my plugin" in Cursor chat — the assistant takes it from there
-```
-
-No manual YAML writing. No guessing at thresholds. No hunting for missing coverage. The Framework Assistant handles it end-to-end, and doesn't stop until `npx cursor-plugin-evals run --ci` exits 0.
-
----
+<br/>
 
 ## Quick Start
 
 ```bash
-npm install
+npm install cursor-plugin-evals
 
-# One-command setup wizard
-npx cursor-plugin-evals setup
-
-# Or step by step:
-npx cursor-plugin-evals init          # Scaffold config from your plugin
+npx cursor-plugin-evals setup         # Interactive setup wizard
 npx cursor-plugin-evals run           # Run all layers
 npx cursor-plugin-evals run --ci      # Enforce CI quality gates
-npx cursor-plugin-evals run --lf      # Re-run only last-failed tests
-npx cursor-plugin-evals run --ff      # Run failed tests first, then the rest
-npx cursor-plugin-evals run --shard 1/4  # Shard tests for CI parallelism
-npx cursor-plugin-evals merge-reports shard-*.json --ci  # Merge sharded reports
-npx cursor-plugin-evals score         # Quality score with badge
 ```
 
-## External Evaluation (No Commit Mode)
-
-Evaluate any plugin without committing eval files to the target repo. All configs, results, and infrastructure stay local — only content improvements are applied to the target.
+<details>
+<summary><strong>More CLI commands</strong></summary>
 
 ```bash
-# 1. Create a workspace targeting an external repo
+npx cursor-plugin-evals init              # Scaffold config from your plugin
+npx cursor-plugin-evals run --lf          # Re-run only last-failed tests
+npx cursor-plugin-evals run --ff          # Failed tests first, then the rest
+npx cursor-plugin-evals run --shard 1/4   # Shard tests for CI parallelism
+npx cursor-plugin-evals merge-reports shard-*.json --ci
+npx cursor-plugin-evals score             # Quality score with badge
+npx cursor-plugin-evals coverage          # Component x layer matrix
+npx cursor-plugin-evals dashboard         # Web UI on localhost
+```
+
+</details>
+
+## External Evaluation
+
+Evaluate any plugin without committing eval files to the target repo:
+
+```bash
 npx cursor-plugin-evals external-init --external ~/Projects/some-plugin --scope skills/security
-
-# 2. Run evals (config lives in workspaces/, not the target)
 npx cursor-plugin-evals run -c workspaces/some-plugin-skills-security/plugin-eval.yaml
-
-# 3. Apply only skill/rule improvements to the target
 npx cursor-plugin-evals apply-fixes --workspace workspaces/some-plugin-skills-security
-
-# 4. Generate a PR-ready findings report
-npx cursor-plugin-evals pr-findings --workspace workspaces/some-plugin-skills-security -o FINDINGS.md
 ```
 
 See [External Evaluation docs](docs/external-eval.md) for the full workflow.
 
-## What It Tests
+---
 
-Every Cursor plugin component is covered — not just MCP tools:
+## What Gets Tested
 
-| Component | Layers | What's tested |
-|-----------|--------|---------------|
+| Component | Layers | What's validated |
+|-----------|--------|-----------------|
 | **MCP Tools** | static, unit, integration, llm, performance | Registration, schema, execution, LLM selection, latency |
 | **Skills** | static, llm | Frontmatter, activation triggers, cross-references |
 | **Rules** | static | Frontmatter, content quality, glob validity |
@@ -89,50 +72,68 @@ Every Cursor plugin component is covered — not just MCP tools:
 | **Commands** | static, llm | Frontmatter, execution flow |
 | **Hooks** | static | Schema validation |
 
-## Testing Layers
+### 7 Testing Layers
 
-| Layer | What it validates | External deps |
-|-------|-------------------|---------------|
-| **Static** | Manifest, frontmatter, naming, cross-component coherence | None |
-| **Unit** | Tool registration, schemas, conditional registration | MCP server only |
+| Layer | What it validates | Needs |
+|-------|-------------------|-------|
+| **Static** | Manifest, frontmatter, naming, cross-component coherence | Nothing |
+| **Unit** | Tool registration, schemas, conditional registration | MCP server |
 | **Integration** | Tool execution with assertions and workflows | Live/mock cluster |
-| **Performance** | P50/P95/P99 latency, throughput, memory | Live cluster |
+| **Performance** | P50 / P95 / P99 latency, throughput, memory | Live cluster |
 | **LLM Eval** | Agent loop — tool selection, correctness, security | LLM API |
 | **Skill Eval** | Dataset-driven evaluation through adapters | Adapter-dependent |
-| **Conformance** | MCP protocol spec compliance (25 checks) | MCP server only |
+| **Conformance** | MCP protocol spec compliance (25 checks) | MCP server |
 
-## Key Features
+---
 
-- **27 evaluators** — 15 deterministic + 9 LLM-as-judge + multi-judge blind panel
-- **Evaluator skip/not-applicable** — auto-skips inapplicable evaluators per adapter
-- **Per-adapter evaluator config** — add/remove/override evaluators at the suite level
-- **Adapter-aware context** — evaluators know which adapter is running and its capabilities
-- **6 task adapters** — MCP, plain-llm, cursor-cli, headless-coder, gemini-cli, claude-sdk
-- **20 OWASP-aligned security rules** with 3-pass audit and red-teaming
-- **Security domain awareness** — exclude locations to prevent false positives
-- **SAFE-MCP compliance** with 26 attack technique coverage
-- **Auto-test generation** — schema-based and LLM-powered smart generation
-- **Regression detection** — Welch's t-test between runs with fingerprinting
-- **Multi-model comparison** — fair benchmarking with Borda count medals
-- **Prompt optimization** — hill-climbing to improve eval scores
-- **Production monitoring** — OTel trace scoring with anomaly detection
-- **154 community tests** for 15 popular MCP servers
-- **15-page web dashboard** with dark mode, live SSE, trace viewer, interactive explorer, and re-run from UI
-- **Trace viewer** — drill into any test to replay the full conversation, tool calls, and evaluator results as a timeline
-- **Interactive explorer** — browse suites/tests in a tree, filter by layer, and re-run individual tests from the dashboard
-- **Coverage analysis** — static analysis of component x layer coverage with CLI, API, dashboard, and badge
-- **Cost optimization** — find the cheapest model per test that meets quality thresholds
-- **Threshold auto-calibration** — tighten CI gates when scores exceed thresholds
-- **Typed evaluator configs** — type-safe configuration for token-usage, workflow, security, groundedness
-- **Configurable adapter retry** — exponential backoff with pattern-based retry for CLI race conditions
-- **Token input estimation** — estimates input tokens for adapters that don't report them
-- **Conversation preview** — full conversation transcripts (messages, tool calls, results) in HTML reports for manual review
-- **Universal assertion negation** — prefix any assertion op with `not_` to invert it (e.g. `not_eq`, `not_matches`, `not_starts_with`)
-- **Matrix parametrization** — declarative cross-product testing across models, temperatures, or any custom dimension
-- **Derived metrics** — compose evaluator scores with math expressions (e.g. `0.4 * accuracy + 0.3 * speed`) with CI thresholds
-- **Test sharding** — `--shard=x/y` splits suites across CI runners with `merge-reports` to combine results
-- **Last-failed mode** — `--last-failed` re-runs only previously failed tests; `--failed-first` prioritizes them
-- **Post-run hooks** — trigger webhooks or scripts after eval runs with template interpolation
+## Highlights
+
+<table>
+<tr><td width="50%">
+
+**Evaluation**
+- 24 evaluators (13 deterministic + 9 LLM-as-judge + multi-judge panel)
+- 6 task adapters (MCP, plain-llm, cursor-cli, headless-coder, gemini-cli, claude-sdk)
+- 20 OWASP-aligned security rules with 3-pass red-teaming
+- SAFE-MCP compliance with 26 attack techniques
+- Regression detection via Welch's t-test
+- Multi-model comparison with Borda count
+
+</td><td width="50%">
+
+**Developer Experience**
+- 15-page web dashboard with dark mode, live SSE, and trace viewer
+- Interactive test explorer — browse, filter, and re-run from the UI
+- Conversation preview — full transcripts with inline tool calls
+- Coverage analysis with CLI, API, dashboard, and SVG badge
+- Test sharding (`--shard`) and last-failed mode (`--lf`, `--ff`)
+- Post-run hooks (webhooks, scripts) with template interpolation
+
+</td></tr>
+<tr><td>
+
+**Generation & Optimization**
+- Auto-test generation from tool schemas and LLM-powered smart gen
+- Prompt optimization via hill-climbing
+- Cost optimization — cheapest model per test that meets thresholds
+- Threshold auto-calibration after passing runs
+- Matrix parametrization (models x temperatures x any dimension)
+- Derived metrics with math expressions and CI thresholds
+
+</td><td>
+
+**Assertions & Config**
+- Universal assertion negation (`not_eq`, `not_matches`, `not_starts_with`)
+- Evaluator skip/not-applicable — auto-skips per adapter
+- Per-adapter evaluator overrides (add/remove/override per suite)
+- Configurable adapter retry with exponential backoff
+- Token input estimation for adapters that don't report them
+- 154 community tests for 15 popular MCP servers
+
+</td></tr>
+</table>
+
+---
 
 ## Model Defaults
 
@@ -145,6 +146,8 @@ Every Cursor plugin component is covered — not just MCP tools:
 
 Override via `JUDGE_MODEL` env var, `judge_model` in YAML, or `--model` CLI flag.
 
+---
+
 ## CI Integration
 
 ```yaml
@@ -153,14 +156,21 @@ ci:
   evaluators: { security: { min: 1.0 }, tool-selection: { avg: 0.9 } }
   required_pass: [security, tool-poisoning, mcp-protocol]
   first_try_pass_rate: 0.80
+```
 
-# Derived metrics — compose evaluator scores with custom formulas:
+```bash
+npx cursor-plugin-evals run --ci   # Exit non-zero if any gate fails
+```
+
+<details>
+<summary><strong>Derived metrics, matrix testing, hooks, and adapter overrides</strong></summary>
+
+```yaml
 derived_metrics:
   - name: composite_quality
     formula: "0.4 * tool_selection + 0.3 * correctness + 0.2 * groundedness + 0.1 * response_quality"
     threshold: 0.75
 
-# Matrix — test across models and temperatures in one suite:
 suites:
   - name: tool-selection
     matrix:
@@ -168,7 +178,6 @@ suites:
       temperature: [0.0, 0.7]
     tests: [...]
 
-# Post-run hooks — notify Slack, trigger scripts:
 post_run:
   - type: webhook
     url: https://hooks.slack.com/services/...
@@ -176,7 +185,6 @@ post_run:
   - type: script
     command: node scripts/post-eval.js
 
-# Per-adapter evaluator overrides — different adapters, different evaluators:
 suites:
   - name: cli-behavior
     adapter: cursor-cli
@@ -188,158 +196,118 @@ suites:
       remove: [groundedness, workflow]
 ```
 
-```bash
-npx cursor-plugin-evals run --ci   # Exit non-zero if any gate fails
-```
+</details>
 
-### CI Parallelism with Sharding
+<details>
+<summary><strong>CI parallelism with sharding</strong></summary>
 
 ```bash
-# Split across 4 CI runners:
 npx cursor-plugin-evals run --shard 1/4 --report json -o shard-1.json
 npx cursor-plugin-evals run --shard 2/4 --report json -o shard-2.json
 npx cursor-plugin-evals run --shard 3/4 --report json -o shard-3.json
 npx cursor-plugin-evals run --shard 4/4 --report json -o shard-4.json
 
-# Merge and enforce thresholds:
 npx cursor-plugin-evals merge-reports shard-*.json --ci -o merged.json
 ```
 
+</details>
+
 GitHub Action, GitLab CI, and shell script examples in [docs/ci-cd.md](docs/ci-cd.md).
 
-## Docker Infrastructure
-
-```bash
-docker compose -f docker/docker-compose.yml up -d    # Full test environment
-docker compose -f docker/docker-compose.lite.yml up -d  # Lightweight (mock mode)
-```
+---
 
 ## Web Dashboard
 
-A 15-page web UI for visualizing evaluation results, trends, coverage, security, model comparisons, trace inspection, and interactive test exploration.
+A 15-page web UI for results, trends, coverage, security, model comparisons, trace inspection, and interactive test exploration.
 
 ```bash
-npx cursor-plugin-evals dashboard          # Start on default port
-npx cursor-plugin-evals dashboard --port 8080  # Custom port
+npx cursor-plugin-evals dashboard
 ```
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-overview.png" alt="Dashboard overview showing total runs, pass rate, grade, and trend chart" width="90%" />
+  <img src="docs/screenshots/dashboard-overview.png" alt="Dashboard overview" width="90%" />
 </p>
 
-<p align="center"><em>Dashboard overview — at-a-glance plugin health with stat cards and pass rate trend.</em></p>
-
-Drill into any run to see suite-level breakdown with individual test results:
+<details>
+<summary><strong>More screenshots</strong></summary>
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-run-detail.png" alt="Run detail view with suite-level breakdown and test results" width="90%" />
+  <img src="docs/screenshots/dashboard-run-detail.png" alt="Run detail view" width="90%" />
+  <br/><sub>Run detail — suite pass rates, test-level status, and timing data.</sub>
 </p>
-
-<p align="center"><em>Run detail — suite pass rates, test-level status, and timing data.</em></p>
-
-Track quality over time with pass rate and quality score trend charts:
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-trends.png" alt="Trend charts showing pass rate and quality score over time" width="90%" />
+  <img src="docs/screenshots/dashboard-trends.png" alt="Trend charts" width="90%" />
+  <br/><sub>Trends — pass rate and quality score over evaluation history.</sub>
 </p>
-
-<p align="center"><em>Trends — pass rate and quality score trajectories across evaluation history.</em></p>
-
-Security findings from the latest run:
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-security.png" alt="Security findings with prompt injection and privilege escalation test results" width="90%" />
+  <img src="docs/screenshots/dashboard-security.png" alt="Security findings" width="90%" />
+  <br/><sub>Security — prompt injection, privilege escalation, and OWASP test results.</sub>
 </p>
 
-<p align="center"><em>Security — prompt injection, privilege escalation, and OWASP-aligned test results.</em></p>
+<p align="center">
+  <img src="docs/screenshots/dashboard-coverage.png" alt="Coverage matrix" width="90%" />
+  <br/><sub>Coverage — component x layer depth matrix.</sub>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/conversation-preview-top.png" alt="Conversation preview" width="90%" />
+  <br/><sub>Conversation preview — system prompt, user query, assistant response with inline tool calls.</sub>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/conversation-preview-scrolled.png" alt="Tool call details" width="90%" />
+  <br/><sub>Tool calls shown inline with expandable arguments, results, and evaluator scores.</sub>
+</p>
+
+</details>
 
 See [Dashboard docs](docs/dashboard.md) for the full page reference.
 
-## Coverage Analysis
+---
 
-Analyze which test layers cover each plugin component — without running any evals.
+## Framework Assistant
 
-```bash
-npx cursor-plugin-evals coverage                         # Terminal matrix
-npx cursor-plugin-evals coverage --report markdown        # Markdown table
-npx cursor-plugin-evals coverage --report badge -o badge.svg  # SVG badge
+The killer feature: an **autonomous AI agent** that handles the entire eval lifecycle. Point it at your plugin and it will:
+
+1. **Deep scan** — discovers all MCP tools, skills, rules, agents, commands, and hooks
+2. **Set up infrastructure** — creates Docker Compose, test data seeds, `.env.test`, CI workflows
+3. **Generate coverage** — writes a comprehensive `plugin-eval.yaml` across all layers
+4. **Run + Fix + Converge** — iterates up to 5 times per layer until CI passes
+5. **Calibrate thresholds** — tightens CI gates based on actual scores
+
 ```
-
-<p align="center">
-  <img src="docs/screenshots/dashboard-coverage.png" alt="Coverage matrix showing component × layer test coverage" width="90%" />
-</p>
-
-<p align="center"><em>Coverage matrix — depth coverage across tools, skills, rules, agents, and commands.</em></p>
-
-Two metrics: **Component Coverage** (% with any test) and **Depth Coverage** (% of applicable layer slots filled). See [Coverage docs](docs/coverage.md) for details.
-
-## Conversation Preview
-
-Every test that runs through an LLM adapter (skill, llm, or cursor-cli layer) captures the full conversation transcript. Expand any test in the HTML report to review the entire exchange — system prompts, user messages, assistant responses, and inline tool calls with arguments and results.
-
-```bash
-npx cursor-plugin-evals run --report html -o report.html
+Just say "evaluate my plugin" in Cursor chat — the assistant takes it from there.
 ```
-
-<p align="center">
-  <img src="docs/screenshots/conversation-preview-top.png" alt="Conversation preview showing system, user, and assistant messages with inline tool calls" width="90%" />
-</p>
-
-<p align="center"><em>Conversation preview — system prompt, user query, and assistant response with inline tool calls.</em></p>
-
-Scroll within the conversation panel to see multi-turn exchanges, tool call arguments/results, and evaluator scores:
-
-<p align="center">
-  <img src="docs/screenshots/conversation-preview-scrolled.png" alt="Conversation preview showing tool call details and evaluator results" width="90%" />
-</p>
-
-<p align="center"><em>Tool calls shown inline with expandable arguments and results. Evaluators and tool call summary below.</em></p>
-
-Also available in the JSON report (`--report json`) for programmatic access.
-
-## Documentation
-
-Full documentation at **[patrykkopycinski.github.io/cursor-plugin-evals](https://patrykkopycinski.github.io/cursor-plugin-evals)**:
-
-- [Getting Started](docs/getting-started.md)
-- [Configuration Reference](docs/configuration.md)
-- [Testing Layers](docs/layers/static.md) (static, unit, integration, performance, LLM, skill, conformance)
-- [Evaluators](docs/evaluators.md) (27 evaluators with scoring details)
-- [Task Adapters](docs/adapters.md) (MCP, cursor-cli, claude-sdk, etc.)
-- [Coverage Analysis](docs/coverage.md)
-- [Conversation Preview](docs/conversations.md)
-- [Web Dashboard](docs/dashboard.md)
-- [Security & Red-Teaming](docs/red-teaming.md)
-- [CI/CD Integration](docs/ci-cd.md)
-- [API Reference](docs/api-reference.md)
-
-## Cursor Plugin Integration
-
-This framework ships as a Cursor plugin with an **autonomous assistant** and supporting skills, commands, and rules:
-
-### Framework Assistant (the star)
-
-The Framework Assistant is an always-on AI agent embedded in the Cursor plugin. It activates when you mention evals, testing, quality, or plugin evaluation — or when it detects a plugin repo without coverage. It autonomously:
-
-- Scans every component type (MCP tools, skills, rules, agents, commands, hooks)
-- Generates `plugin-eval.yaml` with 100% coverage across all layers
-- Sets up Docker, test data, `.env.test`, and CI workflows from scratch
-- Runs → fixes → re-runs in a convergence loop until CI passes
-- Calibrates thresholds so they track actual quality (no stale gates)
-
-### Supporting tools
 
 | Type | Name | What it does |
 |------|------|-------------|
 | Skill | Coverage Auditor | Finds and fixes all coverage gaps |
-| Skill | Debug Eval Failure | Root cause analysis for failing tests |
+| Skill | Debug Eval Failure | Root-cause analysis for failing tests |
 | Skill | Eval Generator | Generates tests for specific component types |
 | Command | `/eval:run` | Run evaluation suites |
 | Command | `/eval:debug` | Debug failing tests |
 | Command | `/eval:write` | Write new test suites |
 | Rule | proactive-coverage | Auto-generate tests when tools/skills are added |
 | Rule | post-run-analysis | Auto-diagnose and fix failures after every run |
-| Rule | new-component-detection | Triggers test generation for newly added components |
+
+---
+
+## Documentation
+
+Full docs at **[patrykkopycinski.github.io/cursor-plugin-evals](https://patrykkopycinski.github.io/cursor-plugin-evals)**:
+
+| Section | Topics |
+|---------|--------|
+| **Getting Started** | [Quick Start](docs/getting-started.md) · [Framework Assistant](docs/framework-assistant.md) · [External Eval](docs/external-eval.md) · [Configuration](docs/configuration.md) |
+| **Layers** | [Static](docs/layers/static.md) · [Unit](docs/layers/unit.md) · [Integration](docs/layers/integration.md) · [Performance](docs/layers/performance.md) · [LLM](docs/layers/llm.md) · [Skill](docs/layers/skill.md) · [Conformance](docs/layers/conformance.md) |
+| **Core** | [Evaluators](docs/evaluators.md) · [Adapters](docs/adapters.md) · [Coverage](docs/coverage.md) · [Red-Teaming](docs/red-teaming.md) |
+| **Features** | [Smart Gen](docs/smart-gen.md) · [Conversations](docs/conversations.md) · [Prompt Optimization](docs/prompt-optimization.md) · [Regression](docs/regression.md) · [Guardrails](docs/guardrails.md) |
+| **Advanced** | [Dashboard](docs/dashboard.md) · [Trace Viewer](docs/visual-trace-viewer.md) · [Monitoring](docs/monitoring.md) · [OAuth](docs/oauth.md) · [Notifications](docs/notifications.md) |
+| **CI/CD** | [CI Integration](docs/ci-cd.md) · [GitHub Action](docs/github-action.md) · [Registry](docs/eval-registry.md) · [API Reference](docs/api-reference.md) |
+
+---
 
 ## Development
 
