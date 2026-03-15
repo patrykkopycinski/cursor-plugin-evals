@@ -351,7 +351,7 @@ Full docs at **[patrykkopycinski.github.io/cursor-plugin-evals](https://patrykko
 ```bash
 npm install
 npm run typecheck    # TypeScript check
-npm test             # Run framework tests (1402 tests)
+npm test             # Run framework tests (1443 tests)
 npm run build        # Build CLI binary
 npm run lint:fix     # Fix linting issues
 ```

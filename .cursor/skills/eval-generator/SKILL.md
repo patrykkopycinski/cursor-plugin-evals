@@ -230,6 +230,19 @@ After generation, the eval file MUST have:
 - CI thresholds configured
 - Performance benchmarks for top 5 tools
 
+## MCP Tools (Preferred)
+
+When the `cursor-plugin-evals` MCP server is connected:
+
+| Instead of CLI | Use MCP tool |
+|---|---|
+| `npx cursor-plugin-evals discover` | `discover_plugin` |
+| `npx cursor-plugin-evals coverage` | `audit_coverage` |
+| Gap detection | `detect_gaps` |
+| Fix generation | `generate_fixes` |
+| Config validation | `load_config` |
+| Running generated tests | `run_evals` |
+
 ## DO NOT
 
 - Generate a few tests and ask "want more?" — generate ALL of them

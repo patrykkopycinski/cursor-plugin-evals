@@ -63,6 +63,14 @@ Record MCP tool call/response fixtures for offline and mock-mode testing.
 - After cluster data changes
 - When fixture freshness warnings appear (>14 days old)
 
+## MCP Tools (Preferred)
+
+When the `cursor-plugin-evals` MCP server is connected:
+
+| Instead of CLI | Use MCP tool |
+|---|---|
+| `npx cursor-plugin-evals doctor` | `doctor` |
+
 **Output**
 
 ```
