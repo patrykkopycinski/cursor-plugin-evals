@@ -3,11 +3,11 @@
 </p>
 
 <p align="center">
-  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/getting-started"><img src="https://img.shields.io/badge/layers-7-6C5CE7?style=flat-square" alt="7 Layers" /></a>
-  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/evaluators"><img src="https://img.shields.io/badge/evaluators-27-A29BFE?style=flat-square" alt="27 Evaluators" /></a>
-  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/adapters"><img src="https://img.shields.io/badge/adapters-6-74B9FF?style=flat-square" alt="6 Adapters" /></a>
+  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/getting-started"><img src="https://img.shields.io/badge/layers-7-6C5CE7?style=flat-square" alt="7 Layers" /></a>
+  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/evaluators"><img src="https://img.shields.io/badge/evaluators-24-A29BFE?style=flat-square" alt="24 Evaluators" /></a>
+  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/adapters"><img src="https://img.shields.io/badge/adapters-6-74B9FF?style=flat-square" alt="6 Adapters" /></a>
   <a href="#mcp-server"><img src="https://img.shields.io/badge/MCP--tools-14-55E6C1?style=flat-square" alt="14 MCP Tools" /></a>
-  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/red-teaming"><img src="https://img.shields.io/badge/security--rules-20-E74C3C?style=flat-square" alt="20 Security Rules" /></a>
+  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/red-teaming"><img src="https://img.shields.io/badge/security--rules-20-E74C3C?style=flat-square" alt="20 Security Rules" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Elastic--2.0-00E676?style=flat-square" alt="Elastic License 2.0" /></a>
 </p>
 
@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals">Documentation</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="site/index.html">Landing Page</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="showcase/elastic-cursor-plugin/">Showcase</a>
+  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/">Documentation</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="site/index.html">Landing Page</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="showcase/elastic-cursor-plugin/">Showcase</a>
 </p>
 
 <br/>
@@ -333,7 +333,7 @@ Just say "evaluate my plugin" in Cursor chat — the assistant takes it from the
 
 ## Documentation
 
-Full docs at **[patrykkopycinski.github.io/cursor-plugin-evals](https://patrykkopycinski.github.io/cursor-plugin-evals)**:
+Full docs at **[patrykkopycinski.github.io/cursor-plugin-evals/docs](https://patrykkopycinski.github.io/cursor-plugin-evals/docs/)**:
 
 | Section | Topics |
 |---------|--------|
