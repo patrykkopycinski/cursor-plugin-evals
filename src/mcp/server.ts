@@ -80,6 +80,16 @@ export function createEvalServer(): Server {
         },
       },
       {
+        name: 'generate_fixes',
+        description: 'Auto-generate YAML test configurations and code to fill coverage gaps',
+        inputSchema: {
+          type: 'object' as const,
+          properties: {
+            plugin_dir: { type: 'string', description: 'Plugin directory (default: .)' },
+          },
+        },
+      },
+      {
         name: 'list_runs',
         description: 'Browse evaluation run history',
         inputSchema: {
@@ -337,6 +347,36 @@ export function createEvalServer(): Server {
         } catch (err) {
           return errorResult(
             `Gap detection failed: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
+      }
+
+      case 'generate_fixes': {
+        try {
+          const { scanCodebase } = await import('../assistant/codebase-scanner.js');
+          const { auditCoverage } = await import('../assistant/coverage-analyzer.js');
+          const { detectGaps } = await import('../assistant/gap-detector.js');
+          const { generateFixes } = await import('../assistant/fix-generator.js');
+
+          const pluginDir = resolve(process.cwd(), (args?.plugin_dir as string) || '.');
+          const profile = await scanCodebase(pluginDir);
+          const audit = auditCoverage(profile);
+          const gaps = detectGaps(profile, audit);
+          const fixes = generateFixes(gaps);
+
+          return textResult({
+            gapCount: gaps.length,
+            fixCount: fixes.length,
+            fixes: fixes.map((f) => ({
+              gapId: f.gapId,
+              description: f.description,
+              files: f.files,
+              testCommand: f.testCommand,
+            })),
+          });
+        } catch (err) {
+          return errorResult(
+            `Fix generation failed: ${err instanceof Error ? err.message : String(err)}`,
           );
         }
       }

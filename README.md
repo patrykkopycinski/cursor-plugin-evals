@@ -4,8 +4,9 @@
 
 <p align="center">
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/getting-started"><img src="https://img.shields.io/badge/layers-7-6C5CE7?style=flat-square" alt="7 Layers" /></a>
-  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/evaluators"><img src="https://img.shields.io/badge/evaluators-24-A29BFE?style=flat-square" alt="24 Evaluators" /></a>
+  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/evaluators"><img src="https://img.shields.io/badge/evaluators-27-A29BFE?style=flat-square" alt="27 Evaluators" /></a>
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/adapters"><img src="https://img.shields.io/badge/adapters-6-74B9FF?style=flat-square" alt="6 Adapters" /></a>
+  <a href="#mcp-server"><img src="https://img.shields.io/badge/MCP--tools-14-55E6C1?style=flat-square" alt="14 MCP Tools" /></a>
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/#/red-teaming"><img src="https://img.shields.io/badge/security--rules-20-E74C3C?style=flat-square" alt="20 Security Rules" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Elastic--2.0-00E676?style=flat-square" alt="Elastic License 2.0" /></a>
 </p>
@@ -43,6 +44,7 @@ npx cursor-plugin-evals merge-reports shard-*.json --ci
 npx cursor-plugin-evals score             # Quality score with badge
 npx cursor-plugin-evals coverage          # Component x layer matrix
 npx cursor-plugin-evals dashboard         # Web UI on localhost
+npx cursor-plugin-evals serve             # MCP server for agent integration
 ```
 
 </details>
@@ -58,6 +60,37 @@ npx cursor-plugin-evals apply-fixes --workspace workspaces/some-plugin-skills-se
 ```
 
 See [External Evaluation docs](docs/external-eval.md) for the full workflow.
+
+## MCP Server
+
+Expose the framework as an MCP server so any agent (Cursor, Claude Desktop, custom) can call eval operations natively.
+
+```bash
+npx cursor-plugin-evals serve          # Start stdio MCP server
+```
+
+**14 tools available:**
+
+| Tool | What it does |
+|------|-------------|
+| `run_evals` | Run eval suites, return structured results |
+| `discover_plugin` | Scan directory for all plugin components |
+| `audit_coverage` | Coverage matrix with gaps and severity |
+| `detect_gaps` | Find missing tests across component × layer |
+| `generate_fixes` | Auto-generate YAML to fill coverage gaps |
+| `load_config` | Parse and validate plugin-eval.yaml |
+| `list_runs` | Browse evaluation history |
+| `get_run_detail` | Drill into a specific run |
+| `doctor` | Check environment prerequisites |
+| `analyze_collisions` | Detect overlapping skills |
+| `security_audit` | 3-pass security audit |
+| `regression_check` | Welch's t-test regression detection |
+| `compare_models` | Multi-model comparison matrix |
+| `cost_report` | Token usage and cost optimization |
+
+**4 resources:** `eval://config`, `eval://latest-run`, `eval://coverage`, `eval://history`
+
+Auto-registers when you install the Cursor plugin (via `.mcp.json`).
 
 ---
 
@@ -92,7 +125,7 @@ See [External Evaluation docs](docs/external-eval.md) for the full workflow.
 <tr><td width="50%">
 
 **Evaluation**
-- 24 evaluators (13 deterministic + 9 LLM-as-judge + multi-judge panel)
+- 27 evaluators (13 deterministic + 12 LLM-as-judge + multi-judge panel)
 - 6 task adapters (MCP, plain-llm, cursor-cli, headless-coder, gemini-cli, claude-sdk)
 - 20 OWASP-aligned security rules with 3-pass red-teaming
 - SAFE-MCP compliance with 26 attack techniques
@@ -108,6 +141,7 @@ See [External Evaluation docs](docs/external-eval.md) for the full workflow.
 - Coverage analysis with CLI, API, dashboard, and SVG badge
 - Test sharding (`--shard`) and last-failed mode (`--lf`, `--ff`)
 - Post-run hooks (webhooks, scripts) with template interpolation
+- MCP server with 14 tools and 4 resources for native agent integration
 
 </td></tr>
 <tr><td>
@@ -291,6 +325,9 @@ Just say "evaluate my plugin" in Cursor chat — the assistant takes it from the
 | Command | `/eval:write` | Write new test suites |
 | Rule | proactive-coverage | Auto-generate tests when tools/skills are added |
 | Rule | post-run-analysis | Auto-diagnose and fix failures after every run |
+| Agent | eval-debugger | Diagnoses failing/flaky tests |
+| Agent | coverage-watcher | Detects coverage gaps proactively |
+| Agent | report-interpreter | Explains results in plain language |
 
 ---
 
@@ -314,7 +351,7 @@ Full docs at **[patrykkopycinski.github.io/cursor-plugin-evals](https://patrykko
 ```bash
 npm install
 npm run typecheck    # TypeScript check
-npm test             # Run framework tests (1268 tests)
+npm test             # Run framework tests (1402 tests)
 npm run build        # Build CLI binary
 npm run lint:fix     # Fix linting issues
 ```
