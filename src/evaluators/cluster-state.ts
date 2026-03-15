@@ -160,13 +160,13 @@ async function executeScriptCheck(
   script: string,
   skillsDir?: string,
 ): Promise<{ passed: boolean; details: string }> {
-  const { execSync } = await import('child_process');
+  const { execFileSync } = await import('child_process');
   const { resolve } = await import('path');
 
   const scriptPath = skillsDir ? resolve(skillsDir, script) : resolve(script);
 
   try {
-    const output = execSync(`node ${scriptPath}`, {
+    const output = execFileSync('node', [scriptPath], {
       timeout: 30_000,
       encoding: 'utf-8',
       env: { ...process.env },

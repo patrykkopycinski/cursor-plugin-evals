@@ -2,9 +2,13 @@ import { describe, it, expect, vi } from 'vitest';
 import { PlanQualityEvaluator } from './plan-quality.js';
 import type { EvaluatorContext } from '../core/types.js';
 
-vi.mock('./llm-judge.js', () => ({
-  callJudge: vi.fn(),
-}));
+vi.mock('./llm-judge.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    callJudge: vi.fn(),
+  };
+});
 
 import { callJudge } from './llm-judge.js';
 

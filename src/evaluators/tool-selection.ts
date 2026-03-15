@@ -8,8 +8,14 @@ function fuzzyMatch(expected: string, actual: string): boolean {
   const ne = normalizeToolName(expected);
   const na = normalizeToolName(actual);
   if (ne === na) return true;
-  if (na.includes(ne) || ne.includes(na)) return true;
-  return false;
+
+  const shorter = ne.length <= na.length ? ne : na;
+  const longer = ne.length <= na.length ? na : ne;
+
+  if (shorter.length < 4) return false;
+  if (shorter.length / longer.length < 0.4) return false;
+
+  return longer.includes(shorter);
 }
 
 export class ToolSelectionEvaluator implements Evaluator {

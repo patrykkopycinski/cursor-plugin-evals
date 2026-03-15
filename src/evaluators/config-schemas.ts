@@ -19,6 +19,9 @@ export interface WorkflowConfig {
 
 export interface SecurityConfig {
   exclude_locations?: string[];
+  exclude_args_containing?: string[];
+  exclude_tools?: string[];
+  llm_verify?: boolean;
   domain?: string;
 }
 
@@ -61,6 +64,9 @@ export function resolveSecurityConfig(
   if (!raw) return {};
   return {
     exclude_locations: raw.exclude_locations as string[] | undefined,
+    exclude_args_containing: raw.exclude_args_containing as string[] | undefined,
+    exclude_tools: raw.exclude_tools as string[] | undefined,
+    llm_verify: raw.llm_verify as boolean | undefined,
     domain: raw.domain as string | undefined,
   };
 }

@@ -17,6 +17,21 @@ export interface JudgeResponse {
   explanation: string;
 }
 
+const CONTENT_FILTER_RE = /content.?(?:policy|filter|management)|ContentPolicyViolation|content_filter/i;
+
+export class ContentFilterError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ContentFilterError';
+  }
+}
+
+export function isContentFilterError(err: unknown): err is ContentFilterError {
+  if (err instanceof ContentFilterError) return true;
+  const msg = err instanceof Error ? err.message : String(err);
+  return CONTENT_FILTER_RE.test(msg);
+}
+
 const DEFAULT_JUDGE_MODEL = 'llm-gateway/gpt-5.4';
 
 export async function callJudge(request: JudgeRequest): Promise<JudgeResponse> {
@@ -109,7 +124,11 @@ export async function callJudge(request: JudgeRequest): Promise<JudgeResponse> {
 
   if (!response.ok) {
     const errorBody = await response.text().catch(() => '');
-    throw new Error(`Judge API error ${response.status}: ${errorBody.slice(0, 300)}`);
+    const msg = `Judge API error ${response.status}: ${errorBody.slice(0, 300)}`;
+    if (CONTENT_FILTER_RE.test(errorBody) || CONTENT_FILTER_RE.test(msg)) {
+      throw new ContentFilterError(msg);
+    }
+    throw new Error(msg);
   }
 
   const data = await response.json();
@@ -152,4 +171,36 @@ function parseJudgeResponse(content: string): JudgeResponse {
   const score = scoreMatch ? Math.max(0, Math.min(1, parseFloat(scoreMatch[1]))) : 0.5;
 
   return { score, label: 'PARSED', explanation: content.slice(0, 500) };
+}
+
+/**
+ * Standard catch handler for LLM evaluators.
+ * Returns a content-filtered skip result or an error result.
+ */
+export function handleJudgeError(evaluatorName: string, err: unknown): {
+  evaluator: string;
+  score: number;
+  pass: boolean;
+  skipped?: boolean;
+  label: string;
+  explanation: string;
+} {
+  const errMsg = err instanceof Error ? err.message : String(err);
+  if (isContentFilterError(err)) {
+    return {
+      evaluator: evaluatorName,
+      score: 0,
+      pass: true,
+      skipped: true,
+      label: 'content_filtered',
+      explanation: `Judge blocked by content policy — skipped: ${errMsg.slice(0, 200)}`,
+    };
+  }
+  return {
+    evaluator: evaluatorName,
+    score: 0,
+    pass: false,
+    label: 'error',
+    explanation: `Judge call failed: ${errMsg}`,
+  };
 }

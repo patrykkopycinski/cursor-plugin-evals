@@ -1,5 +1,5 @@
 import type { Evaluator, EvaluatorContext, EvaluatorResult, EvaluatorKind } from '../core/types.js';
-import { callJudge } from './llm-judge.js';
+import { callJudge, handleJudgeError } from './llm-judge.js';
 
 interface Criterion {
   id: string;
@@ -31,7 +31,13 @@ export class CriteriaEvaluator implements Evaluator {
   kind: EvaluatorKind = 'LLM';
 
   async evaluate(context: EvaluatorContext): Promise<EvaluatorResult> {
-    const criteria = (context.config?.criteria as Criterion[] | undefined) ?? DEFAULT_CRITERIA;
+    const rawCriteria = context.config?.criteria;
+    const criteria: Criterion[] =
+      Array.isArray(rawCriteria)
+        ? rawCriteria
+        : Array.isArray((rawCriteria as Record<string, unknown> | undefined)?.criteria)
+          ? (rawCriteria as Record<string, unknown>).criteria as Criterion[]
+          : DEFAULT_CRITERIA;
 
     const userPrompt = [
       context.prompt ? `Prompt: ${context.prompt}` : '',
@@ -78,7 +84,10 @@ export class CriteriaEvaluator implements Evaluator {
       }
 
       const score = totalWeight > 0 ? Math.round((passedWeight / totalWeight) * 1000) / 1000 : 0;
-      const threshold = (context.config?.threshold as number | undefined) ?? 0.7;
+      const rawThreshold = typeof rawCriteria === 'object' && rawCriteria !== null && !Array.isArray(rawCriteria)
+        ? (rawCriteria as Record<string, unknown>).threshold as number | undefined
+        : undefined;
+      const threshold = rawThreshold ?? (context.config?.threshold as number | undefined) ?? 0.7;
 
       return {
         evaluator: this.name,
@@ -89,13 +98,7 @@ export class CriteriaEvaluator implements Evaluator {
         metadata: { criteria: details, threshold },
       };
     } catch (err) {
-      return {
-        evaluator: this.name,
-        score: 0,
-        pass: false,
-        label: 'error',
-        explanation: `Judge call failed: ${err instanceof Error ? err.message : String(err)}`,
-      };
+      return handleJudgeError(this.name, err);
     }
   }
 }

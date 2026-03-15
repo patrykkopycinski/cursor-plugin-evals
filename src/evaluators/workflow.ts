@@ -15,7 +15,12 @@ export class WorkflowEvaluator implements Evaluator {
     if (check.tools_used?.length) {
       for (const tool of check.tools_used) {
         totalChecks++;
-        const found = context.toolCalls.some((tc) => tc.tool === tool || tc.tool.includes(tool));
+        const normalizedTool = tool.toLowerCase().replace(/[-_\s.]/g, '');
+        const found = context.toolCalls.some((tc) => {
+          if (tc.tool === tool) return true;
+          const normalizedActual = tc.tool.toLowerCase().replace(/[-_\s.]/g, '');
+          return normalizedActual === normalizedTool;
+        });
         if (found) {
           passedChecks++;
           passes.push(`tool:${tool}`);
@@ -25,12 +30,15 @@ export class WorkflowEvaluator implements Evaluator {
       }
     }
 
+    const READ_TOOLS = new Set(['read_file', 'Read', 'read', 'file_read']);
+    const WRITE_TOOLS = new Set(['write_file', 'Write', 'write', 'edit_file', 'file_write']);
+
     if (check.files_read?.length) {
       for (const pattern of check.files_read) {
         totalChecks++;
         const found = context.toolCalls.some(
           (tc) =>
-            (tc.tool === 'read_file' || tc.tool === 'Read' || tc.tool.includes('read')) &&
+            READ_TOOLS.has(tc.tool) &&
             typeof tc.args?.path === 'string' &&
             tc.args.path.includes(pattern),
         );
@@ -48,7 +56,7 @@ export class WorkflowEvaluator implements Evaluator {
         totalChecks++;
         const found = context.toolCalls.some(
           (tc) =>
-            (tc.tool === 'write_file' || tc.tool === 'Write' || tc.tool.includes('write') || tc.tool === 'edit_file') &&
+            WRITE_TOOLS.has(tc.tool) &&
             typeof tc.args?.path === 'string' &&
             tc.args.path.includes(pattern),
         );

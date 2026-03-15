@@ -1,5 +1,5 @@
 import type { Evaluator, EvaluatorContext, EvaluatorResult, EvaluatorKind } from '../core/types.js';
-import { callJudge } from './llm-judge.js';
+import { callJudge, handleJudgeError } from './llm-judge.js';
 import { resolveGroundednessConfig } from './config-schemas.js';
 
 const SYSTEM_PROMPT = `You are an evaluation judge checking groundedness. Determine if the output's claims are supported by the tool call results provided.
@@ -71,13 +71,7 @@ export class GroundednessEvaluator implements Evaluator {
         explanation: result.explanation,
       };
     } catch (err) {
-      return {
-        evaluator: this.name,
-        score: 0,
-        pass: false,
-        label: 'error',
-        explanation: `Judge call failed: ${err instanceof Error ? err.message : String(err)}`,
-      };
+      return handleJudgeError(this.name, err);
     }
   }
 }

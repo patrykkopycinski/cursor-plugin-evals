@@ -60,14 +60,14 @@ export class ToolArgsEvaluator implements Evaluator {
     }> = [];
 
     for (const [toolName, expectedArgs] of Object.entries(expectedToolArgs)) {
-      const toolCall = context.toolCalls.find(
+      const matchingCalls = context.toolCalls.filter(
         (tc) => tc.tool === toolName || tc.tool.toLowerCase() === toolName.toLowerCase(),
       );
 
       for (const [argName, expectedValue] of Object.entries(expectedArgs)) {
         totalExpected++;
 
-        if (!toolCall) {
+        if (matchingCalls.length === 0) {
           details.push({
             tool: toolName,
             arg: argName,
@@ -78,8 +78,11 @@ export class ToolArgsEvaluator implements Evaluator {
           continue;
         }
 
-        const actualValue = toolCall.args[argName];
-        const match = valueMatches(expectedValue, actualValue);
+        const bestMatch = matchingCalls.find((tc) => valueMatches(expectedValue, tc.args[argName]));
+        const actualValue = bestMatch
+          ? bestMatch.args[argName]
+          : matchingCalls[0].args[argName];
+        const match = !!bestMatch;
 
         if (match) totalMatched++;
 

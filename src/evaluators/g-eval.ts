@@ -1,5 +1,5 @@
 import type { Evaluator, EvaluatorContext, EvaluatorResult, EvaluatorKind } from '../core/types.js';
-import { callJudge } from './llm-judge.js';
+import { callJudge, handleJudgeError } from './llm-judge.js';
 
 const DEFAULT_CRITERIA = ['relevance', 'coherence'];
 
@@ -8,8 +8,13 @@ export class GEvalEvaluator implements Evaluator {
   kind: EvaluatorKind = 'LLM';
 
   async evaluate(context: EvaluatorContext): Promise<EvaluatorResult> {
-    const criteria =
-      (context.config?.['g-eval-criteria'] as string[] | undefined) ?? DEFAULT_CRITERIA;
+    const rawGEval = context.config?.['g-eval-criteria'];
+    const criteria: string[] =
+      Array.isArray(rawGEval)
+        ? rawGEval
+        : Array.isArray((rawGEval as Record<string, unknown> | undefined)?.items)
+          ? (rawGEval as Record<string, unknown>).items as string[]
+          : DEFAULT_CRITERIA;
 
     const systemPrompt = `You are an evaluation judge. Score the output on these criteria: ${criteria.join(', ')}.
 
@@ -40,13 +45,7 @@ Respond ONLY with valid JSON:
         metadata: { criteria },
       };
     } catch (err) {
-      return {
-        evaluator: this.name,
-        score: 0,
-        pass: false,
-        label: 'error',
-        explanation: `Judge call failed: ${err instanceof Error ? err.message : String(err)}`,
-      };
+      return handleJudgeError(this.name, err);
     }
   }
 }
