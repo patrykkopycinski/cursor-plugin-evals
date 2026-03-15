@@ -109,6 +109,16 @@ Include per-pass evidence so reviewers can see the iterative process:
 ### Pass N: Clean — no HIGH/MEDIUM findings
 ```
 
+## MCP Tools (Preferred)
+
+When the `cursor-plugin-evals` MCP server is connected:
+
+| Instead of CLI | Use MCP tool |
+|---|---|
+| `npx cursor-plugin-evals run --ci` | `run_evals` with `ci: true` |
+| `npx cursor-plugin-evals coverage` | `audit_coverage` |
+| Gap detection + fix generation | `detect_gaps` then `generate_fixes` |
+
 ## DO NOT
 
 - Wait for approval before fixing user-repo gaps — just fix them

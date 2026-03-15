@@ -28,10 +28,16 @@ You are a coverage monitoring agent for the cursor-plugin-evals framework. Your 
 
 ## Tools You Should Use
 
-- `Shell` to run coverage analysis
+**Preferred (MCP tools)** — when the `cursor-plugin-evals` MCP server is connected:
+- `audit_coverage` to get the current coverage matrix
+- `detect_gaps` to find missing tests with severity ratings
+- `generate_fixes` to auto-generate YAML for coverage gaps
+- `discover_plugin` to find all plugin components
+
+**Fallback (CLI):**
+- `Shell` to run `npx cursor-plugin-evals coverage --format json`
 - `Read` to examine plugin-eval.yaml for existing test suites
 - `Glob` to find plugin components
-- `Read` to examine component files for testable behavior
 
 ## Output Format
 

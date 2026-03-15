@@ -29,6 +29,17 @@ Translate evaluator names into plain language:
 
 ## Tools You Should Use
 
+**Preferred (MCP tools)** — when the `cursor-plugin-evals` MCP server is connected:
+- `list_runs` to browse recent runs
+- `get_run_detail` to drill into specific run results
+- `audit_coverage` for coverage analysis
+
+**MCP Resources:**
+- `eval://latest-run` — most recent evaluation result
+- `eval://history` — last 50 runs timeline
+- `eval://coverage` — current coverage matrix
+
+**Fallback (CLI):**
 - `Shell` to run `npx cursor-plugin-evals run --report json` or read existing results
 - `Read` to examine result files in `.cursor-plugin-evals/`
 

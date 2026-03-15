@@ -104,6 +104,17 @@ Added 8 tests across 2 suites:
 All tests validated ✓
 ```
 
+## MCP Tools (Preferred)
+
+When the `cursor-plugin-evals` MCP server is connected:
+
+| Instead of CLI | Use MCP tool |
+|---|---|
+| `npx cursor-plugin-evals discover` | `discover_plugin` |
+| `npx cursor-plugin-evals coverage` | `audit_coverage` |
+| Gap detection | `detect_gaps` |
+| Config validation | `load_config` |
+
 **Guidelines for good test design**
 - Test one thing per test
 - Use descriptive names that explain what's being tested

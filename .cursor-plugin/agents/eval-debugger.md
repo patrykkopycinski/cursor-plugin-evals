@@ -23,10 +23,18 @@ You are an eval debugging specialist for the cursor-plugin-evals framework. When
 
 ## Tools You Should Use
 
-- `Read` to examine eval results, config files, and plugin source
-- `Grep` to search for error patterns across test outputs
+**Preferred (MCP tools)** — when the `cursor-plugin-evals` MCP server is connected:
+- `list_runs` to browse recent evaluation runs
+- `get_run_detail` to inspect failing tests in a specific run
+- `run_evals` with `suites: ["name"]` to re-run specific failing suites
+- `doctor` to check environment prerequisites
+- `load_config` to validate configuration
+
+**Fallback (CLI):**
 - `Shell` to run `npx cursor-plugin-evals doctor` for infrastructure checks
 - `Shell` to run `npx cursor-plugin-evals run --suite <name> --verbose` to re-run specific failing suites
+- `Read` to examine eval results, config files, and plugin source
+- `Grep` to search for error patterns across test outputs
 
 ## Output Format
 
