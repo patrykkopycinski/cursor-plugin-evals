@@ -64,6 +64,16 @@ Diagnose and fix infrastructure issues preventing plugin evals from running.
 
    All checks should pass.
 
+## MCP Tools (Preferred)
+
+When the `cursor-plugin-evals` MCP server is connected:
+
+| Instead of CLI | Use MCP tool |
+|---|---|
+| `npx cursor-plugin-evals doctor` | `doctor` |
+| `npx cursor-plugin-evals discover` | `discover_plugin` |
+| Checking config validity | `load_config` |
+
 **Output**
 
 ```

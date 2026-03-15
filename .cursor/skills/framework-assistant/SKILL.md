@@ -403,6 +403,24 @@ Your generated eval file MUST achieve:
 - **Difficulty diversity** — simple, moderate, complex, AND adversarial tests
 - **11+ evaluators used** — minimum 46% evaluator utilization
 
+## MCP Tools (Preferred)
+
+When the `cursor-plugin-evals` MCP server is connected, all operations can be performed via structured MCP tool calls instead of CLI:
+
+| Operation | MCP tool |
+|---|---|
+| Plugin scan | `discover_plugin` |
+| Config validation | `load_config` |
+| Coverage analysis | `audit_coverage` |
+| Gap detection | `detect_gaps` |
+| Fix generation | `generate_fixes` |
+| Running evals | `run_evals` |
+| Environment check | `doctor` |
+| Collision detection | `analyze_collisions` |
+| Security audit | `security_audit` |
+
+MCP tools return structured JSON, enabling tighter feedback loops without parsing terminal output.
+
 ## DO NOT
 
 - Stop after writing the YAML — you MUST run evals and verify

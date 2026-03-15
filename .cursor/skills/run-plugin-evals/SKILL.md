@@ -175,6 +175,19 @@ Run evaluation suites against a Cursor plugin's MCP server. **Automatically fix 
 - Always run doctor before integration/llm tests
 - Commit only after all CI thresholds pass
 
+## MCP Tools (Preferred)
+
+When the `cursor-plugin-evals` MCP server is connected, prefer these tools over CLI:
+
+| Instead of CLI | Use MCP tool |
+|---|---|
+| `npx cursor-plugin-evals run` | `run_evals` |
+| `npx cursor-plugin-evals run --ci` | `run_evals` with `ci: true` |
+| `npx cursor-plugin-evals run -s <name>` | `run_evals` with `suites: ["name"]` |
+| `npx cursor-plugin-evals run -l <layer>` | `run_evals` with `layers: ["layer"]` |
+
+MCP tools return structured JSON instead of terminal output, making results easier to parse and act on.
+
 **Framework Bottleneck Detection (DURING EVERY FIX CYCLE)**
 
 While iterating in step 4, continuously check: **"Am I fixing the test, or working around a framework limitation?"**

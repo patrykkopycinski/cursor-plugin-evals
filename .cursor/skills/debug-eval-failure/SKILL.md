@@ -149,6 +149,17 @@ Automatically debug, fix, and verify failing plugin evaluation tests. Does NOT j
 - [mcp-error] agent-builder tools: Plugin server crashes on startup without AGENT_BUILDER_URL
 ```
 
+## MCP Tools (Preferred)
+
+When the `cursor-plugin-evals` MCP server is connected:
+
+| Instead of CLI | Use MCP tool |
+|---|---|
+| `npx cursor-plugin-evals run -s <suite>` | `run_evals` with `suites: ["suite"]` |
+| Reading run history | `list_runs` |
+| Inspecting a specific run | `get_run_detail` with `run_id` |
+| `npx cursor-plugin-evals doctor` | `doctor` |
+
 **Guardrails**
 - Max 5 fix iterations total — escalate remaining to user
 - Never modify plugin source — only eval config

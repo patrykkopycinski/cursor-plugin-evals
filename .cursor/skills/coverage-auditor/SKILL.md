@@ -253,6 +253,16 @@ After convergence AND threshold calibration:
 - ⏳ Save regression baseline after first successful run
 ```
 
+## MCP Tools (Preferred)
+
+When the `cursor-plugin-evals` MCP server is connected:
+
+| Instead of CLI | Use MCP tool |
+|---|---|
+| `npx cursor-plugin-evals coverage` | `audit_coverage` |
+| Scanning + gap detection | `detect_gaps` |
+| Generating fix YAML | `generate_fixes` |
+
 ## DO NOT
 
 - Report gaps without fixing them
