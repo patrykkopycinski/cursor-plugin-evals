@@ -4,6 +4,8 @@ import type {
   TestResult,
   Difficulty,
   PerformanceMetrics,
+  ConversationMessage,
+  ToolCallRecord,
 } from '../core/types.js';
 import { formatDuration } from '../core/utils.js';
 
@@ -96,7 +98,91 @@ function buildSummaryCards(result: RunResult): string {
     </div>`;
 }
 
-function buildTestRow(test: TestResult): string {
+function buildConversationPanel(
+  conversation: ConversationMessage[],
+  toolCalls: ToolCallRecord[],
+  testId: string,
+): string {
+  let toolCallIndex = 0;
+
+  const messageHtml = conversation
+    .map((msg, i) => {
+      const roleClass = msg.role === 'user' ? 'msg-user' : msg.role === 'assistant' ? 'msg-assistant' : msg.role === 'system' ? 'msg-system' : 'msg-tool';
+      const roleLabel = msg.role === 'user' ? 'User' : msg.role === 'assistant' ? 'Assistant' : msg.role === 'system' ? 'System' : 'Tool';
+      const content = esc(msg.content || '(empty)');
+
+      let toolCallsHtml = '';
+      if (msg.role === 'assistant') {
+        const inlineTools: string[] = [];
+        while (toolCallIndex < toolCalls.length) {
+          const tc = toolCalls[toolCallIndex];
+          const argsJson = JSON.stringify(tc.args, null, 2);
+          const resultText = tc.result.content
+            .filter((c) => c.type === 'text' && c.text)
+            .map((c) => c.text!)
+            .join('\n');
+          const truncatedResult = resultText.length > 2000
+            ? resultText.slice(0, 2000) + '\n…(truncated)'
+            : resultText;
+
+          inlineTools.push(`
+            <div class="conv-tool-call">
+              <div class="conv-tool-header" onclick="this.parentElement.classList.toggle('open')">
+                <span class="conv-tool-icon">${tc.result.isError ? '⚠' : '⚙'}</span>
+                <span class="conv-tool-name">${esc(tc.tool)}</span>
+                <span class="conv-tool-latency">${esc(formatDuration(tc.latencyMs))}</span>
+                <span class="expand-icon">▸</span>
+              </div>
+              <div class="conv-tool-body">
+                <div class="conv-tool-section">
+                  <div class="conv-tool-section-label">Arguments</div>
+                  <pre class="conv-tool-pre">${esc(argsJson)}</pre>
+                </div>
+                <div class="conv-tool-section">
+                  <div class="conv-tool-section-label">Result ${tc.result.isError ? '<span class="tag-fail">error</span>' : ''}</div>
+                  <pre class="conv-tool-pre">${esc(truncatedResult || '(empty)')}</pre>
+                </div>
+              </div>
+            </div>`);
+          toolCallIndex++;
+
+          if (toolCallIndex < toolCalls.length) {
+            const nextMsgIdx = conversation.findIndex(
+              (m, j) => j > i && m.role === 'tool',
+            );
+            if (nextMsgIdx === i + 1) continue;
+          }
+          break;
+        }
+        if (inlineTools.length > 0) {
+          toolCallsHtml = `<div class="conv-tool-calls">${inlineTools.join('')}</div>`;
+        }
+      }
+
+      return `
+        <div class="conv-msg ${roleClass}">
+          <div class="conv-msg-role">${roleLabel}</div>
+          <div class="conv-msg-content"><pre>${content}</pre></div>
+          ${toolCallsHtml}
+        </div>`;
+    })
+    .filter((_, i) => conversation[i].role !== 'tool')
+    .join('');
+
+  return `
+    <div class="conv-panel">
+      <div class="conv-header" onclick="var p=this.parentElement;p.classList.toggle('open');if(!p.dataset.loaded){p.dataset.loaded='1'}">
+        <span class="conv-toggle-icon">💬</span>
+        <span>Conversation (${conversation.length} messages)</span>
+        <span class="expand-icon">▸</span>
+      </div>
+      <div class="conv-body" id="conv-${testId}">
+        ${messageHtml}
+      </div>
+    </div>`;
+}
+
+function buildTestRow(test: TestResult, testIndex: number): string {
   const evalRows = test.evaluatorResults
     .map(
       (e) => `
@@ -121,17 +207,24 @@ function buildTestRow(test: TestResult): string {
 
   const hasEvals = test.evaluatorResults.length > 0;
   const hasToolCalls = test.toolCalls.length > 0;
+  const hasConversation = test.conversation && test.conversation.length > 0;
+  const testId = `test-${testIndex}-${test.name.replace(/[^a-zA-Z0-9]/g, '-')}`;
 
   return `
     <div class="test-row">
       <div class="test-header" onclick="this.parentElement.classList.toggle('open')">
         <span class="test-status" style="color:${passColor(test.pass)}">${test.pass ? '✓' : '✗'}</span>
         <span class="test-name">${esc(test.name)}</span>
-        <span class="test-meta">${esc(formatDuration(test.latencyMs))}${test.model ? ` · ${esc(test.model)}` : ''}</span>
+        <span class="test-meta">${esc(formatDuration(test.latencyMs))}${test.model ? ` · ${esc(test.model)}` : ''}${test.adapter ? ` · ${esc(test.adapter)}` : ''}</span>
         <span class="expand-icon">▸</span>
       </div>
       <div class="test-details">
         ${test.error ? `<div class="test-error"><pre>${esc(test.error)}</pre></div>` : ''}
+        ${
+          hasConversation
+            ? buildConversationPanel(test.conversation!, test.toolCalls, testId)
+            : ''
+        }
         ${
           hasEvals
             ? `
@@ -157,10 +250,11 @@ function buildTestRow(test: TestResult): string {
 }
 
 function buildSuiteCards(result: RunResult): string {
+  let testIndex = 0;
   return result.suites
     .map((suite) => {
       const passRate = (suite.passRate * 100).toFixed(1);
-      const testRows = suite.tests.map(buildTestRow).join('');
+      const testRows = suite.tests.map((t) => buildTestRow(t, testIndex++)).join('');
       return `
       <div class="suite-card">
         <div class="suite-header" onclick="this.parentElement.classList.toggle('open')">
@@ -352,6 +446,38 @@ function buildStyles(): string {
       .diff-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; }
 
       .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.75rem; opacity: 0.5; text-align: center; }
+
+      /* Conversation preview panel */
+      .conv-panel { border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 0.75rem; overflow: hidden; }
+      .conv-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.8rem; cursor: pointer; background: var(--surface); user-select: none; font-size: 0.85rem; font-weight: 500; }
+      .conv-header:hover { opacity: 0.85; }
+      .conv-toggle-icon { font-size: 1rem; }
+      .conv-body { display: none; padding: 0.75rem; max-height: 600px; overflow-y: auto; }
+      .conv-panel.open .conv-body { display: block; }
+      .conv-panel.open .expand-icon { transform: rotate(90deg); }
+
+      .conv-msg { margin-bottom: 0.75rem; border-radius: 6px; padding: 0.6rem 0.8rem; }
+      .conv-msg-role { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; opacity: 0.7; }
+      .conv-msg-content pre { font-family: var(--mono); font-size: 0.8rem; white-space: pre-wrap; word-break: break-word; margin: 0; line-height: 1.5; }
+      .msg-user { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); border-left: 3px solid var(--accent); }
+      .msg-assistant { background: color-mix(in srgb, var(--pass) 8%, var(--surface)); border-left: 3px solid var(--pass); }
+      .msg-system { background: var(--surface); border-left: 3px solid var(--border); opacity: 0.7; }
+      .msg-tool { background: var(--surface); border-left: 3px solid #f59e0b; }
+
+      .conv-tool-calls { margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.35rem; }
+      .conv-tool-call { border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+      .conv-tool-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.6rem; cursor: pointer; font-size: 0.8rem; background: var(--surface); user-select: none; }
+      .conv-tool-header:hover { opacity: 0.85; }
+      .conv-tool-icon { font-size: 0.85rem; }
+      .conv-tool-name { font-family: var(--mono); font-weight: 600; flex: 1; }
+      .conv-tool-latency { font-family: var(--mono); font-size: 0.75rem; opacity: 0.6; }
+      .conv-tool-body { display: none; padding: 0.5rem 0.6rem; border-top: 1px solid var(--border); }
+      .conv-tool-call.open .conv-tool-body { display: block; }
+      .conv-tool-call.open .expand-icon { transform: rotate(90deg); }
+      .conv-tool-section { margin-bottom: 0.4rem; }
+      .conv-tool-section:last-child { margin-bottom: 0; }
+      .conv-tool-section-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.15rem; opacity: 0.6; }
+      .conv-tool-pre { font-family: var(--mono); font-size: 0.75rem; white-space: pre-wrap; word-break: break-word; margin: 0; padding: 0.4rem; background: var(--bg); border-radius: 3px; max-height: 300px; overflow-y: auto; line-height: 1.4; }
     </style>`;
 }
 

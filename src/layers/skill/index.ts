@@ -294,6 +294,7 @@ export async function runSkillSuite(
             repetition: repetitions > 1 ? rep : undefined,
             costUsd: costUsd ?? undefined,
             adapter: adapterName,
+            conversation: taskOutput.messages.length > 0 ? taskOutput.messages : undefined,
           };
         });
       }

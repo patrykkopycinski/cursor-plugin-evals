@@ -44,7 +44,7 @@ Each test shows a timeline of:
 
 ### Trace View
 
-For LLM tests, the trace view shows the full agent loop:
+For LLM and skill tests, the trace view shows the full agent conversation. Test results now include a `conversation` field with the complete message history, which powers both the dashboard trace view and the HTML report conversation preview.
 
 ```
 [0ms]   User → "Search for error logs"
@@ -95,6 +95,7 @@ writeFileSync('trace.html', html);
 
 ## See Also
 
+- [Conversation Preview](./conversations.md)
 - [Production Monitoring](./monitoring.md)
 - [Trace Ingestion](./trace-import.md)
 - [Getting Started](./getting-started.md)

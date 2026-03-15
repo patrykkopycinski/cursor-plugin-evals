@@ -3,27 +3,19 @@ import { resolve, dirname, isAbsolute } from 'path';
 import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
 import type { EvalConfig } from './types.js';
+import { BASE_ASSERTION_OPS } from './types.js';
 import { resolveCollectionPath, loadCollectionSuite } from './collections.js';
 
-const AssertionOpSchema = z.enum([
-  'eq',
-  'neq',
-  'gt',
-  'gte',
-  'lt',
-  'lte',
-  'contains',
-  'not_contains',
-  'exists',
-  'not_exists',
-  'length_gte',
-  'length_lte',
-  'type',
-  'matches',
-  'one_of',
-  'starts_with',
-  'ends_with',
-]);
+const baseOpsSet = new Set<string>(BASE_ASSERTION_OPS);
+
+const AssertionOpSchema = z.string().refine(
+  (op) => {
+    if (baseOpsSet.has(op)) return true;
+    if (op.startsWith('not_') && baseOpsSet.has(op.slice(4))) return true;
+    return false;
+  },
+  { message: 'Must be a known assertion op or not_<known_op>' },
+);
 
 const AssertionConfigSchema = z.object({
   field: z.string(),
@@ -325,6 +317,30 @@ const CiThresholdsSchema = z.object({
   }).optional(),
 }).optional();
 
+const PostRunHookWebhookSchema = z.object({
+  type: z.literal('webhook'),
+  url: z.string().url(),
+  template: z.string().optional(),
+  headers: z.record(z.string(), z.string()).optional(),
+});
+
+const PostRunHookScriptSchema = z.object({
+  type: z.literal('script'),
+  command: z.string(),
+  pass_env: z.array(z.string()).optional(),
+});
+
+const PostRunHookSchema = z.discriminatedUnion('type', [
+  PostRunHookWebhookSchema,
+  PostRunHookScriptSchema,
+]);
+
+const DerivedMetricSchema = z.object({
+  name: z.string(),
+  formula: z.string(),
+  threshold: z.number().min(0).max(1).optional(),
+});
+
 const EvalConfigSchema = z.object({
   plugin: PluginSchema,
   infrastructure: InfrastructureSchema,
@@ -334,6 +350,8 @@ const EvalConfigSchema = z.object({
   plugins: PluginsConfigSchema,
   ci: CiThresholdsSchema,
   guardrails: z.array(GuardrailRuleSchema).optional(),
+  post_run: z.array(PostRunHookSchema).optional(),
+  derived_metrics: z.array(DerivedMetricSchema).optional(),
   suites: z.array(SuiteEntrySchema),
 });
 

@@ -6,6 +6,13 @@ import { LlmClient } from './llm-client.js';
 import type { LlmMessage, LlmToolDefinition } from './llm-client.js';
 import { log } from '../../cli/logger.js';
 
+function serializeMessages(msgs: LlmMessage[]): Array<{ role: string; content: string }> {
+  return msgs.map((m) => ({
+    role: m.role,
+    content: m.content ?? '',
+  }));
+}
+
 export interface AgentLoopConfig {
   model: string;
   systemPrompt: string;
@@ -25,6 +32,7 @@ export interface AgentLoopResult {
   turns: number;
   aborted: boolean;
   guardrailViolations: GuardrailViolation[];
+  messages: Array<{ role: string; content: string }>;
 }
 
 function mcpToLlmTools(tools: McpToolDefinition[]): LlmToolDefinition[] {
@@ -81,6 +89,7 @@ export async function runAgentLoop(config: AgentLoopConfig): Promise<AgentLoopRe
             turns,
             aborted: false,
             guardrailViolations,
+            messages: serializeMessages(messages),
           };
         }
         throw err;
@@ -103,6 +112,7 @@ export async function runAgentLoop(config: AgentLoopConfig): Promise<AgentLoopRe
           turns,
           aborted: false,
           guardrailViolations,
+          messages: serializeMessages(messages),
         };
       }
 
@@ -192,6 +202,7 @@ export async function runAgentLoop(config: AgentLoopConfig): Promise<AgentLoopRe
       turns,
       aborted,
       guardrailViolations,
+      messages: serializeMessages(messages),
     };
   } finally {
     clearTimeout(timeoutId);

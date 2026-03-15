@@ -186,6 +186,7 @@ export async function runConversationTest(
       latencyMs: performance.now() - start,
       model,
       repetition,
+      conversation: messageHistory.length > 0 ? messageHistory : undefined,
       metadata: {
         type: 'conversation',
         turnCount: turnResults.length,

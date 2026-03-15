@@ -20,12 +20,14 @@ import { runSkillSuite } from '../layers/skill/index.js';
 import { createEvaluator, EVALUATOR_NAMES } from '../evaluators/index.js';
 import { createTracer, withRunSpan, withSuiteSpan } from '../tracing/spans.js';
 import { mergeDefaults, buildConnectConfig } from './utils.js';
+import { loadLastFailed, saveLastRun } from './last-run.js';
 import { discoverPlugin } from '../plugin/discovery.js';
 import { log } from '../cli/logger.js';
 import { computeDimensions } from '../scoring/dimensions.js';
 import { computeQualityScore, DEFAULT_WEIGHTS } from '../scoring/composite.js';
 import { aggregateConfidence } from '../scoring/confidence.js';
 import { evaluateCi } from '../ci/index.js';
+import { evaluateDerivedMetrics } from '../scoring/derived.js';
 import type { ScoreEntry } from '../scoring/confidence.js';
 
 export interface RunOptions {
@@ -36,6 +38,8 @@ export interface RunOptions {
   repeat?: number;
   ci?: boolean;
   concurrency?: number;
+  lastFailed?: boolean;
+  failedFirst?: boolean;
 }
 
 function buildEvaluatorRegistry(): Map<string, Evaluator> {
@@ -222,6 +226,41 @@ export async function runEvaluation(
     filteredSuites = filteredSuites.filter((s) => suiteSet.has(s.name));
   }
 
+  if (options.lastFailed || options.failedFirst) {
+    const lastFailedIds = loadLastFailed();
+
+    if (lastFailedIds.length > 0) {
+      const failedSet = new Set(lastFailedIds);
+
+      if (options.lastFailed) {
+        filteredSuites = filteredSuites
+          .map((suite) => {
+            const matchingTests = suite.tests.filter((t) =>
+              failedSet.has(`${suite.name}/${t.name}`),
+            );
+            if (matchingTests.length === 0) return null;
+            return { ...suite, tests: matchingTests };
+          })
+          .filter((s): s is SuiteConfig => s !== null);
+      } else if (options.failedFirst) {
+        filteredSuites = filteredSuites.map((suite) => {
+          const failed: typeof suite.tests = [];
+          const rest: typeof suite.tests = [];
+          for (const t of suite.tests) {
+            if (failedSet.has(`${suite.name}/${t.name}`)) {
+              failed.push(t);
+            } else {
+              rest.push(t);
+            }
+          }
+          return { ...suite, tests: [...failed, ...rest] };
+        });
+      }
+    } else if (options.lastFailed) {
+      log.info('No previously failed tests found — running all suites');
+    }
+  }
+
   if (filteredSuites.length === 0) {
     log.warn('No suites matched the provided filters');
   }
@@ -337,6 +376,12 @@ export async function runEvaluation(
     }
   } catch {
     // Score history is best-effort
+  }
+
+  try {
+    saveLastRun(runResult);
+  } catch {
+    // Last-run persistence is best-effort
   }
 
   return runResult;

@@ -19,6 +19,7 @@ import { watchAndRun } from './watch.js';
 import { initCommand } from './init.js';
 import { ciInitCommand } from './ci-init.js';
 import { externalInitCommand, applyFixesCommand, generatePrFindings } from './external.js';
+import { executePostRunHooks } from '../hooks/post-run.js';
 
 const EXIT_OK = 0;
 const EXIT_FAIL = 1;
@@ -62,6 +63,8 @@ async function runCommand(opts: {
   verbose?: boolean;
   noColor?: boolean;
   watch?: boolean;
+  lastFailed?: boolean;
+  failedFirst?: boolean;
 }): Promise<void> {
   if (opts.noColor) setNoColor(true);
   if (opts.verbose) setLogLevel('debug');
@@ -102,6 +105,8 @@ async function runCommand(opts: {
       models: opts.model,
       repeat: opts.repeat,
       ci: opts.ci,
+      lastFailed: opts.lastFailed,
+      failedFirst: opts.failedFirst,
     });
   } catch (err) {
     log.error('Evaluation failed', err);
@@ -120,6 +125,10 @@ async function runCommand(opts: {
     const outputContent = report ?? generateMarkdownReport(result);
     writeFileSync(outPath, outputContent, 'utf-8');
     log.success(`Report written to ${outPath}`);
+  }
+
+  if (config.postRun && config.postRun.length > 0) {
+    await executePostRunHooks(config.postRun, result);
   }
 
   if (opts.ci && result.overall.failed > 0) {
@@ -362,6 +371,8 @@ program
   )
   .option('-o, --output <path>', 'write report to file')
   .option('--ci', 'CI mode: enforce thresholds, exit non-zero on failure')
+  .option('--lf, --last-failed', 'only re-run tests that failed in the last run')
+  .option('--ff, --failed-first', 'run previously failed tests first, then the rest')
   .option('-w, --watch', 'watch mode: re-run on file changes')
   .option('--verbose', 'debug logging')
   .option('--no-color', 'disable colors')

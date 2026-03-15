@@ -106,6 +106,7 @@ async function runSingleLlmTest(
       model,
       repetition,
       error: result.aborted ? `Agent loop aborted after ${result.turns} turns` : undefined,
+      conversation: result.messages.length > 0 ? result.messages : undefined,
     };
   } catch (err) {
     return {

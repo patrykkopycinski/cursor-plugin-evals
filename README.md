@@ -120,6 +120,7 @@ Every Cursor plugin component is covered — not just MCP tools:
 - **Typed evaluator configs** — type-safe configuration for token-usage, workflow, security, groundedness
 - **Configurable adapter retry** — exponential backoff with pattern-based retry for CLI race conditions
 - **Token input estimation** — estimates input tokens for adapters that don't report them
+- **Conversation preview** — full conversation transcripts (messages, tool calls, results) in HTML reports for manual review
 
 ## Model Defaults
 
@@ -225,6 +226,30 @@ npx cursor-plugin-evals coverage --report badge -o badge.svg  # SVG badge
 
 Two metrics: **Component Coverage** (% with any test) and **Depth Coverage** (% of applicable layer slots filled). See [Coverage docs](docs/coverage.md) for details.
 
+## Conversation Preview
+
+Every test that runs through an LLM adapter (skill, llm, or cursor-cli layer) captures the full conversation transcript. Expand any test in the HTML report to review the entire exchange — system prompts, user messages, assistant responses, and inline tool calls with arguments and results.
+
+```bash
+npx cursor-plugin-evals run --report html -o report.html
+```
+
+<p align="center">
+  <img src="docs/screenshots/conversation-preview-top.png" alt="Conversation preview showing system, user, and assistant messages with inline tool calls" width="90%" />
+</p>
+
+<p align="center"><em>Conversation preview — system prompt, user query, and assistant response with inline tool calls.</em></p>
+
+Scroll within the conversation panel to see multi-turn exchanges, tool call arguments/results, and evaluator scores:
+
+<p align="center">
+  <img src="docs/screenshots/conversation-preview-scrolled.png" alt="Conversation preview showing tool call details and evaluator results" width="90%" />
+</p>
+
+<p align="center"><em>Tool calls shown inline with expandable arguments and results. Evaluators and tool call summary below.</em></p>
+
+Also available in the JSON report (`--report json`) for programmatic access.
+
 ## Documentation
 
 Full documentation at **[patrykkopycinski.github.io/cursor-plugin-evals](https://patrykkopycinski.github.io/cursor-plugin-evals)**:
@@ -235,6 +260,7 @@ Full documentation at **[patrykkopycinski.github.io/cursor-plugin-evals](https:/
 - [Evaluators](docs/evaluators.md) (27 evaluators with scoring details)
 - [Task Adapters](docs/adapters.md) (MCP, cursor-cli, claude-sdk, etc.)
 - [Coverage Analysis](docs/coverage.md)
+- [Conversation Preview](docs/conversations.md)
 - [Web Dashboard](docs/dashboard.md)
 - [Security & Red-Teaming](docs/red-teaming.md)
 - [CI/CD Integration](docs/ci-cd.md)

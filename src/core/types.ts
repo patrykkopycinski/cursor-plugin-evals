@@ -42,6 +42,13 @@ export interface PerformanceMetrics {
   samples: number;
 }
 
+export interface ConversationMessage {
+  role: string;
+  content: string;
+  toolCallId?: string;
+  toolCalls?: Array<{ id: string; name: string; arguments: string }>;
+}
+
 export interface TestResult {
   name: string;
   suite: string;
@@ -59,6 +66,7 @@ export interface TestResult {
   costUsd?: number;
   adapter?: string;
   metadata?: Record<string, unknown>;
+  conversation?: ConversationMessage[];
 }
 
 export interface SuiteResult {
@@ -89,6 +97,20 @@ export interface RunResult {
   qualityScore?: QualityScoreResult;
   confidenceIntervals?: import('../scoring/confidence.js').AggregatedConfidence;
   ciResult?: CiResult;
+  derivedMetrics?: DerivedMetricResult[];
+}
+
+export interface DerivedMetricConfig {
+  name: string;
+  formula: string;
+  threshold?: number;
+}
+
+export interface DerivedMetricResult {
+  name: string;
+  value: number;
+  threshold?: number;
+  pass: boolean;
 }
 
 export interface QualityScoreResult {
@@ -189,24 +211,21 @@ export interface AssertionConfig {
   value?: unknown;
 }
 
-export type AssertionOp =
-  | 'eq'
-  | 'neq'
-  | 'gt'
-  | 'gte'
-  | 'lt'
-  | 'lte'
-  | 'contains'
-  | 'not_contains'
-  | 'exists'
-  | 'not_exists'
-  | 'length_gte'
-  | 'length_lte'
-  | 'type'
-  | 'matches'
-  | 'one_of'
-  | 'starts_with'
-  | 'ends_with';
+export const BASE_ASSERTION_OPS = [
+  'eq', 'neq', 'gt', 'gte', 'lt', 'lte',
+  'contains', 'not_contains', 'exists', 'not_exists',
+  'length_gte', 'length_lte', 'type', 'matches',
+  'one_of', 'starts_with', 'ends_with',
+] as const;
+
+export type BaseAssertionOp = (typeof BASE_ASSERTION_OPS)[number];
+
+/**
+ * Any base assertion op, or its `not_` negated variant (e.g. `not_eq`, `not_matches`).
+ * `not_contains` and `not_exists` have explicit implementations; all other `not_` ops
+ * are handled by running the base op and inverting the result.
+ */
+export type AssertionOp = BaseAssertionOp | `not_${BaseAssertionOp}`;
 
 export type Difficulty = 'simple' | 'moderate' | 'complex' | 'adversarial';
 
@@ -472,6 +491,21 @@ export interface GuardrailRuleConfig {
   message?: string;
 }
 
+export interface PostRunHookWebhook {
+  type: 'webhook';
+  url: string;
+  template?: string;
+  headers?: Record<string, string>;
+}
+
+export interface PostRunHookScript {
+  type: 'script';
+  command: string;
+  passEnv?: string[];
+}
+
+export type PostRunHook = PostRunHookWebhook | PostRunHookScript;
+
 export interface EvalConfig {
   plugin: PluginConfig;
   infrastructure?: InfrastructureConfig;
@@ -481,6 +515,8 @@ export interface EvalConfig {
   plugins?: PluginsConfig;
   ci?: CiThresholds;
   guardrails?: GuardrailRuleConfig[];
+  postRun?: PostRunHook[];
+  derivedMetrics?: DerivedMetricConfig[];
   suites: SuiteConfig[];
 }
 

@@ -1,4 +1,4 @@
-import type { AssertionConfig, AssertionOp } from '../../core/types.js';
+import type { AssertionConfig, AssertionOp, BaseAssertionOp } from '../../core/types.js';
 
 export interface AssertionResult {
   field: string;
@@ -38,7 +38,7 @@ function resolveDotPath(obj: unknown, path: string): unknown {
   return current;
 }
 
-const OPERATORS: Record<AssertionOp, (actual: unknown, expected: unknown) => boolean> = {
+const OPERATORS: Record<BaseAssertionOp, (actual: unknown, expected: unknown) => boolean> = {
   eq: (actual, expected) => JSON.stringify(actual) === JSON.stringify(expected),
 
   neq: (actual, expected) => JSON.stringify(actual) !== JSON.stringify(expected),
@@ -134,7 +134,18 @@ export function evaluateAssertions(
 
   for (const assertion of assertions) {
     const actual = resolveDotPath(response, assertion.field);
-    const operator = OPERATORS[assertion.op];
+
+    let operator = OPERATORS[assertion.op as BaseAssertionOp];
+    let negate = false;
+
+    if (!operator && assertion.op.startsWith('not_')) {
+      const baseOp = assertion.op.slice(4) as BaseAssertionOp;
+      const baseOperator = OPERATORS[baseOp];
+      if (baseOperator) {
+        operator = baseOperator;
+        negate = true;
+      }
+    }
 
     if (!operator) {
       results.push({
@@ -148,7 +159,8 @@ export function evaluateAssertions(
       continue;
     }
 
-    const pass = operator(actual, assertion.value);
+    const rawPass = operator(actual, assertion.value);
+    const pass = negate ? !rawPass : rawPass;
     if (!pass) allPass = false;
 
     results.push({

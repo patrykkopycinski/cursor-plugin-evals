@@ -61,11 +61,13 @@ function mapEvaluatorResults(results: EvaluatorResult[]): TraceViewData['evaluat
 }
 
 export function extractTraceViewData(testResult: TestResult, runId: string): TraceViewData {
+  const conversationMessages = testResult.conversation ?? [];
   const metadata = testResult.metadata as Record<string, unknown> | undefined;
-  const messages = (metadata?.messages ?? []) as Array<{
+  const legacyMessages = (metadata?.messages ?? []) as Array<{
     role: string;
     content: string;
   }>;
+  const messages = conversationMessages.length > 0 ? conversationMessages : legacyMessages;
 
   const turns: TraceViewData['turns'] =
     messages.length > 0
