@@ -4,7 +4,7 @@ dist/
 .env
 .env.*
 !.env.example
-coverage/
+/coverage/
 .nyc_output/
 fixtures/**/*.jsonl.gz
 !fixtures/.gitkeep

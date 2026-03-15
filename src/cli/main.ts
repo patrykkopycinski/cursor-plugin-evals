@@ -658,6 +658,72 @@ program
   );
 
 program
+  .command('coverage')
+  .description('Analyze test coverage for a plugin and report gaps')
+  .option('-c, --config <path>', 'path to plugin-eval.yaml', 'plugin-eval.yaml')
+  .option('--report <format>', 'output format: terminal, markdown, json, badge', 'terminal')
+  .option('-o, --output <path>', 'write report to file')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: {
+      config: string;
+      report: string;
+      output?: string;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+
+      log.header('Coverage Analysis');
+
+      try {
+        const { analyzeCoverage } = await import('../coverage/analyzer.js');
+        const {
+          formatCoverageTerminal,
+          formatCoverageMarkdown,
+          formatCoverageJson,
+          generateCoverageBadge,
+        } = await import('../coverage/formatter.js');
+
+        const configAbsPath = resolve(process.cwd(), opts.config);
+        const pluginDir = process.cwd();
+        const report = analyzeCoverage(pluginDir, configAbsPath);
+
+        let output: string;
+        switch (opts.report) {
+          case 'json':
+            output = formatCoverageJson(report);
+            break;
+          case 'markdown':
+            output = formatCoverageMarkdown(report);
+            break;
+          case 'badge':
+            output = generateCoverageBadge(report);
+            break;
+          case 'terminal':
+          default:
+            output = formatCoverageTerminal(report);
+            break;
+        }
+
+        console.log(output);
+
+        if (opts.output) {
+          const outPath = resolve(process.cwd(), opts.output);
+          mkdirSync(dirname(outPath), { recursive: true });
+          writeFileSync(outPath, output, 'utf-8');
+          log.success(`Report written to ${outPath}`);
+        }
+      } catch (err) {
+        log.error('Coverage analysis failed', err);
+        process.exitCode = EXIT_CONFIG_ERROR;
+      }
+    },
+  );
+
+program
   .command('dashboard')
   .description('Start the web dashboard to browse evaluation results')
   .option('-p, --port <port>', 'server port', parsePositiveInt, 6280)

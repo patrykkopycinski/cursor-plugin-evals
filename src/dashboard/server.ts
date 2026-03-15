@@ -216,6 +216,40 @@ export function createApp(dbPath: string): { app: Hono; db: Database.Database } 
     return c.json({ events });
   });
 
+  app.get('/api/coverage', async (c) => {
+    try {
+      const { analyzeCoverage } = await import('../coverage/analyzer.js');
+      const configPath = resolve(process.cwd(), 'plugin-eval.yaml');
+      const pluginDir = process.cwd();
+      if (!existsSync(configPath)) {
+        return c.json({ error: 'plugin-eval.yaml not found' }, 404);
+      }
+      const report = analyzeCoverage(pluginDir, configPath);
+      return c.json(report);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return c.json({ error: message }, 500);
+    }
+  });
+
+  app.get('/api/coverage/badge', async (c) => {
+    try {
+      const { analyzeCoverage } = await import('../coverage/analyzer.js');
+      const { generateCoverageBadge } = await import('../coverage/formatter.js');
+      const configPath = resolve(process.cwd(), 'plugin-eval.yaml');
+      const pluginDir = process.cwd();
+      if (!existsSync(configPath)) {
+        return c.text('config not found', 404);
+      }
+      const report = analyzeCoverage(pluginDir, configPath);
+      const svg = generateCoverageBadge(report);
+      return c.body(svg, 200, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'no-cache' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return c.text(message, 500);
+    }
+  });
+
   return { app, db };
 }
 
@@ -377,6 +411,7 @@ function dashboardHtml(): string {
       <div class="section">Quality</div>
       <a href="#/security" data-nav><span class="icon">\\u26A0</span> Security</a>
       <a href="#/conformance" data-nav><span class="icon">\\u2713</span> Conformance</a>
+      <a href="#/coverage" data-nav><span class="icon">\\u25A3</span> Coverage</a>
       <div class="section">Resources</div>
       <a href="#/collections" data-nav><span class="icon">\\u2750</span> Collections</a>
       <a href="#/live" data-nav><span class="icon">\\u26A1</span> Live Feed</a>
@@ -428,6 +463,7 @@ function dashboardHtml(): string {
       [/^#\\/comparison$/, pageComparison],
       [/^#\\/security$/, pageSecurity],
       [/^#\\/conformance$/, pageConformance],
+      [/^#\\/coverage$/, pageCoverage],
       [/^#\\/collections$/, pageCollections],
       [/^#\\/live$/, pageLive],
       [/^#\\/leaderboard$/, pageLeaderboard],
@@ -613,6 +649,54 @@ function dashboardHtml(): string {
         }
         html+='</div>';app.innerHTML=html;
       } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed: '+e.message+'</div></div>';}
+    }
+
+    async function pageCoverage() {
+      app.innerHTML='<div class="page"><h1 class="page-title">Coverage</h1><p class="page-subtitle">Test coverage matrix across all components</p>'+skeleton(6)+'</div>';
+      try {
+        const data=await api('/api/coverage');
+        if(data.error){app.innerHTML='<div class="page"><h1 class="page-title">Coverage</h1><div class="empty"><div class="empty-icon">\\u25A3</div>'+data.error+'</div></div>';return;}
+        let html='<div class="page"><h1 class="page-title">Coverage</h1><p class="page-subtitle">Test coverage for '+data.pluginName+'</p>';
+        html+='<div class="stat-cards">';
+        const dp=data.depthPercent||0;
+        html+='<div class="stat-card"><div class="label">Depth Coverage</div><div class="value pass-rate '+prc(dp/100)+'">'+dp+'%</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px">'+(data.slotsFilled||0)+'/'+(data.slotsTotal||0)+' test slots</div>'+scoreBar(dp/100)+'</div>';
+        html+='<div class="stat-card"><div class="label">Components</div><div class="value pass-rate '+prc(data.coveragePercent/100)+'">'+data.coveragePercent+'%</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px">'+data.coveredComponents+'/'+data.totalComponents+' covered</div>'+scoreBar(data.coveragePercent/100)+'</div>';
+        const bt=data.byType||{};
+        for(const [type,d] of Object.entries(bt)){if(d.total>0){html+='<div class="stat-card"><div class="label">'+type.charAt(0).toUpperCase()+type.slice(1)+'</div><div class="value">'+d.covered+'/'+d.total+'</div>'+scoreBar(d.percent/100)+'</div>';}}
+        html+='</div>';
+
+        const layers=['unit','integration','llm','performance','security','static'];
+        const layerH=['unit','integ','llm','perf','sec','static'];
+        html+='<div class="card"><h3>Coverage Matrix</h3><div style="overflow-x:auto"><table><thead><tr><th>Component</th><th>Type</th>';
+        for(const lh of layerH) html+='<th style="text-align:center">'+lh+'</th>';
+        html+='</tr></thead><tbody>';
+        const comps=data.components||[];
+        for(const c of comps){
+          html+='<tr><td>'+c.name+'</td><td><span class="layer-tag">'+c.type+'</span></td>';
+          for(const l of layers){
+            const notApplicable=c.type!=='tool'&&(l==='unit'||l==='integration'||l==='performance');
+            const val=c.layers[l];
+            html+='<td style="text-align:center">'+(notApplicable?'<span style="color:var(--text-dim)">\\u2014</span>':val?'<span style="color:var(--green)">\\u2713</span>':'<span style="color:var(--red)">\\u00B7</span>')+'</td>';
+          }
+          html+='</tr>';
+        }
+        html+='</tbody></table></div></div>';
+
+        const gaps=data.gaps||[];
+        if(gaps.length>0){
+          html+='<div class="card"><h3>Gaps ('+gaps.length+')</h3>';
+          for(const g of gaps.slice(0,50)){
+            const sev=g.severity;
+            const col=sev==='critical'?'var(--red)':sev==='high'?'var(--orange)':sev==='medium'?'var(--yellow)':'var(--text-dim)';
+            html+='<div class="test-row"><span style="color:'+col+';font-weight:600">'+sev.toUpperCase()+'</span><span>'+g.message+'</span></div>';
+          }
+          if(gaps.length>50) html+='<div style="color:var(--text-muted);padding:8px 0;font-size:13px">...and '+(gaps.length-50)+' more</div>';
+          html+='</div>';
+        }
+
+        html+='</div>';
+        app.innerHTML=html;
+      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed to load coverage: '+e.message+'</div></div>';}
     }
 
     function pageLive() {

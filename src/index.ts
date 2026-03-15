@@ -540,3 +540,12 @@ export type {
   ApplyFixesOptions,
   PrFindingsOptions,
 } from './cli/external.js';
+
+export {
+  analyzeCoverage,
+  formatCoverageTerminal,
+  formatCoverageMarkdown,
+  formatCoverageJson,
+  generateCoverageBadge,
+} from './coverage/index.js';
+export type { CoverageReport, ComponentCoverage } from './coverage/analyzer.js';
