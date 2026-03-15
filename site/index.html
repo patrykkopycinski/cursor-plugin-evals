@@ -82,6 +82,27 @@ a:hover{color:var(--purple)}
 .feat h4{font-size:.85rem;font-weight:600;margin-bottom:.2rem}
 .feat p{font-size:.75rem;color:var(--text-dim);line-height:1.4}
 
+/* Showcase */
+.showcase{background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(34,211,238,.06));border:1px solid rgba(124,58,237,.25);border-radius:.75rem;padding:2.5rem;max-width:900px;margin:0 auto;position:relative;overflow:hidden}
+.showcase::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(124,58,237,.12),transparent 70%);pointer-events:none}
+.showcase-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem}
+.showcase-logo{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#005EB8,#00BFB3);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:800;color:#fff;flex-shrink:0}
+.showcase-title{font-size:1.35rem;font-weight:700}
+.showcase-title span{color:var(--cyan)}
+.showcase-desc{color:var(--text-dim);font-size:.95rem;margin-bottom:1.75rem;line-height:1.6}
+.showcase-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.75rem}
+.showcase-stat{text-align:center;padding:.75rem .5rem;background:rgba(10,14,26,.5);border-radius:.5rem;border:1px solid var(--border)}
+.showcase-stat .num{font-family:var(--font-mono);font-size:1.5rem;font-weight:700;background:linear-gradient(135deg,var(--purple),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:block}
+.showcase-stat .label{font-size:.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-top:.15rem}
+.showcase-layers{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1.5rem}
+.showcase-layer{font-family:var(--font-mono);font-size:.72rem;padding:.25rem .6rem;border-radius:9999px;border:1px solid var(--border);color:var(--text-dim);background:var(--bg)}
+.showcase-layer.lit{border-color:var(--green);color:var(--green)}
+.showcase-cta{display:flex;gap:.75rem;flex-wrap:wrap}
+@media(max-width:640px){
+  .showcase-stats{grid-template-columns:repeat(2,1fr)}
+  .showcase{padding:1.5rem}
+}
+
 /* Quick Start */
 .quickstart{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;overflow:hidden;max-width:700px;margin:0 auto}
 .qs-bar{padding:.5rem 1rem;background:var(--surface2);border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:.75rem;color:var(--text-dim)}
@@ -138,6 +159,7 @@ tr:hover td{background:var(--surface)}
     <button class="nav-toggle" aria-label="Menu">&#9776;</button>
     <div class="nav-links">
       <a href="#assistant">Assistant</a>
+      <a href="#showcase">Showcase</a>
       <a href="#features">Features</a>
       <a href="#layers">Layers</a>
       <a href="#evaluators">Evaluators</a>
@@ -247,6 +269,48 @@ tr:hover td{background:var(--surface)}
     <div class="feat"><div class="feat-icon">✅</div><h4>24 Evaluators</h4><p>13 deterministic + 9 LLM-as-judge + multi-judge panel</p></div>
     <div class="feat"><div class="feat-icon">🚦</div><h4>CI Thresholds</h4><p>Quality gates that block merges below your bar</p></div>
     <div class="feat"><div class="feat-icon">🏆</div><h4>Quality Score</h4><p>A single A–F grade for every eval run</p></div>
+  </div>
+</section>
+
+<!-- Showcase: elastic-cursor-plugin -->
+<section class="section fade-in" id="showcase">
+  <h2 class="section-title">Battle-Tested in Production</h2>
+  <p class="section-sub">See what a comprehensive eval suite looks like on a real-world plugin.</p>
+  <div class="showcase">
+    <div class="showcase-header">
+      <div class="showcase-logo">E</div>
+      <div>
+        <div class="showcase-title"><span>elastic</span>-cursor-plugin</div>
+        <div style="font-size:.8rem;color:var(--text-dim)">Elasticsearch, Kibana, and Elastic Cloud — fully integrated into Cursor</div>
+      </div>
+    </div>
+    <div class="showcase-desc">
+      The Elastic Cursor Plugin connects Cursor to the entire Elastic stack — Elasticsearch queries, Kibana dashboards, Cloud management, observability setup, security detection rules, and AI assistant agent building. Its evaluation suite is the reference implementation for cursor-plugin-evals.
+    </div>
+    <div class="showcase-stats">
+      <div class="showcase-stat"><span class="num">38</span><span class="label">MCP Tools</span></div>
+      <div class="showcase-stat"><span class="num">22</span><span class="label">Test Suites</span></div>
+      <div class="showcase-stat"><span class="num">12</span><span class="label">Layers</span></div>
+      <div class="showcase-stat"><span class="num">A</span><span class="label">Quality Grade</span></div>
+    </div>
+    <div class="showcase-layers">
+      <span class="showcase-layer lit">Static</span>
+      <span class="showcase-layer lit">Unit</span>
+      <span class="showcase-layer lit">Integration</span>
+      <span class="showcase-layer lit">Performance</span>
+      <span class="showcase-layer lit">LLM</span>
+      <span class="showcase-layer lit">Conformance</span>
+      <span class="showcase-layer lit">Security</span>
+      <span class="showcase-layer lit">Chaos</span>
+      <span class="showcase-layer lit">Fuzz</span>
+      <span class="showcase-layer lit">Schema Drift</span>
+      <span class="showcase-layer lit">SAFE-MCP</span>
+      <span class="showcase-layer lit">Multi-Server</span>
+    </div>
+    <div class="showcase-cta">
+      <a href="https://github.com/patrykkopycinski/cursor-plugin-evals/tree/main/showcase/elastic-cursor-plugin" class="btn btn-primary" target="_blank">View Showcase &rarr;</a>
+      <a href="https://github.com/patrykkopycinski/elastic-cursor-plugin" class="btn btn-secondary" target="_blank">Plugin Repo</a>
+    </div>
   </div>
 </section>
 
