@@ -238,7 +238,10 @@ export function createPlainLlmAdapter(config: AdapterConfig): TaskAdapter {
           messages.push({ role: 'assistant', content: parsed.content });
         }
 
-        if (!parsed.hasToolCalls) break;
+        if (parsed.hasToolCalls) {
+          console.debug('[plain-llm] LLM returned tool calls — breaking (plain-llm cannot execute tools)');
+          break;
+        }
       } finally {
         clearTimeout(timeoutHandle);
       }

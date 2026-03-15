@@ -117,7 +117,8 @@ export class CorrectnessEvaluator implements Evaluator {
     const expected =
       context.expected?.responseContains?.join(', ') ?? JSON.stringify(context.expected ?? {});
 
-    const useLabelAware = context.config?.['labelAwareScoring'] === true;
+    const useLabelAware =
+      ((context.config?.['label_aware_scoring'] ?? context.config?.['labelAwareScoring']) as boolean | undefined) === true;
 
     const systemPrompt = useLabelAware ? CLAIM_SYSTEM_PROMPT : SYSTEM_PROMPT;
 
@@ -135,7 +136,7 @@ export class CorrectnessEvaluator implements Evaluator {
     try {
       const result = await callJudge({ systemPrompt, userPrompt });
       const claims = (result as unknown as Record<string, unknown>).claims as ClaimVerdict[] | undefined;
-      const scoringConfig = context.config?.['scoringConfig'] as
+      const scoringConfig = (context.config?.['scoring_config'] ?? context.config?.['scoringConfig']) as
         | LabelAwareScoringConfig
         | undefined;
 

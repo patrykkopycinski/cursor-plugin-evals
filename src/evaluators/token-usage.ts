@@ -69,7 +69,7 @@ export class TokenUsageEvaluator implements Evaluator {
       if (budget.max_output && usage.output > 0) ratios.push(usage.output / budget.max_output);
       if (budget.max_total && total > 0) ratios.push(total / budget.max_total);
       const maxRatio = ratios.length > 0 ? Math.max(...ratios) : 0;
-      const efficiency = Math.max(0, 1 - maxRatio * 0.5);
+      const efficiency = Math.max(0, Math.min(1, 1 - maxRatio * 0.5));
 
       return {
         evaluator: this.name,
@@ -88,7 +88,7 @@ export class TokenUsageEvaluator implements Evaluator {
       budget.max_output && usage.output > 0 ? usage.output / budget.max_output : 0,
       budget.max_total && total > 0 ? total / budget.max_total : 0,
     );
-    const score = Math.max(0, 1 / worstRatio);
+    const score = Math.max(0, 2 - worstRatio);
 
     return {
       evaluator: this.name,

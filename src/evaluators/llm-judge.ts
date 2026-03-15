@@ -148,11 +148,25 @@ export async function callJudge(request: JudgeRequest): Promise<JudgeResponse> {
   return parseJudgeResponse(content);
 }
 
+function extractFirstJson(content: string): string | null {
+  const start = content.indexOf('{');
+  if (start === -1) return null;
+  let depth = 0;
+  for (let i = start; i < content.length; i++) {
+    if (content[i] === '{') depth++;
+    else if (content[i] === '}') {
+      depth--;
+      if (depth === 0) return content.slice(start, i + 1);
+    }
+  }
+  return null;
+}
+
 function parseJudgeResponse(content: string): JudgeResponse {
   try {
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]) as {
+    const jsonStr = extractFirstJson(content);
+    if (jsonStr) {
+      const parsed = JSON.parse(jsonStr) as {
         score?: number;
         label?: string;
         explanation?: string;
@@ -168,9 +182,12 @@ function parseJudgeResponse(content: string): JudgeResponse {
   }
 
   const scoreMatch = content.match(/(?:score|rating)[:\s]*([0-9.]+)/i);
-  const score = scoreMatch ? Math.max(0, Math.min(1, parseFloat(scoreMatch[1]))) : 0.5;
+  if (scoreMatch) {
+    const score = Math.max(0, Math.min(1, parseFloat(scoreMatch[1])));
+    return { score, label: 'PARSED', explanation: content.slice(0, 500) };
+  }
 
-  return { score, label: 'PARSED', explanation: content.slice(0, 500) };
+  return { score: 0, label: 'UNPARSEABLE', explanation: content.slice(0, 500) };
 }
 
 /**

@@ -406,7 +406,7 @@ function snakeToCamel(obj: unknown, preserveKey = false): unknown {
       ? key
       : key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
     const shouldPreserveChildren =
-      preserveKey || key === 'args' || key === 'env' || key === 'minimal_env' || key === 'minimalEnv' || key === 'thresholds' || key === 'matrix' || key === 'matrix_values' || key === 'matrixValues';
+      preserveKey || key === 'args' || key === 'env' || key === 'minimal_env' || key === 'minimalEnv' || key === 'thresholds' || key === 'matrix' || key === 'matrix_values' || key === 'matrixValues' || key === 'headers';
     result[camelKey] = snakeToCamel(value, shouldPreserveChildren);
   }
   return result;

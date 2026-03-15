@@ -20,8 +20,18 @@ export class SimilarityEvaluator implements Evaluator {
   kind: EvaluatorKind = 'LLM';
 
   async evaluate(context: EvaluatorContext): Promise<EvaluatorResult> {
-    const expected =
-      context.expected?.responseContains?.join(', ') ?? JSON.stringify(context.expected ?? {});
+    if (!context.expected?.responseContains?.length) {
+      return {
+        evaluator: this.name,
+        score: 0,
+        pass: true,
+        skipped: true,
+        label: 'no_expected',
+        explanation: 'No expected output specified for similarity comparison — skipped.',
+      };
+    }
+
+    const expected = context.expected.responseContains.join(', ');
 
     const userPrompt = [
       `Expected output: ${expected}`,

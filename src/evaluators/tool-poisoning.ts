@@ -55,6 +55,10 @@ export class ToolPoisoningEvaluator implements Evaluator {
     const findings: SecurityFinding[] = [];
 
     for (const tc of context.toolCalls) {
+      if (tc.args) {
+        const argsStr = typeof tc.args === 'string' ? tc.args : JSON.stringify(tc.args);
+        findings.push(...scanText(argsStr, `tool-args:${tc.tool}`));
+      }
       if (tc.result?.content) {
         for (const item of tc.result.content) {
           if (item.text) {

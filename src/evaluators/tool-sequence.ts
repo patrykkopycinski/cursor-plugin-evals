@@ -1,30 +1,5 @@
 import type { Evaluator, EvaluatorContext, EvaluatorResult } from '../core/types.js';
-
-/**
- * Computes the length of the longest common subsequence between two arrays.
- * Uses a standard DP approach in O(m*n) time and O(min(m,n)) space.
- */
-function lcsLength(a: string[], b: string[]): number {
-  if (a.length === 0 || b.length === 0) return 0;
-
-  const [short, long] = a.length < b.length ? [a, b] : [b, a];
-  let prev = new Array<number>(short.length + 1).fill(0);
-  let curr = new Array<number>(short.length + 1).fill(0);
-
-  for (let i = 1; i <= long.length; i++) {
-    for (let j = 1; j <= short.length; j++) {
-      if (long[i - 1] === short[j - 1]) {
-        curr[j] = prev[j - 1] + 1;
-      } else {
-        curr[j] = Math.max(prev[j], curr[j - 1]);
-      }
-    }
-    [prev, curr] = [curr, prev];
-    curr.fill(0);
-  }
-
-  return prev[short.length];
-}
+import { lcsLength } from './path-efficiency.js';
 
 export class ToolSequenceEvaluator implements Evaluator {
   readonly name = 'tool-sequence';

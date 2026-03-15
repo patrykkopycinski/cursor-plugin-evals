@@ -44,31 +44,29 @@ function checkAssertion(value: unknown, op: AssertionOp, expected?: unknown): bo
     case 'not_exists':
       return value === undefined || value === null;
     case 'length_gte': {
-      const len = Array.isArray(value)
-        ? value.length
-        : typeof value === 'string'
-          ? value.length
-          : -1;
-      return typeof expected === 'number' && len >= expected;
+      if (Array.isArray(value)) return typeof expected === 'number' && value.length >= expected;
+      if (typeof value === 'string') return typeof expected === 'number' && value.length >= expected;
+      return false;
     }
     case 'length_lte': {
-      const len = Array.isArray(value)
-        ? value.length
-        : typeof value === 'string'
-          ? value.length
-          : -1;
-      return typeof expected === 'number' && len <= expected;
+      if (Array.isArray(value)) return typeof expected === 'number' && value.length <= expected;
+      if (typeof value === 'string') return typeof expected === 'number' && value.length <= expected;
+      return false;
     }
     case 'type':
       if (expected === 'array') return Array.isArray(value);
       if (expected === 'null') return value === null;
       return typeof value === expected;
     case 'matches':
-      return (
-        typeof value === 'string' &&
-        typeof expected === 'string' &&
-        new RegExp(expected).test(value)
-      );
+      try {
+        return (
+          typeof value === 'string' &&
+          typeof expected === 'string' &&
+          new RegExp(expected).test(value)
+        );
+      } catch {
+        return false;
+      }
     case 'one_of':
       return (
         Array.isArray(expected) && expected.some((e) => JSON.stringify(e) === JSON.stringify(value))
@@ -79,8 +77,13 @@ function checkAssertion(value: unknown, op: AssertionOp, expected?: unknown): bo
       );
     case 'ends_with':
       return typeof value === 'string' && typeof expected === 'string' && value.endsWith(expected);
-    default:
+    default: {
+      if (typeof op === 'string' && op.startsWith('not_')) {
+        const baseOp = op.slice(4) as AssertionOp;
+        return !checkAssertion(value, baseOp, expected);
+      }
       return false;
+    }
   }
 }
 

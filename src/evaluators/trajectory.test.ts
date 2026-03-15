@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  extractTrajectory, computeLevenshteinDistance, computeLCS,
+  extractTrajectory, computeLCS,
   scoreTrajectory, TrajectoryEvaluator,
 } from './trajectory.js';
 import type { ToolCallRecord } from '../core/types.js';
@@ -16,18 +16,6 @@ describe('extractTrajectory', () => {
     expect(trajectory).toHaveLength(3);
     expect(trajectory[0]).toEqual({ tool: 'a', args: {}, success: true });
     expect(trajectory[1].success).toBe(false);
-  });
-});
-
-describe('computeLevenshteinDistance', () => {
-  it('returns 0 for identical sequences', () => {
-    expect(computeLevenshteinDistance(['a', 'b'], ['a', 'b'])).toBe(0);
-  });
-  it('returns length for empty vs non-empty', () => {
-    expect(computeLevenshteinDistance([], ['a', 'b'])).toBe(2);
-  });
-  it('computes correct distance', () => {
-    expect(computeLevenshteinDistance(['a', 'b', 'c'], ['a', 'c'])).toBe(1);
   });
 });
 

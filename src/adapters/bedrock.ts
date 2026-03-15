@@ -3,6 +3,7 @@ import { createHmac, createHash } from 'crypto';
 export interface BedrockConfig {
   accessKeyId: string;
   secretAccessKey: string;
+  sessionToken?: string;
   region: string;
   model: string;
 }
@@ -15,6 +16,7 @@ export function getBedrockConfig(): BedrockConfig | null {
   return {
     accessKeyId,
     secretAccessKey,
+    sessionToken: process.env.AWS_SESSION_TOKEN,
     region: process.env.AWS_REGION ?? 'us-east-1',
     model: process.env.AWS_BEDROCK_MODEL ?? 'us.anthropic.claude-opus-4-6-v1',
   };
@@ -67,9 +69,12 @@ export function signBedrockRequest(
   const canonicalHeaders =
     `content-type:${contentType}\n` +
     `host:${host}\n` +
+    (config.sessionToken ? `x-amz-security-token:${config.sessionToken}\n` : '') +
     `x-amz-content-sha256:${payloadHash}\n` +
     `x-amz-date:${amzDate}\n`;
-  const signedHeaders = 'content-type;host;x-amz-content-sha256;x-amz-date';
+  const signedHeaders = config.sessionToken
+    ? 'content-type;host;x-amz-security-token;x-amz-content-sha256;x-amz-date'
+    : 'content-type;host;x-amz-content-sha256;x-amz-date';
 
   const canonicalRequest = [
     method,
@@ -95,14 +100,19 @@ export function signBedrockRequest(
     `AWS4-HMAC-SHA256 Credential=${config.accessKeyId}/${credentialScope}, ` +
     `SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
+  const resultHeaders: Record<string, string> = {
+    'Content-Type': contentType,
+    'x-amz-date': amzDate,
+    'x-amz-content-sha256': payloadHash,
+    Authorization: authHeader,
+  };
+  if (config.sessionToken) {
+    resultHeaders['x-amz-security-token'] = config.sessionToken;
+  }
+
   return {
     url: endpoint,
-    headers: {
-      'Content-Type': contentType,
-      'x-amz-date': amzDate,
-      'x-amz-content-sha256': payloadHash,
-      Authorization: authHeader,
-    },
+    headers: resultHeaders,
   };
 }
 

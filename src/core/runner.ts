@@ -296,7 +296,7 @@ export async function runEvaluation(
   const allTests = suiteResults.flatMap((s) => s.tests);
   const skipped = allTests.filter((t) => t.skipped).length;
   const passed = allTests.filter((t) => t.pass).length;
-  const failed = allTests.length - passed;
+  const failed = allTests.length - passed - skipped;
   const duration = performance.now() - runStart;
 
   log.summary(allTests.length, passed, failed, duration, skipped);
@@ -311,7 +311,7 @@ export async function runEvaluation(
       passed,
       failed,
       skipped,
-      passRate: allTests.length > 0 ? passed / allTests.length : 1,
+      passRate: (allTests.length - skipped) > 0 ? passed / (allTests.length - skipped) : 1,
       duration,
     },
   });
@@ -344,7 +344,7 @@ export async function runEvaluation(
       passed,
       failed,
       skipped,
-      passRate: allTests.length > 0 ? passed / allTests.length : 1,
+      passRate: (allTests.length - skipped) > 0 ? passed / (allTests.length - skipped) : 1,
       duration,
     },
     qualityScore,
@@ -362,7 +362,7 @@ export async function runEvaluation(
         const totalBefore = e.total;
         e.total += summary.total;
         e.pass += summary.pass;
-        e.mean = (e.mean * totalBefore + summary.mean * summary.total) / e.total;
+        e.mean = e.total > 0 ? (e.mean * totalBefore + summary.mean * summary.total) / e.total : 0;
         e.min = Math.min(e.min, summary.min);
         e.max = Math.max(e.max, summary.max);
       }
@@ -381,8 +381,11 @@ export async function runEvaluation(
     const dbPath = resolve(process.cwd(), '.cursor-plugin-evals', 'dashboard.db');
     const { initDb, saveRun } = await import('../dashboard/db.js');
     const db = initDb(dbPath);
-    saveRun(db, runResult);
-    db.close();
+    try {
+      saveRun(db, runResult);
+    } finally {
+      db.close();
+    }
   } catch {
     // Dashboard db is optional — silently skip if better-sqlite3 isn't available
   }

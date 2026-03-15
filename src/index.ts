@@ -451,7 +451,6 @@ export type {
 
 export {
   extractTrajectory,
-  computeLevenshteinDistance,
   computeLCS,
   scoreTrajectory,
   TrajectoryEvaluator,

@@ -44,8 +44,10 @@ export class ConversationCoherenceEvaluator implements Evaluator {
   async evaluate(context: EvaluatorContext): Promise<EvaluatorResult> {
     const turns = extractConversationTurns(context);
     const assistantTurns = turns.filter((t) => t.startsWith('[assistant]'));
+    const toolCallTurns = turns.filter((t) => t.startsWith('[tool:'));
+    const meaningfulSteps = assistantTurns.length + toolCallTurns.length;
 
-    if (assistantTurns.length <= 1) {
+    if (meaningfulSteps < 2) {
       return {
         evaluator: this.name,
         score: 1.0,

@@ -12,10 +12,16 @@ export function createApp(dbPath: string): { app: Hono; db: Database.Database } 
   const db = initDb(dbPath);
   const app = new Hono();
 
+  app.use('*', async (c, next) => {
+    await next();
+    c.header('Access-Control-Allow-Origin', 'null');
+    c.header('X-Content-Type-Options', 'nosniff');
+  });
+
   app.get('/', (c) => c.html(dashboardHtml()));
 
   app.get('/api/runs', (c) => {
-    const limit = Number(c.req.query('limit')) || 50;
+    const limit = Math.min(Math.max(Number(c.req.query('limit')) || 50, 1), 500);
     const runs = getLatestRuns(db, limit);
     return c.json(runs.map(formatRunForApi));
   });
@@ -183,15 +189,15 @@ export function createApp(dbPath: string): { app: Hono; db: Database.Database } 
 
   app.get('/api/events', (c) => {
     return streamSSE(c, async (stream) => {
+      let aborted = false;
       const unsubscribe = globalEmitter.subscribe((event: EvalEvent) => {
         stream.writeSSE({ data: JSON.stringify(event) }).catch(() => {});
       });
-
       stream.onAbort(() => {
+        aborted = true;
         unsubscribe();
       });
-
-      while (true) {
+      while (!aborted) {
         await stream.writeSSE({ data: '', event: 'keepalive' });
         await stream.sleep(15_000);
       }
@@ -267,6 +273,9 @@ export function createApp(dbPath: string): { app: Hono; db: Database.Database } 
   });
 
   app.post('/api/rerun', async (c) => {
+    if (c.req.header('X-Requested-With') !== 'dashboard') {
+      return c.json({ error: 'Missing required header' }, 403);
+    }
     try {
       const body = await c.req.json<{ suite?: string; test?: string; layer?: string }>();
       const configPath = resolve(process.cwd(), 'plugin-eval.yaml');
@@ -590,6 +599,7 @@ function dashboardHtml(): string {
       return '<svg viewBox="0 0 '+w+' '+h+'" width="'+w+'" height="'+h+'" style="vertical-align:middle"><polyline points="'+pts.join(' ')+'" fill="none" stroke="url(#sparkGrad)" stroke-width="1.5"/><defs><linearGradient id="sparkGrad"><stop offset="0%" stop-color="var(--accent)"/><stop offset="100%" stop-color="var(--accent-secondary)"/></linearGradient></defs></svg>';
     }
     function skeleton(n) { let h=''; for(let i=0;i<n;i++) h+='<div class="skeleton skeleton-line" style="width:'+(60+Math.random()*40)+'%"></div>'; return h; }
+    function esc(s){if(s==null)return '';const d=document.createElement('div');d.textContent=String(s);return d.innerHTML;}
 
     async function api(path) {
       if(cache[path]&&Date.now()-cache[path].t<5000) return cache[path].d;
@@ -647,7 +657,7 @@ function dashboardHtml(): string {
           '<div class="stat-card"><div class="label">Total Tests</div><div class="value">'+stats.totalTests+'</div></div>'+
           '</div>'+
           '<div class="card"><h3>Recent Trend</h3>'+buildChart(trends.trends||[])+'</div></div>';
-      } catch(e) { app.innerHTML='<div class="page"><div class="empty">Failed to load stats: '+e.message+'</div></div>'; }
+      } catch(e) { app.innerHTML='<div class="page"><div class="empty">Failed to load stats: '+esc(e.message)+'</div></div>'; }
     }
 
     async function pageRuns() {
@@ -657,11 +667,11 @@ function dashboardHtml(): string {
         if(!runs.length) { app.innerHTML='<div class="page"><h1 class="page-title">Run History</h1><div class="empty"><div class="empty-icon">\\u25B6</div>No runs yet. Run an evaluation to see results.</div></div>'; return; }
         let html='<div class="page"><h1 class="page-title">Run History</h1><p class="page-subtitle">'+runs.length+' runs recorded</p><table><thead><tr><th>Time</th><th>Config</th><th>Pass Rate</th><th>Grade</th><th>Tests</th><th>Duration</th></tr></thead><tbody>';
         for(const r of runs) {
-          html+='<tr onclick="location.hash=\\'#/runs/'+r.id+'\\'"><td class="mono">'+fmtT(r.timestamp)+'</td><td>'+r.config+'</td><td class="pass-rate '+prc(r.passRate)+'">'+(r.passRate*100).toFixed(1)+'%</td><td>'+gradeBadge(r.grade)+'</td><td class="mono">'+r.passed+'/'+r.total+'</td><td class="duration">'+fmtD(r.duration)+'</td></tr>';
+          html+='<tr onclick="location.hash=\\'#/runs/'+r.id+'\\'"><td class="mono">'+fmtT(r.timestamp)+'</td><td>'+esc(r.config)+'</td><td class="pass-rate '+prc(r.passRate)+'">'+(r.passRate*100).toFixed(1)+'%</td><td>'+gradeBadge(r.grade)+'</td><td class="mono">'+r.passed+'/'+r.total+'</td><td class="duration">'+fmtD(r.duration)+'</td></tr>';
         }
         html+='</tbody></table></div>';
         app.innerHTML=html;
-      } catch(e) { app.innerHTML='<div class="page"><div class="empty">Failed to load runs: '+e.message+'</div></div>'; }
+      } catch(e) { app.innerHTML='<div class="page"><div class="empty">Failed to load runs: '+esc(e.message)+'</div></div>'; }
     }
 
     async function pageRunDetail(m) {
@@ -669,8 +679,8 @@ function dashboardHtml(): string {
       app.innerHTML='<div class="page"><div class="breadcrumb"><a href="#/runs">Runs</a> / Detail</div>'+skeleton(8)+'</div>';
       try {
         const data = await api('/api/runs/'+id);
-        let html='<div class="page"><div class="breadcrumb"><a href="#/runs">Runs</a> / '+data.config+'</div>';
-        html+='<h1 class="page-title">'+data.config+'</h1>';
+        let html='<div class="page"><div class="breadcrumb"><a href="#/runs">Runs</a> / '+esc(data.config)+'</div>';
+        html+='<h1 class="page-title">'+esc(data.config)+'</h1>';
         html+='<p class="page-subtitle">'+(data.passRate*100).toFixed(1)+'% pass rate \\u00B7 '+data.passed+'/'+data.total+' tests \\u00B7 '+fmtD(data.duration)+(data.grade?' \\u00B7 Grade '+data.grade:'')+'</p>';
         html+='<div class="stat-cards">';
         html+='<div class="stat-card"><div class="label">Pass Rate</div><div class="value pass-rate '+prc(data.passRate)+'">'+(data.passRate*100).toFixed(1)+'%</div>'+scoreBar(data.passRate)+'</div>';
@@ -678,10 +688,10 @@ function dashboardHtml(): string {
         html+='<div class="stat-card"><div class="label">Grade</div><div class="value">'+gradeBadge(data.grade)+'</div></div>';
         html+='</div>';
         for(const s of data.suites||[]) {
-          html+='<div class="card"><h3>'+s.name+'<span class="layer-tag">'+s.layer+'</span></h3>';
+          html+='<div class="card"><h3>'+esc(s.name)+'<span class="layer-tag">'+esc(s.layer)+'</span></h3>';
           html+='<div style="margin-bottom:8px;color:var(--text-muted);font-size:13px">'+(s.passRate*100).toFixed(1)+'% \\u00B7 '+fmtD(s.duration)+'</div>';
           html+=scoreBar(s.passRate);
-          if(s.tests&&s.tests.length) { for(const t of s.tests) { html+='<div class="test-row" style="cursor:pointer" onclick="location.hash=\\'#/runs/'+id+'/trace/'+encodeURIComponent(s.name)+'/'+encodeURIComponent(t.name)+'\\'"><span class="'+(t.pass?'test-pass':'test-fail')+'">'+(t.pass?'\\u2713':'\\u2717')+' '+t.name+'</span><span class="duration">'+fmtD(t.latencyMs)+'</span></div>'; } }
+          if(s.tests&&s.tests.length) { for(const t of s.tests) { html+='<div class="test-row" style="cursor:pointer" onclick="location.hash=\\'#/runs/'+id+'/trace/'+encodeURIComponent(s.name)+'/'+encodeURIComponent(t.name)+'\\'"><span class="'+(t.pass?'test-pass':'test-fail')+'">'+(t.pass?'\\u2713':'\\u2717')+' '+esc(t.name)+'</span><span class="duration">'+fmtD(t.latencyMs)+'</span></div>'; } }
           html+='</div>';
         }
         html+='</div>';
@@ -696,10 +706,10 @@ function dashboardHtml(): string {
         const suites=data.suites||[];
         if(!suites.length){app.innerHTML='<div class="page"><h1 class="page-title">Suites</h1><div class="empty">No suite data.</div></div>';return;}
         let html='<div class="page"><h1 class="page-title">Suites</h1><p class="page-subtitle">'+suites.length+' suites tracked</p><table><thead><tr><th>Suite</th><th>Layer</th><th>Runs</th><th>Avg Pass Rate</th><th>Latest</th></tr></thead><tbody>';
-        for(const s of suites){html+='<tr><td>'+s.name+'</td><td><span class="layer-tag">'+s.layer+'</span></td><td class="mono">'+s.runs+'</td><td class="pass-rate '+prc(s.avgPassRate)+'">'+(s.avgPassRate*100).toFixed(1)+'%</td><td>'+scoreBar(s.latestPassRate)+'</td></tr>';}
+        for(const s of suites){html+='<tr><td>'+esc(s.name)+'</td><td><span class="layer-tag">'+esc(s.layer)+'</span></td><td class="mono">'+s.runs+'</td><td class="pass-rate '+prc(s.avgPassRate)+'">'+(s.avgPassRate*100).toFixed(1)+'%</td><td>'+scoreBar(s.latestPassRate)+'</td></tr>';}
         html+='</tbody></table></div>';
         app.innerHTML=html;
-      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed: '+e.message+'</div></div>';}
+      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed: '+esc(e.message)+'</div></div>';}
     }
 
     function buildChart(trends) {
@@ -736,7 +746,7 @@ function dashboardHtml(): string {
         }
         html+='</div>';
         app.innerHTML=html;
-      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed: '+e.message+'</div></div>';}
+      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed: '+esc(e.message)+'</div></div>';}
     }
 
     async function pageComparison() {
@@ -747,12 +757,12 @@ function dashboardHtml(): string {
         const res=await fetch('/api/runs/'+runs[0].id+'/comparison');
         const data=await res.json();
         if(!data.comparison||!data.comparison.length){app.innerHTML='<div class="page"><h1 class="page-title">Model Comparison</h1><div class="empty">No model comparison data.</div></div>';return;}
-        let html='<div class="page"><h1 class="page-title">Model Comparison</h1><p class="page-subtitle">Comparing models from: '+runs[0].config+'</p>';
+        let html='<div class="page"><h1 class="page-title">Model Comparison</h1><p class="page-subtitle">Comparing models from: '+esc(runs[0].config)+'</p>';
         html+='<table class="comp-table"><thead><tr><th>Model</th><th>Pass Rate</th><th>Avg Score</th><th>Passed</th><th>Failed</th><th>Avg Latency</th></tr></thead><tbody>';
-        for(const m of data.comparison){html+='<tr><td>'+m.model+'</td><td class="pass-rate '+prc(m.passRate)+'">'+(m.passRate*100).toFixed(1)+'%</td><td class="mono">'+(m.avgScore*100).toFixed(1)+'%</td><td class="mono test-pass">'+m.passed+'</td><td class="mono test-fail">'+m.failed+'</td><td class="duration">'+fmtD(m.avgLatencyMs)+'</td></tr>';}
+        for(const m of data.comparison){html+='<tr><td>'+esc(m.model)+'</td><td class="pass-rate '+prc(m.passRate)+'">'+(m.passRate*100).toFixed(1)+'%</td><td class="mono">'+(m.avgScore*100).toFixed(1)+'%</td><td class="mono test-pass">'+m.passed+'</td><td class="mono test-fail">'+m.failed+'</td><td class="duration">'+fmtD(m.avgLatencyMs)+'</td></tr>';}
         html+='</tbody></table></div>';
         app.innerHTML=html;
-      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed: '+e.message+'</div></div>';}
+      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed: '+esc(e.message)+'</div></div>';}
     }
 
     async function pageSecurity() {
@@ -764,9 +774,9 @@ function dashboardHtml(): string {
         const secSuites=(data.suites||[]).filter(s=>s.layer==='security'||s.name.includes('security'));
         let html='<div class="page"><h1 class="page-title">Security</h1><p class="page-subtitle">Security findings from latest run</p>';
         if(!secSuites.length){html+='<div class="card"><div class="empty">No security suites found in latest run.</div></div>';}
-        else { for(const s of secSuites){html+='<div class="card"><h3>'+s.name+'<span class="layer-tag">'+s.layer+'</span></h3>'+scoreBar(s.passRate)+'<div style="margin:8px 0;font-size:13px;color:var(--text-muted)">'+(s.passRate*100).toFixed(1)+'% pass rate</div>';if(s.tests){for(const t of s.tests){html+='<div class="test-row"><span class="'+(t.pass?'test-pass':'test-fail')+'">'+(t.pass?'\\u2713':'\\u2717')+' '+t.name+'</span></div>';}}html+='</div>';} }
+        else { for(const s of secSuites){html+='<div class="card"><h3>'+esc(s.name)+'<span class="layer-tag">'+esc(s.layer)+'</span></h3>'+scoreBar(s.passRate)+'<div style="margin:8px 0;font-size:13px;color:var(--text-muted)">'+(s.passRate*100).toFixed(1)+'% pass rate</div>';if(s.tests){for(const t of s.tests){html+='<div class="test-row"><span class="'+(t.pass?'test-pass':'test-fail')+'">'+(t.pass?'\\u2713':'\\u2717')+' '+esc(t.name)+'</span></div>';}}html+='</div>';} }
         html+='</div>';app.innerHTML=html;
-      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed: '+e.message+'</div></div>';}
+      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed: '+esc(e.message)+'</div></div>';}
     }
 
     async function pageConformance() {
@@ -780,9 +790,9 @@ function dashboardHtml(): string {
         html+='<div class="stat-cards"><div class="stat-card"><div class="label">Grade</div><div class="value">'+gradeBadge(data.grade)+'</div></div><div class="stat-card"><div class="label">Composite Score</div><div class="value">'+(data.composite!=null?data.composite.toFixed(1):'N/A')+'</div></div></div>';
         if(!confSuites.length){html+='<div class="card"><div class="empty">No conformance suites found. Showing all suites.</div></div>';}
         const showSuites=confSuites.length?confSuites:data.suites||[];
-        for(const s of showSuites){html+='<div class="card"><h3>'+s.name+'<span class="layer-tag">'+s.layer+'</span></h3>'+scoreBar(s.passRate)+'<div style="margin:8px 0;font-size:13px;color:var(--text-muted)">'+(s.passRate*100).toFixed(1)+'%</div>';if(s.tests){for(const t of s.tests){html+='<div class="test-row"><span class="'+(t.pass?'test-pass':'test-fail')+'">'+(t.pass?'\\u2713':'\\u2717')+' '+t.name+'</span></div>';}}html+='</div>';}
+        for(const s of showSuites){html+='<div class="card"><h3>'+esc(s.name)+'<span class="layer-tag">'+esc(s.layer)+'</span></h3>'+scoreBar(s.passRate)+'<div style="margin:8px 0;font-size:13px;color:var(--text-muted)">'+(s.passRate*100).toFixed(1)+'%</div>';if(s.tests){for(const t of s.tests){html+='<div class="test-row"><span class="'+(t.pass?'test-pass':'test-fail')+'">'+(t.pass?'\\u2713':'\\u2717')+' '+esc(t.name)+'</span></div>';}}html+='</div>';}
         html+='</div>';app.innerHTML=html;
-      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed: '+e.message+'</div></div>';}
+      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed: '+esc(e.message)+'</div></div>';}
     }
 
     async function pageCollections() {
@@ -794,26 +804,26 @@ function dashboardHtml(): string {
         for(const s of list){if(!layers[s.layer])layers[s.layer]=[];layers[s.layer].push(s);}
         let html='<div class="page"><h1 class="page-title">Collections</h1><p class="page-subtitle">'+list.length+' suites across '+Object.keys(layers).length+' layers</p>';
         for(const [layer,items] of Object.entries(layers)){
-          html+='<div class="card"><h3><span class="layer-tag">'+layer+'</span> '+items.length+' suites</h3>';
-          for(const s of items){html+='<div class="test-row"><span>'+s.name+'</span><span class="pass-rate '+prc(s.avgPassRate)+'">'+(s.avgPassRate*100).toFixed(1)+'%</span></div>';}
+          html+='<div class="card"><h3><span class="layer-tag">'+esc(layer)+'</span> '+items.length+' suites</h3>';
+          for(const s of items){html+='<div class="test-row"><span>'+esc(s.name)+'</span><span class="pass-rate '+prc(s.avgPassRate)+'">'+(s.avgPassRate*100).toFixed(1)+'%</span></div>';}
           html+='</div>';
         }
         html+='</div>';app.innerHTML=html;
-      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed: '+e.message+'</div></div>';}
+      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed: '+esc(e.message)+'</div></div>';}
     }
 
     async function pageCoverage() {
       app.innerHTML='<div class="page"><h1 class="page-title">Coverage</h1><p class="page-subtitle">Test coverage matrix across all components</p>'+skeleton(6)+'</div>';
       try {
         const data=await api('/api/coverage');
-        if(data.error){app.innerHTML='<div class="page"><h1 class="page-title">Coverage</h1><div class="empty"><div class="empty-icon">\\u25A3</div>'+data.error+'</div></div>';return;}
-        let html='<div class="page"><h1 class="page-title">Coverage</h1><p class="page-subtitle">Test coverage for '+data.pluginName+'</p>';
+        if(data.error){app.innerHTML='<div class="page"><h1 class="page-title">Coverage</h1><div class="empty"><div class="empty-icon">\\u25A3</div>'+esc(data.error)+'</div></div>';return;}
+        let html='<div class="page"><h1 class="page-title">Coverage</h1><p class="page-subtitle">Test coverage for '+esc(data.pluginName)+'</p>';
         html+='<div class="stat-cards">';
         const dp=data.depthPercent||0;
         html+='<div class="stat-card"><div class="label">Depth Coverage</div><div class="value pass-rate '+prc(dp/100)+'">'+dp+'%</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px">'+(data.slotsFilled||0)+'/'+(data.slotsTotal||0)+' test slots</div>'+scoreBar(dp/100)+'</div>';
         html+='<div class="stat-card"><div class="label">Components</div><div class="value pass-rate '+prc(data.coveragePercent/100)+'">'+data.coveragePercent+'%</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px">'+data.coveredComponents+'/'+data.totalComponents+' covered</div>'+scoreBar(data.coveragePercent/100)+'</div>';
         const bt=data.byType||{};
-        for(const [type,d] of Object.entries(bt)){if(d.total>0){html+='<div class="stat-card"><div class="label">'+type.charAt(0).toUpperCase()+type.slice(1)+'</div><div class="value">'+d.covered+'/'+d.total+'</div>'+scoreBar(d.percent/100)+'</div>';}}
+        for(const [type,d] of Object.entries(bt)){if(d.total>0){html+='<div class="stat-card"><div class="label">'+esc(type.charAt(0).toUpperCase()+type.slice(1))+'</div><div class="value">'+d.covered+'/'+d.total+'</div>'+scoreBar(d.percent/100)+'</div>';}}
         html+='</div>';
 
         const layers=['unit','integration','llm','performance','security','static'];
@@ -823,7 +833,7 @@ function dashboardHtml(): string {
         html+='</tr></thead><tbody>';
         const comps=data.components||[];
         for(const c of comps){
-          html+='<tr><td>'+c.name+'</td><td><span class="layer-tag">'+c.type+'</span></td>';
+          html+='<tr><td>'+esc(c.name)+'</td><td><span class="layer-tag">'+esc(c.type)+'</span></td>';
           for(const l of layers){
             const notApplicable=c.type!=='tool'&&(l==='unit'||l==='integration'||l==='performance');
             const val=c.layers[l];
@@ -839,7 +849,7 @@ function dashboardHtml(): string {
           for(const g of gaps.slice(0,50)){
             const sev=g.severity;
             const col=sev==='critical'?'var(--red)':sev==='high'?'var(--orange)':sev==='medium'?'var(--yellow)':'var(--text-dim)';
-            html+='<div class="test-row"><span style="color:'+col+';font-weight:600">'+sev.toUpperCase()+'</span><span>'+g.message+'</span></div>';
+            html+='<div class="test-row"><span style="color:'+col+';font-weight:600">'+esc(sev.toUpperCase())+'</span><span>'+esc(g.message)+'</span></div>';
           }
           if(gaps.length>50) html+='<div style="color:var(--text-muted);padding:8px 0;font-size:13px">...and '+(gaps.length-50)+' more</div>';
           html+='</div>';
@@ -847,7 +857,7 @@ function dashboardHtml(): string {
 
         html+='</div>';
         app.innerHTML=html;
-      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed to load coverage: '+e.message+'</div></div>';}
+      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed to load coverage: '+esc(e.message)+'</div></div>';}
     }
 
     function pageLive() {
@@ -875,12 +885,12 @@ function dashboardHtml(): string {
     function appendEvent(feed,evt) {
       const line=document.createElement('div');line.className='event-line';
       const time=evt.timestamp?new Date(evt.timestamp).toLocaleTimeString():'';
-      if(evt.type==='test-pass'){line.className+=' event-pass';line.innerHTML='<span class="etime">'+time+'</span><span>\\u2713 '+evt.suite+' / '+evt.test+' ('+(evt.score*100).toFixed(0)+'%)</span>';}
-      else if(evt.type==='test-fail'){line.className+=' event-fail';line.innerHTML='<span class="etime">'+time+'</span><span>\\u2717 '+evt.suite+' / '+evt.test+(evt.error?' \\u2014 '+evt.error:'')+'</span>';}
-      else if(evt.type==='test-start'){line.className+=' event-info';line.innerHTML='<span class="etime">'+time+'</span><span>\\u25B6 '+evt.suite+' / '+evt.test+'</span>';}
-      else if(evt.type==='suite-complete'){line.innerHTML='<span class="etime">'+time+'</span><span>\\u2014 Suite '+evt.suite+': '+evt.passed+' passed, '+evt.failed+' failed</span>';}
+      if(evt.type==='test-pass'){line.className+=' event-pass';line.innerHTML='<span class="etime">'+time+'</span><span>\\u2713 '+esc(evt.suite)+' / '+esc(evt.test)+' ('+(evt.score*100).toFixed(0)+'%)</span>';}
+      else if(evt.type==='test-fail'){line.className+=' event-fail';line.innerHTML='<span class="etime">'+time+'</span><span>\\u2717 '+esc(evt.suite)+' / '+esc(evt.test)+(evt.error?' \\u2014 '+esc(evt.error):'')+'</span>';}
+      else if(evt.type==='test-start'){line.className+=' event-info';line.innerHTML='<span class="etime">'+time+'</span><span>\\u25B6 '+esc(evt.suite)+' / '+esc(evt.test)+'</span>';}
+      else if(evt.type==='suite-complete'){line.innerHTML='<span class="etime">'+time+'</span><span>\\u2014 Suite '+esc(evt.suite)+': '+evt.passed+' passed, '+evt.failed+' failed</span>';}
       else if(evt.type==='run-complete'){line.className+=' event-pass';line.innerHTML='<span class="etime">'+time+'</span><span>\\u2714 Run complete \\u2014 '+(evt.passRate*100).toFixed(1)+'% pass rate</span>';}
-      else{line.className+=' event-info';line.innerHTML='<span class="etime">'+time+'</span><span>'+JSON.stringify(evt)+'</span>';}
+      else{line.className+=' event-info';line.innerHTML='<span class="etime">'+time+'</span><span>'+esc(JSON.stringify(evt))+'</span>';}
       feed.appendChild(line);
     }
 
@@ -891,31 +901,31 @@ function dashboardHtml(): string {
         const lb=data.leaderboard||[];
         if(!lb.length){app.innerHTML='<div class="page"><h1 class="page-title">Leaderboard</h1><div class="empty">No model data available.</div></div>';return;}
         let html='<div class="page"><h1 class="page-title">Leaderboard</h1><p class="page-subtitle">Model rankings by average score</p><table class="comp-table"><thead><tr><th>#</th><th>Model</th><th>Avg Score</th><th>Pass Rate</th><th>Tests</th><th>Avg Latency</th></tr></thead><tbody>';
-        lb.forEach((m,i)=>{html+='<tr><td class="mono">'+(i+1)+'</td><td>'+m.model+'</td><td class="mono">'+(m.avgScore*100).toFixed(1)+'%</td><td class="pass-rate '+prc(m.passRate)+'">'+(m.passRate*100).toFixed(1)+'%</td><td class="mono">'+m.totalTests+'</td><td class="duration">'+fmtD(m.avgLatencyMs)+'</td></tr>';});
+        lb.forEach((m,i)=>{html+='<tr><td class="mono">'+(i+1)+'</td><td>'+esc(m.model)+'</td><td class="mono">'+(m.avgScore*100).toFixed(1)+'%</td><td class="pass-rate '+prc(m.passRate)+'">'+(m.passRate*100).toFixed(1)+'%</td><td class="mono">'+m.totalTests+'</td><td class="duration">'+fmtD(m.avgLatencyMs)+'</td></tr>';});
         html+='</tbody></table></div>';
         app.innerHTML=html;
-      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed: '+e.message+'</div></div>';}
+      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed: '+esc(e.message)+'</div></div>';}
     }
 
     function renderTraceTimeline(data) {
       let html='<div class="trace-timeline">';
       let stepIdx=0;
       // Prompt step
-      html+='<div class="trace-step step-info"><div class="trace-step-header" onclick="toggleStep('+stepIdx+')"><span class="step-type type-prompt">Prompt</span><span class="step-title">Test Input</span><span class="step-meta"><span class="chevron" id="chev-'+stepIdx+'">\\u25B6</span></span></div><div class="trace-step-body" id="step-'+stepIdx+'"><pre>'+(data.prompt||data.name||'(no prompt recorded)')+'</pre></div></div>';
+      html+='<div class="trace-step step-info"><div class="trace-step-header" onclick="toggleStep('+stepIdx+')"><span class="step-type type-prompt">Prompt</span><span class="step-title">Test Input</span><span class="step-meta"><span class="chevron" id="chev-'+stepIdx+'">\\u25B6</span></span></div><div class="trace-step-body" id="step-'+stepIdx+'"><pre>'+esc(data.prompt||data.name||'(no prompt recorded)')+'</pre></div></div>';
       stepIdx++;
       // Tool call steps
       if(data.toolCalls&&data.toolCalls.length){
         for(const tc of data.toolCalls){
           const cls=tc.result&&tc.result.isError?'step-fail':'step-pass';
-          html+='<div class="trace-step '+cls+'"><div class="trace-step-header" onclick="toggleStep('+stepIdx+')"><span class="step-type type-tool">Tool Call</span><span class="step-title">'+tc.tool+'</span><span class="step-meta"><span class="duration">'+fmtD(tc.latencyMs||0)+'</span><span class="chevron" id="chev-'+stepIdx+'">\\u25B6</span></span></div><div class="trace-step-body" id="step-'+stepIdx+'">';
-          html+='<div style="margin-bottom:8px;font-size:12px;color:var(--text-dim)">Arguments</div><pre>'+JSON.stringify(tc.args,null,2)+'</pre>';
+          html+='<div class="trace-step '+cls+'"><div class="trace-step-header" onclick="toggleStep('+stepIdx+')"><span class="step-type type-tool">Tool Call</span><span class="step-title">'+esc(tc.tool)+'</span><span class="step-meta"><span class="duration">'+fmtD(tc.latencyMs||0)+'</span><span class="chevron" id="chev-'+stepIdx+'">\\u25B6</span></span></div><div class="trace-step-body" id="step-'+stepIdx+'">';
+          html+='<div style="margin-bottom:8px;font-size:12px;color:var(--text-dim)">Arguments</div><pre>'+esc(JSON.stringify(tc.args,null,2))+'</pre>';
           if(tc.result){
             html+='<div style="margin:12px 0 8px;font-size:12px;color:var(--text-dim)">Response'+(tc.result.isError?' <span style="color:var(--red)">(error)</span>':'')+'</div><pre>';
             if(tc.result.content){
               for(const c of tc.result.content){
-                html+=c.text||'(blob: '+c.type+')';
+                html+=esc(c.text)||'(blob: '+esc(c.type)+')';
               }
-            } else { html+=JSON.stringify(tc.result,null,2); }
+            } else { html+=esc(JSON.stringify(tc.result,null,2)); }
             html+='</pre>';
           }
           html+='</div></div>';
@@ -927,9 +937,9 @@ function dashboardHtml(): string {
         for(const ev of data.evaluatorResults){
           const cls=ev.pass?'step-pass':'step-fail';
           const scoreColor=ev.score>=0.9?'var(--green)':ev.score>=0.6?'var(--yellow)':'var(--red)';
-          html+='<div class="trace-step '+cls+'"><div class="trace-step-header" onclick="toggleStep('+stepIdx+')"><span class="step-type type-evaluator">Evaluator</span><span class="step-title">'+ev.evaluator+(ev.label?' ('+ev.label+')':'')+'</span><span class="step-meta"><span style="color:'+scoreColor+';font-weight:700">'+(ev.score*100).toFixed(0)+'%</span><span class="'+(ev.pass?'test-pass':'test-fail')+'" style="font-weight:600">'+(ev.pass?'PASS':'FAIL')+'</span><span class="chevron" id="chev-'+stepIdx+'">\\u25B6</span></span></div><div class="trace-step-body" id="step-'+stepIdx+'">';
-          if(ev.explanation) html+='<div style="font-size:13px;margin-bottom:8px">'+ev.explanation+'</div>';
-          if(ev.metadata) html+='<div style="margin-top:8px;font-size:12px;color:var(--text-dim)">Metadata</div><pre>'+JSON.stringify(ev.metadata,null,2)+'</pre>';
+          html+='<div class="trace-step '+cls+'"><div class="trace-step-header" onclick="toggleStep('+stepIdx+')"><span class="step-type type-evaluator">Evaluator</span><span class="step-title">'+esc(ev.evaluator)+(ev.label?' ('+esc(ev.label)+')':'')+'</span><span class="step-meta"><span style="color:'+scoreColor+';font-weight:700">'+(ev.score*100).toFixed(0)+'%</span><span class="'+(ev.pass?'test-pass':'test-fail')+'" style="font-weight:600">'+(ev.pass?'PASS':'FAIL')+'</span><span class="chevron" id="chev-'+stepIdx+'">\\u25B6</span></span></div><div class="trace-step-body" id="step-'+stepIdx+'">';
+          if(ev.explanation) html+='<div style="font-size:13px;margin-bottom:8px">'+esc(ev.explanation)+'</div>';
+          if(ev.metadata) html+='<div style="margin-top:8px;font-size:12px;color:var(--text-dim)">Metadata</div><pre>'+esc(JSON.stringify(ev.metadata,null,2))+'</pre>';
           html+='</div></div>';
           stepIdx++;
         }
@@ -949,22 +959,22 @@ function dashboardHtml(): string {
       app.innerHTML='<div class="page"><div class="breadcrumb"><a href="#/runs">Runs</a> / <a href="#/runs/'+runId+'">Detail</a> / Trace</div>'+skeleton(8)+'</div>';
       try {
         const data=await fetch('/api/runs/'+runId+'/tests/'+encodeURIComponent(suiteName)+'/'+encodeURIComponent(testName)).then(r=>r.json());
-        if(data.error){app.innerHTML='<div class="page"><div class="breadcrumb"><a href="#/runs">Runs</a> / <a href="#/runs/'+runId+'">Detail</a> / Trace</div><div class="empty">'+data.error+'</div></div>';return;}
-        let html='<div class="page"><div class="breadcrumb"><a href="#/runs">Runs</a> / <a href="#/runs/'+runId+'">Detail</a> / '+suiteName+' / '+testName+'</div>';
-        html+='<h1 class="page-title">'+testName+'</h1>';
+        if(data.error){app.innerHTML='<div class="page"><div class="breadcrumb"><a href="#/runs">Runs</a> / <a href="#/runs/'+runId+'">Detail</a> / Trace</div><div class="empty">'+esc(data.error)+'</div></div>';return;}
+        let html='<div class="page"><div class="breadcrumb"><a href="#/runs">Runs</a> / <a href="#/runs/'+runId+'">Detail</a> / '+esc(suiteName)+' / '+esc(testName)+'</div>';
+        html+='<h1 class="page-title">'+esc(testName)+'</h1>';
         html+='<div class="trace-summary">';
-        html+='<div class="tag"><span class="tag-label">Suite</span> '+suiteName+'</div>';
-        html+='<div class="tag"><span class="tag-label">Layer</span> <span class="layer-tag">'+data.layer+'</span></div>';
+        html+='<div class="tag"><span class="tag-label">Suite</span> '+esc(suiteName)+'</div>';
+        html+='<div class="tag"><span class="tag-label">Layer</span> <span class="layer-tag">'+esc(data.layer)+'</span></div>';
         html+='<div class="tag"><span class="tag-label">Status</span> <span class="'+(data.pass?'test-pass':'test-fail')+'" style="font-weight:600">'+(data.pass?'\\u2713 Pass':'\\u2717 Fail')+'</span></div>';
         html+='<div class="tag"><span class="tag-label">Latency</span> '+fmtD(data.latencyMs||0)+'</div>';
         if(data.tokenUsage){html+='<div class="tag"><span class="tag-label">Tokens</span> '+(data.tokenUsage.input||0)+' in / '+(data.tokenUsage.output||0)+' out'+(data.tokenUsage.cached?' / '+data.tokenUsage.cached+' cached':'')+'</div>';}
-        if(data.model){html+='<div class="tag"><span class="tag-label">Model</span> '+data.model+'</div>';}
-        if(data.error){html+='<div class="tag" style="border-color:var(--red)"><span class="tag-label">Error</span> <span style="color:var(--red)">'+data.error+'</span></div>';}
+        if(data.model){html+='<div class="tag"><span class="tag-label">Model</span> '+esc(data.model)+'</div>';}
+        if(data.error){html+='<div class="tag" style="border-color:var(--red)"><span class="tag-label">Error</span> <span style="color:var(--red)">'+esc(data.error)+'</span></div>';}
         html+='</div>';
         html+=renderTraceTimeline(data);
         html+='</div>';
         app.innerHTML=html;
-      } catch(e){app.innerHTML='<div class="page"><div class="breadcrumb"><a href="#/runs">Runs</a> / Trace</div><div class="empty">Failed to load trace: '+e.message+'</div></div>';}
+      } catch(e){app.innerHTML='<div class="page"><div class="breadcrumb"><a href="#/runs">Runs</a> / Trace</div><div class="empty">Failed to load trace: '+esc(e.message)+'</div></div>';}
     }
 
     let explorerState={selected:null,selectedType:null,treeData:null,latestTests:{},searchFilter:'',layerFilters:new Set()};
@@ -993,7 +1003,7 @@ function dashboardHtml(): string {
         }
 
         renderExplorer();
-      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed to load explorer: '+e.message+'</div></div>';}
+      } catch(e){app.innerHTML='<div class="page"><div class="empty">Failed to load explorer: '+esc(e.message)+'</div></div>';}
     }
 
     function renderExplorer(){
@@ -1011,10 +1021,10 @@ function dashboardHtml(): string {
       const allLayers=new Set();
       for(const s of td.suites||[]) allLayers.add(s.layer);
 
-      let treeHtml='<div class="explorer-tree"><div class="tree-search"><input type="text" placeholder="Filter tests..." value="'+explorerState.searchFilter+'" oninput="explorerSearch(this.value)"/></div>';
+      let treeHtml='<div class="explorer-tree"><div class="tree-search"><input type="text" placeholder="Filter tests..." value="'+esc(explorerState.searchFilter)+'" oninput="explorerSearch(this.value)"/></div>';
       treeHtml+='<div class="tree-filters">';
       for(const l of allLayers){
-        treeHtml+='<label><input type="checkbox" '+(explorerState.layerFilters.has(l)?'checked':'')+' onchange="explorerToggleLayer(\\''+l+'\\',this.checked)"> '+l+'</label>';
+        treeHtml+='<label><input type="checkbox" '+(explorerState.layerFilters.has(l)?'checked':'')+' onchange="explorerToggleLayer(\\''+l+'\\',this.checked)"> '+esc(l)+'</label>';
       }
       treeHtml+='</div>';
       for(const s of suites){
@@ -1022,7 +1032,7 @@ function dashboardHtml(): string {
         treeHtml+='<div class="tree-node '+(isActive?'active':'')+'">';
         treeHtml+='<div class="tree-suite" onclick="explorerSelectSuite(\\''+s.name.replace(/'/g,"\\\\'")+'\\')">';
         treeHtml+='<span class="expand-icon" onclick="event.stopPropagation();explorerToggleSuite(this)">\\u25B6</span>';
-        treeHtml+='<span class="layer-tag">'+s.layer+'</span><span style="flex:1">'+s.name+'</span>';
+        treeHtml+='<span class="layer-tag">'+esc(s.layer)+'</span><span style="flex:1">'+esc(s.name)+'</span>';
         treeHtml+='</div><div class="tree-tests">';
         const filteredTests=explorerState.searchFilter?s.tests.filter(t=>t.name.toLowerCase().includes(explorerState.searchFilter.toLowerCase())):s.tests;
         for(const t of filteredTests){
@@ -1031,7 +1041,7 @@ function dashboardHtml(): string {
           const dotCls=passed===true?'pass':passed===false?'fail':'unknown';
           const isTestActive=explorerState.selectedType==='test'&&explorerState.selected===key;
           treeHtml+='<div class="tree-test '+(isTestActive?'active':'')+'" onclick="explorerSelectTest(\\''+s.name.replace(/'/g,"\\\\'")+'\\'  ,\\''+t.name.replace(/'/g,"\\\\'")+'\\')">';
-          treeHtml+='<span class="dot '+dotCls+'"></span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+t.name+'</span></div>';
+          treeHtml+='<span class="dot '+dotCls+'"></span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(t.name)+'</span></div>';
         }
         treeHtml+='</div></div>';
       }
@@ -1041,7 +1051,7 @@ function dashboardHtml(): string {
       if(!explorerState.selected){
         detailHtml+='<div class="empty" style="padding:60px 20px"><div class="empty-icon">\\u1F50D</div>Select a suite or test from the tree to view details.</div>';
       } else {
-        detailHtml+='<div class="detail-header"><div><h2 style="font-size:18px;font-weight:700">'+explorerState.selected.split('::').pop()+'</h2><span style="font-size:12px;color:var(--text-muted)">'+explorerState.selectedType+'</span></div>';
+        detailHtml+='<div class="detail-header"><div><h2 style="font-size:18px;font-weight:700">'+esc(explorerState.selected.split('::').pop())+'</h2><span style="font-size:12px;color:var(--text-muted)">'+esc(explorerState.selectedType)+'</span></div>';
         detailHtml+='<button class="rerun-btn" id="rerun-btn" onclick="explorerRerun()">\\u25B6 Re-run</button></div>';
         detailHtml+='<div id="explorer-detail-content"><div class="loading">'+skeleton(5)+'</div></div>';
       }
@@ -1062,12 +1072,12 @@ function dashboardHtml(): string {
           const runs=await api('/api/runs');
           if(!runs||!runs.length){container.innerHTML='<div class="empty">No runs available.</div>';return;}
           const data=await fetch('/api/runs/'+runs[0].id+'/tests/'+encodeURIComponent(suiteName)+'/'+encodeURIComponent(testName)).then(r=>r.json());
-          if(data.error){container.innerHTML='<div class="empty">'+data.error+'</div>';return;}
+          if(data.error){container.innerHTML='<div class="empty">'+esc(data.error)+'</div>';return;}
           let html='<div class="trace-summary">';
           html+='<div class="tag"><span class="tag-label">Status</span> <span class="'+(data.pass?'test-pass':'test-fail')+'" style="font-weight:600">'+(data.pass?'\\u2713 Pass':'\\u2717 Fail')+'</span></div>';
           html+='<div class="tag"><span class="tag-label">Latency</span> '+fmtD(data.latencyMs||0)+'</div>';
           if(data.tokenUsage){html+='<div class="tag"><span class="tag-label">Tokens</span> '+(data.tokenUsage.input||0)+' in / '+(data.tokenUsage.output||0)+' out</div>';}
-          if(data.model){html+='<div class="tag"><span class="tag-label">Model</span> '+data.model+'</div>';}
+          if(data.model){html+='<div class="tag"><span class="tag-label">Model</span> '+esc(data.model)+'</div>';}
           html+='</div>';
           html+=renderTraceTimeline(data);
           container.innerHTML=html;
@@ -1081,20 +1091,20 @@ function dashboardHtml(): string {
           let html='<div class="trace-summary">';
           html+='<div class="tag"><span class="tag-label">Pass Rate</span> <span class="pass-rate '+prc(suite.passRate)+'">'+(suite.passRate*100).toFixed(1)+'%</span></div>';
           html+='<div class="tag"><span class="tag-label">Duration</span> '+fmtD(suite.duration)+'</div>';
-          html+='<div class="tag"><span class="tag-label">Layer</span> <span class="layer-tag">'+suite.layer+'</span></div>';
+          html+='<div class="tag"><span class="tag-label">Layer</span> <span class="layer-tag">'+esc(suite.layer)+'</span></div>';
           html+='</div>'+scoreBar(suite.passRate);
           if(suite.tests&&suite.tests.length){
             html+='<div style="margin-top:16px">';
             for(const t of suite.tests){
               html+='<div class="test-row" style="cursor:pointer" onclick="explorerSelectTest(\\''+suiteName.replace(/'/g,"\\\\'")+'\\'  ,\\''+t.name.replace(/'/g,"\\\\'")+'\\')">';
-              html+='<span class="'+(t.pass?'test-pass':'test-fail')+'">'+(t.pass?'\\u2713':'\\u2717')+' '+t.name+'</span>';
+              html+='<span class="'+(t.pass?'test-pass':'test-fail')+'">'+(t.pass?'\\u2713':'\\u2717')+' '+esc(t.name)+'</span>';
               html+='<span class="duration">'+fmtD(t.latencyMs)+'</span></div>';
             }
             html+='</div>';
           }
           container.innerHTML=html;
         }
-      } catch(e){container.innerHTML='<div class="empty">Failed to load detail: '+e.message+'</div>';}
+      } catch(e){container.innerHTML='<div class="empty">Failed to load detail: '+esc(e.message)+'</div>';}
     }
 
     window.explorerSearch=function(val){
@@ -1138,10 +1148,10 @@ function dashboardHtml(): string {
         } else if(explorerState.selectedType==='test'){
           body.suite=explorerState.selected.split('::')[0];
         }
-        const res=await fetch('/api/rerun',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        const res=await fetch('/api/rerun',{method:'POST',headers:{'Content-Type':'application/json','X-Requested-With':'dashboard'},body:JSON.stringify(body)});
         const data=await res.json();
         if(data.error){
-          if(container)container.innerHTML='<div class="empty" style="color:var(--red)">Re-run failed: '+data.error+'</div>';
+          if(container)container.innerHTML='<div class="empty" style="color:var(--red)">Re-run failed: '+esc(data.error)+'</div>';
           btn.disabled=false;btn.innerHTML='\\u25B6 Re-run';return;
         }
         Object.keys(cache).forEach(k=>delete cache[k]);
@@ -1156,7 +1166,7 @@ function dashboardHtml(): string {
         loadExplorerDetail();
         renderExplorer();
       } catch(e){
-        if(container)container.innerHTML='<div class="empty" style="color:var(--red)">Re-run failed: '+e.message+'</div>';
+        if(container)container.innerHTML='<div class="empty" style="color:var(--red)">Re-run failed: '+esc(e.message)+'</div>';
         btn.disabled=false;btn.innerHTML='\\u25B6 Re-run';
       }
     };
@@ -1165,7 +1175,7 @@ function dashboardHtml(): string {
       const isDark=document.documentElement.getAttribute('data-theme')!=='light';
       app.innerHTML='<div class="page"><h1 class="page-title">Settings</h1><p class="page-subtitle">Dashboard configuration</p>'+
         '<div class="card"><div class="settings-row"><div><div class="settings-label">Dark Mode</div><div class="settings-desc">Toggle between dark and light theme</div></div><div class="toggle-switch '+(isDark?'on':'')+'" id="theme-toggle" onclick="toggleTheme()"><div class="knob"></div></div></div>'+
-        '<div class="settings-row"><div><div class="settings-label">Clear Cache</div><div class="settings-desc">Clear cached API responses</div></div><button style="background:var(--bg-surface);border:1px solid var(--border);color:var(--text);padding:6px 16px;border-radius:6px;cursor:pointer;font-size:13px" onclick="clearCacheAction()">Clear</button></div>'+
+        '<div class="settings-row"><div><div class="settings-label">Clear Cache</div><div class="settings-desc">Clear cached API responses</div></div><button style="background:var(--bg-surface);border:1px solid var(--border);color:var(--text);padding:6px 16px;border-radius:6px;cursor:pointer;font-size:13px" onclick="clearCacheAction(event)">Clear</button></div>'+
         '</div></div>';
     }
 
@@ -1178,9 +1188,9 @@ function dashboardHtml(): string {
       if(tog)tog.classList.toggle('on',isLight);
     };
 
-    window.clearCacheAction=function(){
+    window.clearCacheAction=function(e){
       Object.keys(cache).forEach(k=>delete cache[k]);
-      const btn=event.target;btn.textContent='Cleared!';setTimeout(()=>{btn.textContent='Clear';},1500);
+      const btn=e.target;btn.textContent='Cleared!';setTimeout(()=>{btn.textContent='Clear';},1500);
     };
 
     (function init(){

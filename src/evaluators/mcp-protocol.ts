@@ -37,10 +37,6 @@ function validateToolCall(tc: ToolCallRecord): ValidationResult {
   }
 
   if (tc.result) {
-    if (tc.result.isError) {
-      issues.push(`Tool returned an error response.`);
-    }
-
     if (!Array.isArray(tc.result.content)) {
       issues.push('Result content is not an array.');
     } else {
