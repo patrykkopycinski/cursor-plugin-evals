@@ -53,9 +53,17 @@ export class ToolSelectionEvaluator implements Evaluator {
       truePositives + falsePositives > 0 ? truePositives / (truePositives + falsePositives) : 0;
     const recall =
       truePositives + falseNegatives > 0 ? truePositives / (truePositives + falseNegatives) : 0;
-    const f1 = precision + recall > 0 ? (2 * precision * recall) / (precision + recall) : 0;
 
-    const score = Math.round(f1 * 1000) / 1000;
+    // Use F-beta with beta=2 (recall-weighted). LLMs often call extra relevant tools
+    // which shouldn't be penalized as harshly as missing expected tools.
+    const beta = 2;
+    const betaSq = beta * beta;
+    const fbeta =
+      precision + recall > 0
+        ? ((1 + betaSq) * precision * recall) / (betaSq * precision + recall)
+        : 0;
+
+    const score = Math.round(fbeta * 1000) / 1000;
     const missing = expectedTools.filter((t) => !matched.has(t));
     const extra = uniqueActual.filter((t) => !matchedActual.has(t));
 
@@ -65,14 +73,14 @@ export class ToolSelectionEvaluator implements Evaluator {
       pass: score >= threshold,
       label: score >= threshold ? 'pass' : 'fail',
       explanation:
-        `F1=${score.toFixed(3)} (precision=${precision.toFixed(3)}, recall=${recall.toFixed(3)}). ` +
+        `Fβ=${score.toFixed(3)} (precision=${precision.toFixed(3)}, recall=${recall.toFixed(3)}, β=2). ` +
         `Matched ${truePositives}/${expectedTools.length} expected tools.` +
         (missing.length > 0 ? ` Missing: [${missing.join(', ')}].` : '') +
         (extra.length > 0 ? ` Extra: [${extra.join(', ')}].` : ''),
       metadata: {
         precision,
         recall,
-        f1,
+        fbeta,
         matched: [...matched],
         missing,
         extra,

@@ -24,8 +24,13 @@ export class CommandInjectionRule implements SecurityRule {
 
   scan(text: string, location: string): SecurityFinding[] {
     const findings: SecurityFinding[] = [];
+    const isFinalOutput = location === 'finalOutput' || location.includes('finalOutput');
 
     for (const { pattern, label } of INJECTION_PATTERNS) {
+      // Backtick patterns in finalOutput are almost always markdown formatting,
+      // not actual command injection. Only flag them in tool call arguments.
+      if (isFinalOutput && label === 'backtick subshell execution') continue;
+
       const match = pattern.exec(text);
       if (match) {
         findings.push({

@@ -26,16 +26,19 @@ export async function callJudge(request: JudgeRequest): Promise<JudgeResponse> {
     !!process.env.AZURE_OPENAI_API_KEY && !!process.env.AZURE_OPENAI_ENDPOINT;
   const bedrock = !isAzure ? getBedrockConfig() : null;
   const isAnthropic = !isAzure && !bedrock && !!process.env.ANTHROPIC_API_KEY;
+  const isLiteLLM = !isAzure && !bedrock && !isAnthropic && !!process.env.LITELLM_API_KEY;
   const apiKey = isAzure
     ? process.env.AZURE_OPENAI_API_KEY!
     : isAnthropic
       ? process.env.ANTHROPIC_API_KEY!
-      : (process.env.OPENAI_API_KEY ?? '');
+      : isLiteLLM
+        ? process.env.LITELLM_API_KEY!
+        : (process.env.OPENAI_API_KEY ?? '');
 
   if (!apiKey && !bedrock) {
     throw new Error(
       'LLM judge requires AZURE_OPENAI_API_KEY, AWS_ACCESS_KEY_ID+AWS_SECRET_ACCESS_KEY, ' +
-        'ANTHROPIC_API_KEY, or OPENAI_API_KEY. Set the environment variable before running LLM evaluators.',
+        'ANTHROPIC_API_KEY, LITELLM_API_KEY, or OPENAI_API_KEY. Set the environment variable before running LLM evaluators.',
     );
   }
 
