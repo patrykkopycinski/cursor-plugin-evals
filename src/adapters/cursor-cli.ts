@@ -138,8 +138,15 @@ function extractToolArgs(toolCall: Record<string, unknown>): Record<string, unkn
       if (key === 'mcpToolCall') {
         const innerArgs = call.args.arguments as Record<string, unknown> | undefined;
         if (innerArgs) return innerArgs;
-        const { toolName: _tn, tool_name: _tn2, serverName: _sn, server_name: _sn2, name: _n, toolCallId: _id, providerIdentifier: _pi, ...rest } = call.args;
-        return rest.args as Record<string, unknown> ?? rest;
+        const mcpWrapperKeys = new Set([
+          'toolName', 'tool_name', 'serverName', 'server_name',
+          'name', 'toolCallId', 'providerIdentifier',
+        ]);
+        const stripped: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(call.args)) {
+          if (!mcpWrapperKeys.has(k)) stripped[k] = v;
+        }
+        return (stripped.args as Record<string, unknown>) ?? stripped;
       }
       return call.args;
     }
