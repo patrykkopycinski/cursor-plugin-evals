@@ -413,6 +413,7 @@ export interface SuiteConfig {
   adapter?: string | string[];
   skillDir?: string;
   skillPath?: string;
+  skipIsolation?: boolean;
   evaluators?: SuiteEvaluatorOverrides;
   testFilter?: {
     adapters?: string[];

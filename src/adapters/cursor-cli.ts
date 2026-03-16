@@ -111,7 +111,20 @@ const CURSOR_TOOL_NAMES: Record<string, string> = {
 
 function extractToolName(toolCall: Record<string, unknown>): string {
   for (const key of TOOL_CALL_KEYS) {
-    if (toolCall[key]) return CURSOR_TOOL_NAMES[key] ?? key.replace('ToolCall', '');
+    if (toolCall[key] != null) {
+      if (key === 'mcpToolCall') {
+        const mcpCall = toolCall[key] as Record<string, unknown>;
+        const args = mcpCall.args as Record<string, unknown> | undefined;
+        const toolName =
+          (mcpCall.toolName as string) ??
+          (args?.toolName as string) ??
+          (mcpCall.tool_name as string) ??
+          (args?.tool_name as string);
+        if (toolName) return toolName;
+        return 'mcp:unknown';
+      }
+      return CURSOR_TOOL_NAMES[key] ?? key.replace('ToolCall', '');
+    }
   }
   const fn = toolCall.function as { name?: string } | undefined;
   if (fn?.name) return fn.name;
@@ -121,7 +134,15 @@ function extractToolName(toolCall: Record<string, unknown>): string {
 function extractToolArgs(toolCall: Record<string, unknown>): Record<string, unknown> {
   for (const key of TOOL_CALL_KEYS) {
     const call = toolCall[key] as { args?: Record<string, unknown> } | undefined;
-    if (call?.args) return call.args;
+    if (call?.args) {
+      if (key === 'mcpToolCall') {
+        const innerArgs = call.args.arguments as Record<string, unknown> | undefined;
+        if (innerArgs) return innerArgs;
+        const { toolName: _tn, tool_name: _tn2, serverName: _sn, server_name: _sn2, name: _n, toolCallId: _id, providerIdentifier: _pi, ...rest } = call.args;
+        return rest.args as Record<string, unknown> ?? rest;
+      }
+      return call.args;
+    }
   }
   const fn = toolCall.function as { arguments?: string } | undefined;
   if (fn?.arguments) {

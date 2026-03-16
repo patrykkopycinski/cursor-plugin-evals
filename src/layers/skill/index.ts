@@ -154,13 +154,15 @@ export async function runSkillSuite(
     }
 
     let wsPool: WorkspacePool | undefined;
-    if (isCursorCli && skillDir) {
+    if (isCursorCli && skillDir && !suite.skipIsolation) {
       wsPool = await createWorkspacePool(
         skillDir,
         pluginConfig.dir ?? process.cwd(),
         CURSOR_CLI_CONCURRENCY,
         pluginConfig.dir,
       );
+    } else if (isCursorCli && suite.skipIsolation) {
+      log.debug(`Skipping workspace isolation for suite "${suite.name}" (skip_isolation: true)`);
     }
 
     const adapterConfig = {
@@ -171,7 +173,11 @@ export async function runSkillSuite(
       entry: pluginConfig.entry,
       env: pluginConfig.env,
       skillContent,
-      ...(wsPool ? { workspacePool: wsPool, skillPath: undefined } : {}),
+      ...(wsPool
+        ? { workspacePool: wsPool, skillPath: undefined }
+        : suite.skipIsolation
+          ? { skillPath: undefined }
+          : {}),
     };
 
     const adapter = createAdapter(adapterName, adapterConfig);

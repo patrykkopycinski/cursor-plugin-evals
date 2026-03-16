@@ -181,6 +181,7 @@ const SuiteSchema = z.object({
   adapter: z.union([z.string(), z.array(z.string())]).optional(),
   skill_dir: z.string().optional(),
   skill_path: z.string().optional(),
+  skip_isolation: z.boolean().optional(),
   require_env: z.array(z.string()).optional(),
   evaluators: SuiteEvaluatorOverridesSchema,
   test_filter: TestFilterSchema,

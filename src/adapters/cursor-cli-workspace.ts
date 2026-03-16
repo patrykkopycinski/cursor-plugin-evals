@@ -174,6 +174,9 @@ export async function createIsolatedWorkspace(
 const SHARED_SYMLINKS = [
   '.cursor',
   '.cursor-plugin/marketplace.json',
+  'mcp.json',
+  'packages',
+  'dist',
   'node_modules',
   'package.json',
   'package-lock.json',
