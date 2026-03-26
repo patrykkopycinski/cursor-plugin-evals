@@ -52,6 +52,7 @@
 
 - **Showcase**
   - [Elastic Cursor Plugin](https://github.com/patrykkopycinski/cursor-plugin-evals/tree/main/showcase/elastic-cursor-plugin)
+  - [Attack Emulation Plugin](https://github.com/patrykkopycinski/cursor-plugin-evals/tree/main/showcase/attack-emulation-cursor-plugin)
 
 - **Reference**
   - [API Reference](api-reference.md)

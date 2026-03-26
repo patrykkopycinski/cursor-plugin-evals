@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/">Documentation</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="site/index.html">Landing Page</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="showcase/elastic-cursor-plugin/">Showcase</a>
+  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/">Documentation</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="site/index.html">Landing Page</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="showcase/elastic-cursor-plugin/">Showcase: Elastic</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="showcase/attack-emulation-cursor-plugin/">Showcase: Attack Emulation</a>
 </p>
 
 <br/>

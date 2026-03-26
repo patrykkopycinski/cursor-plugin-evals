@@ -1,0 +1,214 @@
+name: Attack Emulation Plugin Evals
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "showcase/attack-emulation-cursor-plugin/**"
+      - "src/**"
+  pull_request:
+    paths:
+      - "showcase/attack-emulation-cursor-plugin/**"
+      - "src/**"
+  workflow_dispatch:
+
+env:
+  ATTACK_EMULATION_PLUGIN_DIR: ${{ github.workspace }}/attack-emulation-cursor-plugin
+  CALDERA_URL: "http://localhost:8888"
+  CALDERA_API_KEY: "ADMIN123"
+  KIBANA_URL: "http://localhost:5601"
+  KIBANA_USERNAME: "elastic"
+  KIBANA_PASSWORD: "changeme"
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+jobs:
+  static-unit:
+    name: Static + Unit + Conformance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+
+      - uses: actions/checkout@v4
+        with:
+          repository: elastic/attack-emulation-cursor-plugin
+          path: attack-emulation-cursor-plugin
+
+      - name: Build plugin
+        working-directory: attack-emulation-cursor-plugin
+        run: npm ci && npm run build
+
+      - name: Run static layer
+        run: npx cursor-plugin-evals run --config showcase/attack-emulation-cursor-plugin/plugin-eval.yaml --layer static --ci
+
+      - name: Run unit layer
+        run: npx cursor-plugin-evals run --config showcase/attack-emulation-cursor-plugin/plugin-eval.yaml --layer unit --ci
+
+  integration-performance:
+    name: Integration + Performance (Caldera)
+    runs-on: ubuntu-latest
+    needs: static-unit
+    services:
+      caldera:
+        image: ghcr.io/mitre/caldera:latest
+        ports:
+          - 8888:8888
+          - 7010:7010
+          - 7012:7012
+        options: >-
+          --health-cmd "curl -sf http://localhost:8888/api/v2/health || exit 1"
+          --health-interval 15s
+          --health-timeout 10s
+          --health-retries 30
+          --health-start-period 120s
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+
+      - uses: actions/checkout@v4
+        with:
+          repository: elastic/attack-emulation-cursor-plugin
+          path: attack-emulation-cursor-plugin
+
+      - name: Build plugin
+        working-directory: attack-emulation-cursor-plugin
+        run: npm ci && npm run build
+
+      - name: Run integration layer (Caldera)
+        run: npx cursor-plugin-evals run --config showcase/attack-emulation-cursor-plugin/plugin-eval.yaml --layer integration --ci --report junit-xml --output integration-results.xml
+
+      - name: Run performance layer
+        run: npx cursor-plugin-evals run --config showcase/attack-emulation-cursor-plugin/plugin-eval.yaml --layer performance --ci --report junit-xml --output performance-results.xml
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-results
+          path: |
+            *.xml
+
+  integration-detection:
+    name: Integration + Performance (Detection / Kibana)
+    runs-on: ubuntu-latest
+    needs: static-unit
+    services:
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:9.4.0-SNAPSHOT
+        ports:
+          - 9200:9200
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: "true"
+          ELASTIC_PASSWORD: changeme
+          xpack.security.http.ssl.enabled: "false"
+          ES_JAVA_OPTS: -Xms512m -Xmx512m
+        options: >-
+          --health-cmd "curl -sf -u elastic:changeme http://localhost:9200/_cluster/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 30
+      kibana:
+        image: docker.elastic.co/kibana/kibana:9.4.0-SNAPSHOT
+        ports:
+          - 5601:5601
+        env:
+          ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+          ELASTICSEARCH_USERNAME: kibana_system
+          ELASTICSEARCH_PASSWORD: changeme
+        options: >-
+          --health-cmd "curl -sf http://localhost:5601/api/status || exit 1"
+          --health-interval 15s
+          --health-timeout 5s
+          --health-retries 30
+          --health-start-period 60s
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+
+      - uses: actions/checkout@v4
+        with:
+          repository: elastic/attack-emulation-cursor-plugin
+          path: attack-emulation-cursor-plugin
+
+      - name: Build plugin
+        working-directory: attack-emulation-cursor-plugin
+        run: npm ci && npm run build
+
+      - name: Run detection integration tests
+        env:
+          KIBANA_URL: "http://localhost:5601"
+          KIBANA_USERNAME: "elastic"
+          KIBANA_PASSWORD: "changeme"
+        run: npx cursor-plugin-evals run --config showcase/attack-emulation-cursor-plugin/plugin-eval.yaml --suite integration-detection --ci --report junit-xml --output detection-results.xml
+
+      - name: Run detection performance tests
+        env:
+          KIBANA_URL: "http://localhost:5601"
+          KIBANA_USERNAME: "elastic"
+          KIBANA_PASSWORD: "changeme"
+        run: npx cursor-plugin-evals run --config showcase/attack-emulation-cursor-plugin/plugin-eval.yaml --suite performance-detection --ci --report junit-xml --output detection-perf-results.xml
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detection-results
+          path: |
+            *.xml
+
+  llm-eval:
+    name: LLM Evaluation
+    runs-on: ubuntu-latest
+    needs: static-unit
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+
+      - uses: actions/checkout@v4
+        with:
+          repository: elastic/attack-emulation-cursor-plugin
+          path: attack-emulation-cursor-plugin
+
+      - name: Build plugin
+        working-directory: attack-emulation-cursor-plugin
+        run: npm ci && npm run build
+
+      - name: Run LLM eval layer
+        run: npx cursor-plugin-evals run --config showcase/attack-emulation-cursor-plugin/plugin-eval.yaml --layer llm --ci --report markdown --output llm-report.md
+
+      - name: Run TypeScript eval suites
+        run: npx cursor-plugin-evals run --ts showcase/attack-emulation-cursor-plugin/showcase.eval.ts --ci --report json --output ts-results.json
+
+      - name: Quality score
+        run: npx cursor-plugin-evals score --config showcase/attack-emulation-cursor-plugin/plugin-eval.yaml
+
+      - name: Generate leaderboard
+        run: npx cursor-plugin-evals leaderboard --format markdown --output leaderboard.md
+
+      - name: Upload LLM report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: llm-report
+          path: |
+            llm-report.md
+            ts-results.json
+            leaderboard.md
