@@ -400,6 +400,75 @@ Validates file modifications and workflow patterns.
 - **Scores:** Based on expected file operations and output patterns
 - **Requires:** `defaults.thresholds.workflow` configuration
 
+### nl-scorer
+
+Natural language scorer — describe what to check in plain English and get an LLM evaluator.
+
+- **Scores:** LLM judge scores based on the provided criterion
+- **Default threshold:** `0.7`
+- **Config:** `nl-scorer` (string description of what to evaluate)
+
+```yaml
+evaluators: [nl-scorer]
+defaults:
+  thresholds:
+    nl-scorer: "Check if the response accurately explains the concept and provides examples"
+```
+
+### skill-routing
+
+Tests whether an LLM correctly activates or ignores a skill based on the prompt.
+
+- **Scores:** 1.0 for correct routing, low for incorrect
+- **Default threshold:** `0.7`
+- **Config:** `skill-routing.skillDescription` + `skill-routing.shouldActivate`
+
+```yaml
+evaluators: [skill-routing]
+config:
+  skill-routing:
+    skillDescription: "Generate ES|QL queries from natural language"
+    shouldActivate: true  # or false for negative tests
+```
+
+### skill-description
+
+Scores a skill description on 4 dimensions: clarity, specificity, actionability, uniqueness.
+
+- **Scores:** Average of 4 dimension scores (0-1 each)
+- **Default threshold:** `0.7`
+- **Config:** `skill-description.description` + optional `skill-description.otherDescriptions`
+
+```yaml
+evaluators: [skill-description]
+config:
+  skill-description:
+    description: "Generate ES|QL queries from natural language for Elasticsearch"
+    otherDescriptions:
+      - "Manage Kibana dashboards"
+      - "Monitor cluster health"
+```
+
+### skill-composability
+
+Evaluates whether multiple skills can work together in a given scenario.
+
+- **Scores:** LLM judge assesses compatibility, interference, and chainability
+- **Default threshold:** `0.7`
+- **Config:** `skill-composability.skills` + `skill-composability.scenario`
+
+```yaml
+evaluators: [skill-composability]
+config:
+  skill-composability:
+    skills:
+      - name: data-discovery
+        description: "Discover available data sources"
+      - name: esql-writer
+        description: "Write ES|QL queries"
+    scenario: "Use discovery output as context for query generation"
+```
+
 ## Programmatic API
 
 ```typescript

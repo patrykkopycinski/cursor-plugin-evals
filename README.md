@@ -7,7 +7,7 @@
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/evaluators"><img src="https://img.shields.io/badge/evaluators-35-A29BFE?style=flat-square" alt="35 Evaluators" /></a>
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/adapters"><img src="https://img.shields.io/badge/adapters-6-74B9FF?style=flat-square" alt="6 Adapters" /></a>
   <a href="#mcp-server"><img src="https://img.shields.io/badge/MCP--tools-14-55E6C1?style=flat-square" alt="14 MCP Tools" /></a>
-  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/red-teaming"><img src="https://img.shields.io/badge/security--rules-20-E74C3C?style=flat-square" alt="20 Security Rules" /></a>
+  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/red-teaming"><img src="https://img.shields.io/badge/security--rules-22-E74C3C?style=flat-square" alt="22 Security Rules" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Elastic--2.0-00E676?style=flat-square" alt="Elastic License 2.0" /></a>
 </p>
 
@@ -127,10 +127,10 @@ Auto-registers when you install the Cursor plugin (via `.mcp.json`).
 <tr><td width="50%">
 
 **Evaluation**
-- 35 evaluators (16 deterministic + 14 LLM-as-judge + multi-judge panel + inline script graders)
+- 35 evaluators (19 deterministic + 16 LLM-as-judge + multi-judge panel)
 - 3 ES|QL evaluators: execution scoring, pattern matching with equivalence classes, and result comparison against golden queries
 - 6 task adapters (MCP, plain-llm, cursor-cli, headless-coder, gemini-cli, claude-sdk)
-- 20 OWASP-aligned security rules with 3-pass red-teaming
+- 22 security rules (20 OWASP-aligned + unicode obfuscation + YAML anomaly detection) with 3-pass red-teaming
 - SAFE-MCP compliance with 26 attack techniques
 - Regression detection via Welch's t-test
 - Multi-model comparison with Borda count

@@ -55,7 +55,7 @@ src/
   dashboard/      Web dashboard (Hono + SQLite)
   dataset/        Dataset generator for programmatic test creation
   docker/         Docker health checks and test cluster setup
-  evaluators/     All 35 evaluators (16 CODE + 14 LLM + multi-judge)
+  evaluators/     All 35 evaluators (19 CODE + 16 LLM + multi-judge)
   expect/         TypeScript Expect API for programmatic suites
   fixtures/       Record/replay/mock-gen for MCP tool calls
   layers/         Layer implementations (static, unit, integration, llm, performance, skill, conformance)
