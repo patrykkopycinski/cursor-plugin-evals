@@ -78,6 +78,35 @@ describe('computeDeterministicRecommendations', () => {
     const recs = computeDeterministicRecommendations(result, evalYaml);
     expect(Array.isArray(recs)).toBe(true);
   });
+
+  it('does not recommend repetitions when already > 1', () => {
+    const result = makeRunResult([makeTest('a', 1.0), makeTest('b', 1.0)]);
+    const evalYaml = { defaults: { repetitions: 5 } };
+    const recs = computeDeterministicRecommendations(result, evalYaml);
+    expect(recs.some((r) => r.message.includes('repetitions'))).toBe(false);
+  });
+
+  it('does not suggest harder tests when pass rate < 100%', () => {
+    const tests = Array.from({ length: 6 }, (_, i) => makeTest(`t${i}`, i < 5 ? 1.0 : 0.3));
+    const result = makeRunResult(tests);
+    const recs = computeDeterministicRecommendations(result, {});
+    expect(recs.some((r) => r.message.includes('too easy'))).toBe(false);
+  });
+
+  it('handles empty suites gracefully', () => {
+    const result = makeRunResult([]);
+    const recs = computeDeterministicRecommendations(result, {});
+    expect(Array.isArray(recs)).toBe(true);
+  });
+
+  it('handles multiple evaluators scoring low', () => {
+    const result = makeRunResult([
+      makeTest('a', 0.1, 'correctness'),
+      makeTest('b', 0.2, 'keywords'),
+    ]);
+    const recs = computeDeterministicRecommendations(result, {});
+    expect(recs.filter((r) => r.message.includes('scores very low') || r.message.includes('below 0.3')).length).toBeGreaterThanOrEqual(1);
+  });
 });
 
 describe('computeLlmRecommendations', () => {
@@ -98,5 +127,27 @@ describe('computeLlmRecommendations', () => {
     const recs = await computeLlmRecommendations(result, 'skill content', 'eval yaml content');
     expect(recs.length).toBeGreaterThan(0);
     expect(recs[0].message).toContain('DISSECT');
+  });
+});
+
+describe('computeLlmRecommendations error handling', () => {
+  it('returns empty array when LLM returns invalid JSON', async () => {
+    const { callJudge } = await import('../evaluators/llm-judge.js');
+    (callJudge as any).mockResolvedValueOnce({
+      score: 1,
+      label: 'OK',
+      explanation: 'Not JSON at all',
+    });
+    const result = makeRunResult([makeTest('a', 0.8)]);
+    const recs = await computeLlmRecommendations(result, 'skill', 'yaml');
+    expect(recs).toEqual([]);
+  });
+
+  it('returns empty array when LLM call throws', async () => {
+    const { callJudge } = await import('../evaluators/llm-judge.js');
+    (callJudge as any).mockRejectedValueOnce(new Error('API error'));
+    const result = makeRunResult([makeTest('a', 0.8)]);
+    const recs = await computeLlmRecommendations(result, 'skill', 'yaml');
+    expect(recs).toEqual([]);
   });
 });

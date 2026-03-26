@@ -56,4 +56,41 @@ describe('applyPatches', () => {
     const result = applyPatches(yaml, patches);
     expect(result.defaults.thresholds.correctness).toBe(0.6);
   });
+
+  it('applies multiple patches in sequence', () => {
+    const yaml = { evaluators: ['correctness'], defaults: { repetitions: 1, thresholds: { correctness: 0.7 } } };
+    const patches: EvalYamlPatch[] = [
+      { op: 'add_evaluator', path: 'evaluators', value: 'keywords' },
+      { op: 'set_repetitions', path: 'defaults.repetitions', value: 5 },
+      { op: 'set_threshold', path: 'defaults.thresholds.correctness', value: 0.6 },
+    ];
+    const result = applyPatches(yaml, patches);
+    expect(result.evaluators).toContain('keywords');
+    expect(result.defaults.repetitions).toBe(5);
+    expect(result.defaults.thresholds.correctness).toBe(0.6);
+  });
+
+  it('does not mutate the original object', () => {
+    const yaml = { evaluators: ['correctness'], defaults: { repetitions: 1 } };
+    const patches: EvalYamlPatch[] = [
+      { op: 'set_repetitions', path: 'defaults.repetitions', value: 10 },
+    ];
+    applyPatches(yaml, patches);
+    expect(yaml.defaults.repetitions).toBe(1); // original unchanged
+  });
+
+  it('handles add_test as no-op', () => {
+    const yaml = { tests: [{ name: 'existing' }] };
+    const patches: EvalYamlPatch[] = [
+      { op: 'add_test', path: 'tests', value: { name: 'new-test' } },
+    ];
+    const result = applyPatches(yaml, patches);
+    expect(result.tests).toHaveLength(1); // unchanged
+  });
+
+  it('handles empty patches array', () => {
+    const yaml = { evaluators: ['correctness'] };
+    const result = applyPatches(yaml, []);
+    expect(result).toEqual({ evaluators: ['correctness'] });
+  });
 });

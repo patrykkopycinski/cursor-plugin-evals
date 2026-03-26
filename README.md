@@ -31,6 +31,7 @@ npx cursor-plugin-evals setup         # Interactive setup wizard
 npx cursor-plugin-evals run           # Run all layers
 npx cursor-plugin-evals run --ci      # Enforce CI quality gates
 npx cursor-plugin-evals run --preset reliable  # 20 trials with pass@k/pass^k
+npx cursor-plugin-evals skill-eval-init --skill-dir ./my-skill  # Auto-generate eval.yaml
 ```
 
 <details>
@@ -135,6 +136,8 @@ Auto-registers when you install the Cursor plugin (via `.mcp.json`).
 - Probabilistic trial metrics: pass@k and pass^k with [named presets](docs/trial-metrics.md)
 - [Ablation testing](docs/ablation.md): prove skill value with statistical A/B comparison
 - [Golden dataset loader](docs/configuration.md#golden-dataset) for accuracy evaluation (JSON/JSONL)
+- Zero-config skill eval: auto-generate eval.yaml from SKILL.md via LLM
+- AI-powered recommendations with `--optimize` to auto-improve eval config
 
 </td><td width="50%">
 

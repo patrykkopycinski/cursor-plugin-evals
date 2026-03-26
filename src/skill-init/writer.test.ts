@@ -51,4 +51,77 @@ describe('serializeEvalYaml', () => {
     expect(parsed.tests).toHaveLength(1);
     expect(parsed.evaluators).toEqual(['correctness', 'keywords']);
   });
+
+  it('excludes empty optional fields from expected', async () => {
+    const evalWithOptional: GeneratedEval = {
+      ...SAMPLE_EVAL,
+      tests: [
+        {
+          name: 'test-no-optionals',
+          prompt: 'Do something',
+          expected: {}, // no response_contains, no tools
+          difficulty: 'simple',
+          category: 'happy-path',
+        },
+      ],
+    };
+    const yaml = serializeEvalYaml(evalWithOptional);
+    expect(yaml).not.toContain('response_contains');
+    expect(yaml).not.toContain('response_not_contains');
+    expect(yaml).not.toContain('tools');
+  });
+
+  it('includes response_not_contains when present', () => {
+    const evalWithNegative: GeneratedEval = {
+      ...SAMPLE_EVAL,
+      tests: [
+        {
+          name: 'negative-test',
+          prompt: 'Do not do something',
+          expected: { response_not_contains: ['error', 'fail'] },
+          difficulty: 'simple',
+          category: 'negative',
+        },
+      ],
+    };
+    const yaml = serializeEvalYaml(evalWithNegative);
+    expect(yaml).toContain('response_not_contains');
+    expect(yaml).toContain('error');
+    expect(yaml).toContain('fail');
+  });
+
+  it('includes tools when present', () => {
+    const evalWithTools: GeneratedEval = {
+      ...SAMPLE_EVAL,
+      tests: [
+        {
+          name: 'tool-test',
+          prompt: 'Use the search tool',
+          expected: { tools: ['search_tool', 'query_tool'] },
+          difficulty: 'moderate',
+          category: 'happy-path',
+        },
+      ],
+    };
+    const yaml = serializeEvalYaml(evalWithTools);
+    expect(yaml).toContain('search_tool');
+    expect(yaml).toContain('query_tool');
+  });
+
+  it('handles multiple tests', async () => {
+    const { parse } = await import('yaml');
+    const multiTest: GeneratedEval = {
+      ...SAMPLE_EVAL,
+      tests: [
+        { name: 'test-a', prompt: 'A', expected: { response_contains: ['a'] }, difficulty: 'simple', category: 'happy-path' },
+        { name: 'test-b', prompt: 'B', expected: { response_contains: ['b'] }, difficulty: 'moderate', category: 'edge-case' },
+        { name: 'test-c', prompt: 'C', expected: { response_contains: ['c'] }, difficulty: 'complex', category: 'negative' },
+      ],
+    };
+    const yaml = serializeEvalYaml(multiTest);
+    const parsed = parse(yaml);
+    expect(parsed.tests).toHaveLength(3);
+    expect(parsed.tests[0].name).toBe('test-a');
+    expect(parsed.tests[2].name).toBe('test-c');
+  });
 });

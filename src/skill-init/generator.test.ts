@@ -73,3 +73,49 @@ describe('generateEval', () => {
     expect(result.defaults.thresholds.correctness).toBe(0.7);
   });
 });
+
+describe('selectEvaluators edge cases', () => {
+  it('does not add plan-quality for simple skills', () => {
+    const simple: SkillProfile = { ...ESQL_PROFILE, complexity: 'simple' };
+    expect(selectEvaluators(simple)).not.toContain('plan-quality');
+  });
+
+  it('returns only correctness for minimal profile', () => {
+    const minimal: SkillProfile = {
+      name: 'minimal',
+      purpose: 'test',
+      capabilities: [],
+      expectedTools: [],
+      keyDomainTerms: [],
+      complexity: 'simple',
+      hasCodeOutput: false,
+      hasFileOutput: false,
+    };
+    expect(selectEvaluators(minimal)).toEqual(['correctness']);
+  });
+});
+
+describe('selectThresholds edge cases', () => {
+  it('returns empty for unknown evaluators', () => {
+    const thresholds = selectThresholds(['unknown-eval', 'another-unknown']);
+    expect(Object.keys(thresholds)).toHaveLength(0);
+  });
+
+  it('includes tool-selection threshold', () => {
+    const thresholds = selectThresholds(['tool-selection']);
+    expect(thresholds['tool-selection']).toBe(0.8);
+  });
+});
+
+describe('generateEval edge cases', () => {
+  it('includes description from profile purpose', async () => {
+    const result = await generateEval(ESQL_PROFILE);
+    expect(result.description).toContain('ES|QL queries');
+  });
+
+  it('sets default timeout and repetitions', async () => {
+    const result = await generateEval(ESQL_PROFILE);
+    expect(result.defaults.timeout).toBe(120_000);
+    expect(result.defaults.repetitions).toBe(1);
+  });
+});
