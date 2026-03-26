@@ -50,5 +50,8 @@
   - [Community Registry](eval-registry.md)
   - [Cursor Extension](cursor-extension.md)
 
+- **Showcase**
+  - [Elastic Cursor Plugin](https://github.com/patrykkopycinski/cursor-plugin-evals/tree/main/showcase/elastic-cursor-plugin)
+
 - **Reference**
   - [API Reference](api-reference.md)
