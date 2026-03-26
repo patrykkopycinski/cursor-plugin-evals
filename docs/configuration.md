@@ -86,12 +86,22 @@ defaults:
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `timeout` | number | `30000` | Max milliseconds per test |
-| `repetitions` | number | `1` | How many times to repeat each test |
+| `repetitions` | number | `1` | How many times to repeat each test (or use `--preset smoke\|reliable\|regression`) |
 | `judge_model` | string | `gpt-5.4` | LLM model used by LLM evaluators |
 | `thresholds` | map | — | Per-evaluator pass/fail thresholds (number for simple, object for complex) |
 
 Thresholds can be a simple number (0–1) for evaluators that use a single threshold, or a typed
 configuration object for evaluators that need richer config (e.g., `token-usage`, `workflow`, `security`).
+
+#### Trial Presets
+
+```bash
+cursor-plugin-evals run --preset smoke       # 5 repetitions
+cursor-plugin-evals run --preset reliable    # 20 repetitions
+cursor-plugin-evals run --preset regression  # 50 repetitions
+```
+
+Presets are equivalent to `--repeat N` and can be overridden by `--repeat`.
 
 ## scoring
 
@@ -269,6 +279,26 @@ suites:
     adapter: cursor-cli
     test_filter:
       adapters: [cursor-cli]  # Only run tests that support cursor-cli
+```
+
+#### Golden Dataset
+
+Point a suite at a file of input/golden-output pairs for accuracy testing:
+
+```yaml
+suites:
+  - name: accuracy-check
+    layer: llm
+    golden_dataset: datasets/esql-golden.jsonl
+    golden_evaluators:
+      - correctness
+      - similarity
+```
+
+File format (`.jsonl`):
+```jsonl
+{"input": "Count all logs", "golden_output": "FROM logs-* | STATS count = COUNT(*)"}
+{"input": "Show recent errors", "golden_output": "FROM logs-* | WHERE level == \"error\" | SORT @timestamp DESC | LIMIT 10"}
 ```
 
 ## Environment Variable Interpolation

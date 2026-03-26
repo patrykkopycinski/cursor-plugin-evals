@@ -28,6 +28,8 @@
   - [Prompt Sensitivity](prompt-sensitivity.md)
   - [Prompt Optimization](prompt-optimization.md)
   - [Regression Detection](regression.md)
+  - [Trial Metrics](trial-metrics.md)
+  - [Ablation Testing](ablation.md)
   - [Guardrails](guardrails.md)
   - [Cost Optimization](cost-advisor.md)
   - [Dataset Management](datasets.md)

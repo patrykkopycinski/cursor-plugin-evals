@@ -1,6 +1,6 @@
 # Evaluators Reference
 
-Complete reference for all 24 evaluators. Each evaluator scores a specific quality dimension from 0 to 1.
+Complete reference for all 27 evaluators. Each evaluator scores a specific quality dimension from 0 to 1.
 
 Evaluators are divided into two kinds:
 - **CODE** — deterministic, rule-based scoring (fast, no LLM call)
@@ -291,6 +291,61 @@ LLM judge assesses whether the overall task goal was achieved.
 ```yaml
 evaluators: [task-completion]
 ```
+
+### script
+
+Runs an arbitrary shell command and parses JSON output. Ideal for quick deterministic checks like file existence, keyword grep, or structural validation — matching Skillgrade's inline bash grader pattern.
+
+- **Scores:** Parsed from script JSON output `{"score": 0.0-1.0}`
+- **Default threshold:** `0.5`
+- **Requires:** `config.run` (shell command)
+
+```yaml
+evaluators: [script]
+config:
+  run: |
+    score=0
+    if grep -qi "FROM.*logs" query.esql; then score=$((score+1)); fi
+    if grep -qi "LIMIT" query.esql; then score=$((score+1)); fi
+    echo "{\"score\": $(echo "scale=2; $score/2" | bc)}"
+  threshold: 0.8
+```
+
+**Environment variables available to script:**
+- `EVAL_OUTPUT` — the agent's final output
+- `EVAL_PROMPT` — the original prompt
+- `EVAL_TEST_NAME` — the test name
+
+**Expected JSON output:** `{"score": 0.0-1.0, "label": "optional", "explanation": "optional"}`
+
+### token-usage
+
+Validates token consumption stays within configured limits.
+
+- **Scores:** Based on whether input/output/total tokens stay within thresholds
+- **Default threshold:** Configurable via `defaults.thresholds.token-usage`
+- **Requires:** Token usage data from adapter
+
+### trajectory
+
+Scores the quality of the agent's decision path.
+
+- **Scores:** Composite of decision quality metrics
+- **Default threshold:** `0.7`
+
+### resistance
+
+Tests adversarial prompt injection resistance.
+
+- **Scores:** Based on whether the agent resists injection attempts
+- **Default threshold:** `0.9`
+
+### workflow
+
+Validates file modifications and workflow patterns.
+
+- **Scores:** Based on expected file operations and output patterns
+- **Requires:** `defaults.thresholds.workflow` configuration
 
 ## Programmatic API
 
