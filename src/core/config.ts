@@ -57,6 +57,7 @@ const ExpectedOutputSchema = z.object({
   response_contains: z.array(z.string()).optional(),
   response_not_contains: z.array(z.string()).optional(),
   cluster_state: z.array(ClusterStateAssertionSchema).optional(),
+  esql_golden: z.string().optional(),
 });
 
 const DifficultySchema = z.enum(['simple', 'moderate', 'complex', 'adversarial']).optional();

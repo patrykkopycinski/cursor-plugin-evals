@@ -99,6 +99,7 @@ export interface RunResult {
   ciResult?: CiResult;
   derivedMetrics?: DerivedMetricResult[];
   trialMetrics?: TrialMetrics;
+  recommendations?: Array<{ type: string; priority: string; message: string }>;
 }
 
 export interface TrialMetrics {
@@ -200,6 +201,7 @@ export interface ExpectedOutput {
   responseContains?: string[];
   responseNotContains?: string[];
   clusterState?: ClusterStateAssertion[];
+  esqlGolden?: string;
 }
 
 export type ClusterCheckType = 'es_query' | 'kibana_api' | 'script';
