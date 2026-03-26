@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/getting-started"><img src="https://img.shields.io/badge/layers-7-6C5CE7?style=flat-square" alt="7 Layers" /></a>
-  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/evaluators"><img src="https://img.shields.io/badge/evaluators-25-A29BFE?style=flat-square" alt="25 Evaluators" /></a>
+  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/evaluators"><img src="https://img.shields.io/badge/evaluators-27-A29BFE?style=flat-square" alt="27 Evaluators" /></a>
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/adapters"><img src="https://img.shields.io/badge/adapters-6-74B9FF?style=flat-square" alt="6 Adapters" /></a>
   <a href="#mcp-server"><img src="https://img.shields.io/badge/MCP--tools-14-55E6C1?style=flat-square" alt="14 MCP Tools" /></a>
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/red-teaming"><img src="https://img.shields.io/badge/security--rules-20-E74C3C?style=flat-square" alt="20 Security Rules" /></a>
@@ -30,6 +30,7 @@ npm install cursor-plugin-evals
 npx cursor-plugin-evals setup         # Interactive setup wizard
 npx cursor-plugin-evals run           # Run all layers
 npx cursor-plugin-evals run --ci      # Enforce CI quality gates
+npx cursor-plugin-evals run --preset reliable  # 20 trials with pass@k/pass^k
 ```
 
 <details>
@@ -125,16 +126,15 @@ Auto-registers when you install the Cursor plugin (via `.mcp.json`).
 <tr><td width="50%">
 
 **Evaluation**
-- 28 evaluators (13 deterministic + 12 LLM-as-judge + multi-judge panel + script graders)
+- 27 evaluators (13 deterministic + 12 LLM-as-judge + multi-judge panel + inline script graders)
 - 6 task adapters (MCP, plain-llm, cursor-cli, headless-coder, gemini-cli, claude-sdk)
 - 20 OWASP-aligned security rules with 3-pass red-teaming
 - SAFE-MCP compliance with 26 attack techniques
 - Regression detection via Welch's t-test
 - Multi-model comparison with Borda count
-
-| Evaluator | Type | Description |
-|-----------|------|-------------|
-| `script` | CODE | Run inline bash scripts as graders — output `{"score": 0.75}` |
+- Probabilistic trial metrics: pass@k and pass^k with [named presets](docs/trial-metrics.md)
+- [Ablation testing](docs/ablation.md): prove skill value with statistical A/B comparison
+- [Golden dataset loader](docs/configuration.md#golden-dataset) for accuracy evaluation (JSON/JSONL)
 
 </td><td width="50%">
 
