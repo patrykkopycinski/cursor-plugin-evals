@@ -19,6 +19,7 @@ import type { RunResult } from '../core/types.js';
 import type { ShardConfig } from '../core/shard.js';
 import { log, setLogLevel, setNoColor } from './logger.js';
 import { watchAndRun } from './watch.js';
+import { resolveRepeatFromPreset } from './presets.js';
 import { initCommand } from './init.js';
 import { ciInitCommand } from './ci-init.js';
 import { externalInitCommand, applyFixesCommand, generatePrFindings } from './external.js';
@@ -60,6 +61,7 @@ async function runCommand(opts: {
   mock?: boolean;
   model?: string[];
   repeat?: number;
+  preset?: string;
   report: string;
   output?: string;
   ci?: boolean;
@@ -73,6 +75,8 @@ async function runCommand(opts: {
   if (opts.noColor) setNoColor(true);
   if (opts.verbose) setLogLevel('debug');
 
+  const repeat = opts.repeat ?? resolveRepeatFromPreset(opts.preset);
+
   if (opts.watch) {
     try {
       await watchAndRun(opts.config, {
@@ -80,7 +84,7 @@ async function runCommand(opts: {
         suites: opts.suite,
         mock: opts.mock,
         models: opts.model,
-        repeat: opts.repeat,
+        repeat,
         report: opts.report,
         verbose: opts.verbose,
       });
@@ -107,7 +111,7 @@ async function runCommand(opts: {
       suites: opts.suite,
       mock: opts.mock,
       models: opts.model,
-      repeat: opts.repeat,
+      repeat,
       ci: opts.ci,
       lastFailed: opts.lastFailed,
       failedFirst: opts.failedFirst,
@@ -369,6 +373,7 @@ program
   .option('--mock', 'use recorded fixtures instead of live cluster')
   .option('-m, --model <models...>', 'override LLM models')
   .option('-r, --repeat <n>', 'override repetitions', parsePositiveInt)
+  .option('--preset <name>', 'trial preset: smoke (5), reliable (20), regression (50)')
   .option(
     '--report <format>',
     'output format: terminal, markdown, json, html, junit-xml',
