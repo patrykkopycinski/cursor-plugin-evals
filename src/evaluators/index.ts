@@ -28,6 +28,9 @@ import { TokenUsageEvaluator } from './token-usage.js';
 import { WorkflowEvaluator } from './workflow.js';
 import { ResistanceEvaluator } from './resistance.js';
 import { ScriptEvaluator } from './script.js';
+import { EsqlExecutionEvaluator } from './esql-execution.js';
+import { EsqlPatternEvaluator } from './esql-pattern.js';
+import { EsqlResultEvaluator } from './esql-result.js';
 
 export const EVALUATOR_NAMES = [
   'tool-selection',
@@ -58,6 +61,9 @@ export const EVALUATOR_NAMES = [
   'workflow',
   'resistance',
   'script',
+  'esql-execution',
+  'esql-pattern',
+  'esql-result',
 ] as const;
 
 export type EvaluatorName = (typeof EVALUATOR_NAMES)[number];
@@ -91,6 +97,9 @@ const EVALUATOR_MAP: Record<EvaluatorName, new () => Evaluator> = {
   workflow: WorkflowEvaluator,
   resistance: ResistanceEvaluator,
   script: ScriptEvaluator,
+  'esql-execution': EsqlExecutionEvaluator,
+  'esql-pattern': EsqlPatternEvaluator,
+  'esql-result': EsqlResultEvaluator,
 };
 
 export function createEvaluator(name: string): Evaluator {
@@ -130,6 +139,9 @@ export {
   WorkflowEvaluator,
   ResistanceEvaluator,
   ScriptEvaluator,
+  EsqlExecutionEvaluator,
+  EsqlPatternEvaluator,
+  EsqlResultEvaluator,
 };
 
 export type {

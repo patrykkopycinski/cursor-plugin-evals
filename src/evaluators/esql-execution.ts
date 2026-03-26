@@ -51,11 +51,11 @@ export class EsqlExecutionEvaluator implements Evaluator {
       score: 1.0,
       pass: true,
       label: 'executed',
-      explanation: `Query executed successfully (${outcome.columns.length} columns, ${outcome.values.length} rows)`,
+      explanation: `Query executed successfully (${outcome.columns?.length ?? 0} columns, ${outcome.values?.length ?? 0} rows)`,
       metadata: {
         query,
-        columnCount: outcome.columns.length,
-        rowCount: outcome.values.length,
+        columnCount: outcome.columns?.length ?? 0,
+        rowCount: outcome.values?.length ?? 0,
       },
     };
   }
