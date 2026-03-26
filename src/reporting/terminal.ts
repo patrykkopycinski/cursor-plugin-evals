@@ -194,6 +194,26 @@ function printTrialMetrics(metrics: TrialMetrics): void {
   log.info('');
 }
 
+export function printRecommendations(recommendations: RunResult['recommendations']): void {
+  if (!recommendations || recommendations.length === 0) return;
+
+  log.divider();
+  log.info(chalk.bold('  Recommendations'));
+  log.info('');
+
+  const priorityIcon: Record<string, string> = {
+    high: chalk.red('\u25cf'),
+    medium: chalk.yellow('\u25cf'),
+    low: chalk.dim('\u25cf'),
+  };
+
+  for (const rec of recommendations.slice(0, 5)) {
+    const icon = priorityIcon[rec.priority] ?? chalk.dim('\u25cf');
+    log.info(`  ${icon} ${rec.message}`);
+  }
+  log.info('');
+}
+
 export function printTerminalReport(result: RunResult): void {
   log.header(`Eval Run: ${result.runId}`);
   log.info(`  Config: ${result.config}`);
@@ -213,6 +233,10 @@ export function printTerminalReport(result: RunResult): void {
 
   if (result.derivedMetrics?.length) {
     printDerivedMetrics(result.derivedMetrics);
+  }
+
+  if (result.recommendations?.length) {
+    printRecommendations(result.recommendations);
   }
 
   log.summary(

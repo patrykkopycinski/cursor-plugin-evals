@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command, InvalidArgumentError } from 'commander';
-import { writeFileSync, mkdirSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { loadConfig } from '../core/config.js';
 import { runEvaluation } from '../core/runner.js';
@@ -955,6 +955,8 @@ program
   .option('-r, --repeat <n>', 'repetitions per example', parsePositiveInt)
   .option('--report <format>', 'output format: terminal, markdown, json', 'terminal')
   .option('-o, --output <path>', 'write report to file')
+  .option('--optimize', 'apply AI recommendations to eval.yaml after run')
+  .option('--no-llm-recommendations', 'skip LLM-powered recommendations (deterministic only)')
   .option('--verbose', 'debug logging')
   .option('--no-color', 'disable colors')
   .action(
@@ -966,6 +968,8 @@ program
       repeat?: number;
       report: string;
       output?: string;
+      optimize?: boolean;
+      llmRecommendations?: boolean;
       verbose?: boolean;
       noColor?: boolean;
     }) => {
@@ -1079,8 +1083,113 @@ program
           writeFileSync(outPath, outputContent, 'utf-8');
           log.success(`Report written to ${outPath}`);
         }
+
+        // --- Recommendations ---
+        const { computeDeterministicRecommendations, computeLlmRecommendations } =
+          await import('../skill-init/recommendations.js');
+        const { parse: parseYaml } = await import('yaml');
+
+        const evalYamlPath = resolve(skillDir, 'eval.yaml');
+        const evalYamlContent = existsSync(evalYamlPath) ? readFileSync(evalYamlPath, 'utf-8') : '';
+        const evalYamlParsed = evalYamlContent ? (parseYaml(evalYamlContent) as Record<string, unknown>) : {};
+
+        let allRecs = computeDeterministicRecommendations(result, evalYamlParsed);
+
+        if (opts.llmRecommendations !== false) {
+          const skillMdPath = resolve(skillDir, 'SKILL.md');
+          const skillContent = existsSync(skillMdPath) ? readFileSync(skillMdPath, 'utf-8') : '';
+          if (skillContent) {
+            const llmRecs = await computeLlmRecommendations(result, skillContent, evalYamlContent);
+            allRecs = [...allRecs, ...llmRecs];
+          }
+        }
+
+        if (allRecs.length > 0) {
+          result.recommendations = allRecs;
+          const { printRecommendations } = await import('../reporting/terminal.js');
+          printRecommendations(allRecs);
+        }
+
+        // --- Optimize ---
+        if (opts.optimize && allRecs.length > 0) {
+          const actionableRecs = allRecs.filter((r) => r.action);
+          if (actionableRecs.length > 0 && evalYamlContent) {
+            const { applyPatches } = await import('../skill-init/optimizer.js');
+            const { stringify } = await import('yaml');
+            const patches = actionableRecs
+              .map((r) => r.action)
+              .filter((a): a is import('../skill-init/recommendations.js').EvalYamlPatch => !!a);
+            const patched = applyPatches(evalYamlParsed, patches);
+            const header = evalYamlContent.match(/^(#[^\n]*\n)*/)?.[0] ?? '';
+            writeFileSync(evalYamlPath, header + stringify(patched, { lineWidth: 120 }), 'utf-8');
+            log.success(`Applied ${actionableRecs.length} optimization(s) to eval.yaml`);
+          }
+        }
       } catch (err) {
         log.error('Skill evaluation failed', err);
+        process.exitCode = EXIT_FAIL;
+      }
+    },
+  );
+
+program
+  .command('skill-eval-init')
+  .description('Auto-generate eval.yaml from SKILL.md using LLM analysis')
+  .requiredOption('--skill-dir <path>', 'directory containing SKILL.md')
+  .option('--force', 'overwrite existing eval.yaml')
+  .option('-m, --model <model>', 'LLM model for generation')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: {
+      skillDir: string;
+      force?: boolean;
+      model?: string;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+
+      const skillDir = resolve(process.cwd(), opts.skillDir);
+      const skillMdPath = resolve(skillDir, 'SKILL.md');
+      const evalYamlPath = resolve(skillDir, 'eval.yaml');
+
+      if (!existsSync(skillMdPath)) {
+        log.error(`No SKILL.md found in ${skillDir}. Create a SKILL.md first, then run init again.`);
+        process.exitCode = EXIT_CONFIG_ERROR;
+        return;
+      }
+
+      if (existsSync(evalYamlPath) && !opts.force) {
+        log.error(`eval.yaml already exists in ${skillDir}. Use --force to overwrite.`);
+        process.exitCode = EXIT_CONFIG_ERROR;
+        return;
+      }
+
+      log.header('Skill Eval Init');
+
+      try {
+        const { analyzeSkill } = await import('../skill-init/analyzer.js');
+        const { generateEval } = await import('../skill-init/generator.js');
+        const { serializeEvalYaml } = await import('../skill-init/writer.js');
+
+        log.info('  Analyzing SKILL.md...');
+        const skillContent = readFileSync(skillMdPath, 'utf-8');
+        const profile = await analyzeSkill(skillContent, opts.model);
+        log.info(`  Profile: ${profile.name} (${profile.complexity}, ${profile.capabilities.length} capabilities)`);
+
+        log.info('  Generating tests...');
+        const generated = await generateEval(profile, opts.model);
+        log.info(`  Generated ${generated.tests.length} tests with evaluators: ${generated.evaluators.join(', ')}`);
+
+        const yaml = serializeEvalYaml(generated);
+        writeFileSync(evalYamlPath, yaml, 'utf-8');
+        log.success(`eval.yaml written to ${evalYamlPath}`);
+        log.info('');
+        log.info(`  Run: cursor-plugin-evals skill-eval --skill-dir ${opts.skillDir}`);
+      } catch (err) {
+        log.error('Init failed', err);
         process.exitCode = EXIT_FAIL;
       }
     },
