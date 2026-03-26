@@ -25,7 +25,7 @@ End-to-end testing framework for Cursor plugins — static analysis, MCP tool te
 
 ## Core Concepts
 
-- [Evaluators](./evaluators.md) — all 24 evaluators (CODE + LLM) with scoring details
+- [Evaluators](./evaluators.md) — all 30 evaluators (CODE + LLM) with scoring details
 - [Task Adapters](./adapters.md) — MCP, plain-llm, cursor-cli, headless-coder, gemini-cli, claude-sdk
 
 ## Features

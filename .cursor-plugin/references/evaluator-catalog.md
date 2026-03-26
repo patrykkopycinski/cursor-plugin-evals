@@ -1,6 +1,6 @@
 # Evaluator Catalog
 
-Complete reference for all 27 evaluators in cursor-plugin-evals. Each evaluator scores a specific quality dimension of agent behavior, producing a score in `[0, 1]`, a pass/fail result, a label, and an explanation.
+Complete reference for all 30 evaluators in cursor-plugin-evals. Each evaluator scores a specific quality dimension of agent behavior, producing a score in `[0, 1]`, a pass/fail result, a label, and an explanation.
 
 ---
 
@@ -322,6 +322,58 @@ expected:
 defaults:
   thresholds:
     k: 10
+```
+
+---
+
+### esql-execution
+
+**Kind**: CODE
+**Purpose**: Execute the generated ES|QL query against a live Elasticsearch cluster and score based on execution success.
+**Config key**: None (binary execution test)
+**Scoring**: `1.0` if query executes successfully, `0.4` for `index_not_found` (valid syntax, wrong index name), `0` for parse errors or other failures.
+**Labels**: `executed`, `index_not_found`, `error`, `no_query`, `no_es_url`
+**Requirements**: `ELASTICSEARCH_URL` or `ES_URL` env var, or `esUrl` in config.
+
+```yaml
+evaluators: [esql-execution]
+```
+
+---
+
+### esql-pattern
+
+**Kind**: CODE
+**Purpose**: Regex-based pattern matching against generated ES|QL with equivalence classes.
+**Config key**: `esql-pattern` (number, default: `0.7`)
+**Scoring**: Fraction of patterns matched. Supports equivalence substitution: `LOOKUP JOIN` ≈ `ENRICH`, `DISSECT` ≈ `GROK`, `MATCH` ≈ `QSTR`.
+**Labels**: `all_matched`, `partial`, `none_matched`, `no_query`, `no_patterns`
+
+```yaml
+evaluators: [esql-pattern]
+expected:
+  response_contains: ["STATS", "SORT.*DESC", "LIMIT 10"]
+```
+
+---
+
+### esql-result
+
+**Kind**: CODE
+**Purpose**: Compare result sets between generated and golden ES|QL queries executed on a live cluster.
+**Config key**: `esql-result` (number, default: `0.7`)
+**Scoring**: Average of column overlap (fraction of reference columns in generated output, case-insensitive) and row count similarity (`1 - |gen - ref| / ref`). Extra columns don't penalize.
+**Labels**: `match`, `partial`, `mismatch`, `no_golden`, `no_query`, `no_es_url`, `golden_error`, `gen_error`
+**Requirements**: `expected.esql_golden` (reference query), `ELASTICSEARCH_URL` or `esUrl`.
+
+```yaml
+evaluators: [esql-result]
+expected:
+  esql_golden: |
+    FROM logs-test
+    | KEEP @timestamp, level, message
+    | SORT @timestamp DESC
+    | LIMIT 10
 ```
 
 ---

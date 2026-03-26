@@ -1,6 +1,6 @@
 # Evaluators Reference
 
-Complete reference for all 27 evaluators. Each evaluator scores a specific quality dimension from 0 to 1.
+Complete reference for all 30 evaluators. Each evaluator scores a specific quality dimension from 0 to 1.
 
 Evaluators are divided into two kinds:
 - **CODE** — deterministic, rule-based scoring (fast, no LLM call)
@@ -188,6 +188,59 @@ Compares screenshots against baselines for pixel-level regressions.
 ```yaml
 evaluators: [visual-regression]
 ```
+
+### esql-execution
+
+Executes the generated ES|QL query against a live Elasticsearch cluster and scores based on execution success.
+
+- **Scores:** `1.0` if query executes, `0.4` for `index_not_found` (valid syntax, wrong index), `0` for errors
+- **Default threshold:** `0.5`
+- **Requires:** `ELASTICSEARCH_URL` or `config.esUrl`
+
+```yaml
+evaluators: [esql-execution]
+```
+
+Extracts ES|QL from the LLM output automatically (fenced blocks, bare pipe syntax). Partial credit for valid syntax that references a non-existent index rewards correct ES|QL grammar even when the model guesses wrong index names.
+
+### esql-pattern
+
+Regex-based pattern matching against the generated ES|QL query with equivalence class support.
+
+- **Scores:** Fraction of patterns matched (with equivalence substitution)
+- **Default threshold:** `0.7`
+- **Requires:** `expected.responseContains` (patterns)
+
+```yaml
+evaluators: [esql-pattern]
+expected:
+  response_contains:
+    - "STATS"
+    - "SORT.*DESC"
+    - "LIMIT 10"
+```
+
+Equivalence classes: `LOOKUP JOIN` ≈ `ENRICH`, `DISSECT` ≈ `GROK`, `MATCH` ≈ `QSTR`, `MV_EXPAND` ≈ `MV_SORT`. If a pattern specifies one command, its equivalent is also accepted.
+
+### esql-result
+
+Compares result sets between the generated ES|QL query and a golden reference query, both executed against a live cluster.
+
+- **Scores:** Average of column overlap + row count similarity
+- **Default threshold:** `0.7`
+- **Requires:** `expected.esqlGolden` (reference query), `ELASTICSEARCH_URL` or `config.esUrl`
+
+```yaml
+evaluators: [esql-result]
+expected:
+  esql_golden: |
+    FROM logs-test
+    | KEEP @timestamp, level, message
+    | SORT @timestamp DESC
+    | LIMIT 10
+```
+
+Column overlap measures the fraction of reference columns present in the generated output (case-insensitive, extra columns don't penalize). Row count similarity is `1 - |gen - ref| / ref`.
 
 ## LLM Evaluators
 

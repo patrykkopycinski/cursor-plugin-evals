@@ -330,6 +330,7 @@ Used in LLM tests and conversation turns:
 | `response_contains` | string[] | Strings that must appear in the response |
 | `response_not_contains` | string[] | Strings that must NOT appear |
 | `cluster_state` | array | Cluster state assertions (for cluster-state evaluator) |
+| `esql_golden` | string | Reference ES|QL query for result comparison (for esql-result evaluator) |
 
 ### Performance tests (`layer: performance`)
 

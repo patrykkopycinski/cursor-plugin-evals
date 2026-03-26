@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { resolve, isAbsolute, basename } from 'path';
+import { resolve, isAbsolute, basename, dirname } from 'path';
 import { parse as parseYaml } from 'yaml';
 import { discoverPlugin } from '../plugin/discovery.js';
 import type {
@@ -71,15 +71,34 @@ const LAYER_NAMES = ['unit', 'integration', 'llm', 'performance', 'security', 's
 
 function loadConfigLoose(configPath: string): EvalConfig {
   const absPath = isAbsolute(configPath) ? configPath : resolve(process.cwd(), configPath);
+  const configDir = dirname(absPath);
   const raw = readFileSync(absPath, 'utf-8');
   const parsed = parseYaml(raw) as Record<string, unknown>;
 
   const plugin = (parsed.plugin ?? {}) as Record<string, unknown>;
-  const suites = (parsed.suites ?? []) as Array<Record<string, unknown>>;
+  const suitesRaw = (parsed.suites ?? []) as Array<Record<string, unknown> | string>;
 
-  const camelSuites: SuiteConfig[] = suites
-    .filter((s) => typeof s === 'object' && s !== null && 'name' in s && 'layer' in s)
-    .map((s) => snakeToCamelSuite(s));
+  const camelSuites: SuiteConfig[] = [];
+
+  for (const entry of suitesRaw) {
+    if (typeof entry === 'string') {
+      const filePath = isAbsolute(entry) ? entry : resolve(configDir, entry);
+      try {
+        const fileRaw = readFileSync(filePath, 'utf-8');
+        const fileParsed = parseYaml(fileRaw);
+        const entries = Array.isArray(fileParsed) ? fileParsed : [fileParsed];
+        for (const s of entries) {
+          if (typeof s === 'object' && s !== null && 'name' in s && 'layer' in s) {
+            camelSuites.push(snakeToCamelSuite(s as Record<string, unknown>));
+          }
+        }
+      } catch {
+        // Skip unreadable suite files
+      }
+    } else if (typeof entry === 'object' && entry !== null && 'name' in entry && 'layer' in entry) {
+      camelSuites.push(snakeToCamelSuite(entry));
+    }
+  }
 
   return {
     plugin: {
