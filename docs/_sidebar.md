@@ -31,6 +31,7 @@
   - [Trial Metrics](trial-metrics.md)
   - [Ablation Testing](ablation.md)
   - [Zero-Config Skill Eval](zero-config-skill-eval.md)
+  - [LLM Cost Optimization](cost-optimization.md)
   - [Guardrails](guardrails.md)
   - [Cost Optimization](cost-advisor.md)
   - [Dataset Management](datasets.md)

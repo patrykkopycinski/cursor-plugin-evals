@@ -224,3 +224,29 @@ export async function runMultiJudgeEvaluation(
     },
   };
 }
+
+export type MultiJudgeTier = 'fast' | 'balanced' | 'thorough';
+
+export const MULTI_JUDGE_TIERS: Record<MultiJudgeTier, MultiJudgeConfig> = {
+  fast: {
+    judges: [{ model: 'gpt-5.2-mini', weight: 1.0 }],
+    aggregation: 'weighted_average',
+    blind: true,
+    supremeCourtEnabled: false,
+  },
+  balanced: {
+    judges: [
+      { model: 'gpt-5.2', weight: 1.0 },
+      { model: 'gemini-2.5-flash', weight: 1.0 },
+    ],
+    aggregation: 'weighted_average',
+    blind: true,
+    supremeCourtEnabled: false,
+  },
+  thorough: DEFAULT_MULTI_JUDGE_CONFIG,
+};
+
+export function resolveMultiJudgeConfig(tier?: MultiJudgeTier | string): MultiJudgeConfig {
+  if (!tier) return DEFAULT_MULTI_JUDGE_CONFIG;
+  return MULTI_JUDGE_TIERS[tier as MultiJudgeTier] ?? DEFAULT_MULTI_JUDGE_CONFIG;
+}

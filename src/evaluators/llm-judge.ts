@@ -4,11 +4,13 @@ import {
   buildBedrockBody,
   parseBedrockResponse,
 } from '../adapters/bedrock.js';
+import { LlmCache } from '../cache/index.js';
 
 export interface JudgeRequest {
   systemPrompt: string;
   userPrompt: string;
   model?: string;
+  cache?: boolean;
 }
 
 export interface JudgeResponse {
@@ -34,8 +36,23 @@ export function isContentFilterError(err: unknown): err is ContentFilterError {
 
 const DEFAULT_JUDGE_MODEL = 'llm-gateway/gpt-5.4';
 
+const judgeCache = new LlmCache({ ttl: '24h', dir: '.cursor-plugin-evals/judge-cache' });
+
+export function getJudgeCache(): LlmCache {
+  return judgeCache;
+}
+
 export async function callJudge(request: JudgeRequest): Promise<JudgeResponse> {
   const model = request.model ?? process.env.JUDGE_MODEL ?? DEFAULT_JUDGE_MODEL;
+
+  const useCache = request.cache !== false && process.env.JUDGE_CACHE !== 'false';
+
+  if (useCache) {
+    const cached = await judgeCache.get(model, request.systemPrompt, request.userPrompt);
+    if (cached) {
+      return parseJudgeResponse(cached);
+    }
+  }
 
   const isAzure =
     !!process.env.AZURE_OPENAI_API_KEY && !!process.env.AZURE_OPENAI_ENDPOINT;
@@ -143,6 +160,10 @@ export async function callJudge(request: JudgeRequest): Promise<JudgeResponse> {
   } else {
     const resp = data as { choices: Array<{ message: { content: string | null } }> };
     content = resp.choices?.[0]?.message?.content ?? '';
+  }
+
+  if (useCache) {
+    await judgeCache.set(model, request.systemPrompt, request.userPrompt, content).catch(() => {});
   }
 
   return parseJudgeResponse(content);
