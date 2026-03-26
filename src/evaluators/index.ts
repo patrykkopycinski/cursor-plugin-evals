@@ -31,6 +31,7 @@ import { ScriptEvaluator } from './script.js';
 import { EsqlExecutionEvaluator } from './esql-execution.js';
 import { EsqlPatternEvaluator } from './esql-pattern.js';
 import { EsqlResultEvaluator } from './esql-result.js';
+import { NlScorerEvaluator } from './nl-scorer.js';
 
 export const EVALUATOR_NAMES = [
   'tool-selection',
@@ -64,6 +65,7 @@ export const EVALUATOR_NAMES = [
   'esql-execution',
   'esql-pattern',
   'esql-result',
+  'nl-scorer',
 ] as const;
 
 export type EvaluatorName = (typeof EVALUATOR_NAMES)[number];
@@ -100,6 +102,7 @@ const EVALUATOR_MAP: Record<EvaluatorName, new () => Evaluator> = {
   'esql-execution': EsqlExecutionEvaluator,
   'esql-pattern': EsqlPatternEvaluator,
   'esql-result': EsqlResultEvaluator,
+  'nl-scorer': NlScorerEvaluator,
 };
 
 export function createEvaluator(name: string): Evaluator {
@@ -142,6 +145,7 @@ export {
   EsqlExecutionEvaluator,
   EsqlPatternEvaluator,
   EsqlResultEvaluator,
+  NlScorerEvaluator,
 };
 
 export type {

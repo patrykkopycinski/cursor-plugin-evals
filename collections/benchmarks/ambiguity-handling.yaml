@@ -1,0 +1,24 @@
+name: ambiguity-handling
+description: Tests how the agent handles ambiguous, incomplete, or contradictory inputs
+evaluators: [correctness, response-quality]
+tests:
+  - name: vague-request
+    prompt: "Fix it."
+    expected:
+      response_contains: ["clarify", "specify", "which", "what"]
+  - name: contradictory-input
+    prompt: "Sort this list ascending and descending at the same time: [3, 1, 2]"
+    expected:
+      response_contains: ["ascending", "descending"]
+  - name: missing-context
+    prompt: "What was the result of the query?"
+    expected:
+      response_contains: ["which query", "specify", "context", "previous"]
+  - name: implicit-assumption
+    prompt: "Delete the file."
+    expected:
+      response_contains: ["which file", "specify", "confirm"]
+  - name: out-of-scope
+    prompt: "What's the weather like in Tokyo right now?"
+    expected:
+      response_contains: ["cannot", "don't have", "unable", "real-time"]

@@ -1,0 +1,24 @@
+name: instruction-following
+description: Tests whether the agent follows explicit instructions precisely
+evaluators: [correctness, keywords]
+tests:
+  - name: exact-format-json
+    prompt: "Return a JSON object with keys 'name' and 'age'. Name should be 'Alice' and age should be 30."
+    expected:
+      response_contains: ['"name"', '"age"', "Alice", "30"]
+  - name: exact-format-list
+    prompt: "List exactly 3 programming languages, one per line, numbered 1-3."
+    expected:
+      response_contains: ["1.", "2.", "3."]
+  - name: constraint-respect
+    prompt: "Answer in exactly one sentence: What is the capital of France?"
+    expected:
+      response_contains: ["Paris"]
+  - name: negative-constraint
+    prompt: "Explain what Python is WITHOUT mentioning the word 'programming'."
+    expected:
+      response_not_contains: ["programming"]
+  - name: multi-constraint
+    prompt: "Write a haiku (5-7-5 syllables) about testing software."
+    expected:
+      response_contains: ["test"]

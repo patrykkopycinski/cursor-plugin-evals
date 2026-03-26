@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/getting-started"><img src="https://img.shields.io/badge/layers-7-6C5CE7?style=flat-square" alt="7 Layers" /></a>
-  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/evaluators"><img src="https://img.shields.io/badge/evaluators-30-A29BFE?style=flat-square" alt="30 Evaluators" /></a>
+  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/evaluators"><img src="https://img.shields.io/badge/evaluators-31-A29BFE?style=flat-square" alt="31 Evaluators" /></a>
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/adapters"><img src="https://img.shields.io/badge/adapters-6-74B9FF?style=flat-square" alt="6 Adapters" /></a>
   <a href="#mcp-server"><img src="https://img.shields.io/badge/MCP--tools-14-55E6C1?style=flat-square" alt="14 MCP Tools" /></a>
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/red-teaming"><img src="https://img.shields.io/badge/security--rules-20-E74C3C?style=flat-square" alt="20 Security Rules" /></a>
@@ -141,6 +141,14 @@ Auto-registers when you install the Cursor plugin (via `.mcp.json`).
 - AI-powered recommendations with `--optimize` to auto-improve eval config
 - LLM cost optimization: judge caching, per-evaluator model tiers, call deduplication
 - Pre-run cost estimation with `--estimate-cost`
+- Elastic OTEL export: send eval traces to Elasticsearch for production observability
+- Snapshot testing with configurable sanitizers (timestamps, UUIDs, numeric IDs)
+- Deep agent trajectory tracing with `TraceCollector.wrap()` for function-level observation
+- Skill cost-efficiency scoring (0-100 with letter grade)
+- 20 pre-built benchmark tests across 4 categories (instruction-following, ambiguity, reasoning, safety)
+- Natural language scorer: describe what to check in plain English, get an LLM evaluator
+- Unicode obfuscation and YAML anomaly security scanning (bidi overrides, homoglyphs, anchor bombs)
+- VS Code extension with syntax highlighting, snippets, and inline run commands
 
 </td><td width="50%">
 

@@ -1,0 +1,25 @@
+{
+  "scopeName": "source.plugin-eval-yaml",
+  "patterns": [
+    { "include": "#keywords" },
+    { "include": "#evaluators" },
+    { "include": "#layers" },
+    { "include": "source.yaml" }
+  ],
+  "repository": {
+    "keywords": {
+      "patterns": [
+        { "match": "\\b(plugin|suites|tests|defaults|scoring|ci|guardrails|post_run|derived_metrics|infrastructure|tracing)\\b(?=:)", "name": "keyword.control.plugin-eval" },
+        { "match": "\\b(name|layer|tool|args|assert|prompt|expected|evaluators|check|thresholds|adapter|matrix|require_env|setup|teardown)\\b(?=:)", "name": "support.type.property-name.plugin-eval" }
+      ]
+    },
+    "evaluators": {
+      "match": "\\b(correctness|groundedness|g-eval|keywords|similarity|context-faithfulness|conversation-coherence|criteria|plan-quality|task-completion|security|tool-poisoning|resistance|tool-selection|tool-args|tool-sequence|response-quality|content-quality|path-efficiency|cluster-state|mcp-protocol|skill-trigger|rag|visual-regression|trajectory|token-usage|workflow|script|nl-scorer|esql-execution|esql-pattern|esql-result)\\b",
+      "name": "entity.name.tag.evaluator.plugin-eval"
+    },
+    "layers": {
+      "match": "\\b(static|unit|integration|performance|llm|skill|conformance)\\b",
+      "name": "constant.language.layer.plugin-eval"
+    }
+  }
+}

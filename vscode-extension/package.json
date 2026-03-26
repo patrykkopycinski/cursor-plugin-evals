@@ -1,0 +1,23 @@
+{
+  "name": "cursor-plugin-evals-vscode",
+  "displayName": "Cursor Plugin Evals",
+  "description": "YAML authoring support for cursor-plugin-evals",
+  "version": "0.1.0",
+  "publisher": "patrykkopycinski",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Programming Languages", "Snippets", "Testing"],
+  "activationEvents": ["workspaceContains:**/plugin-eval.yaml"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [{ "id": "plugin-eval-yaml", "aliases": ["Plugin Eval YAML"], "filenames": ["plugin-eval.yaml", "eval.yaml", "eval-defaults.yaml"] }],
+    "grammars": [{ "language": "plugin-eval-yaml", "scopeName": "source.plugin-eval-yaml", "path": "./language/plugin-eval.tmLanguage.json" }],
+    "snippets": [{ "language": "plugin-eval-yaml", "path": "./snippets/eval-snippets.json" }],
+    "commands": [
+      { "command": "cursorPluginEvals.runSuite", "title": "Run Eval Suite", "category": "Cursor Evals" },
+      { "command": "cursorPluginEvals.runTest", "title": "Run Single Test", "category": "Cursor Evals" },
+      { "command": "cursorPluginEvals.estimateCost", "title": "Estimate Cost", "category": "Cursor Evals" }
+    ]
+  },
+  "scripts": { "compile": "tsc -p ./" },
+  "devDependencies": { "@types/vscode": "^1.85.0", "typescript": "^5.7.0" }
+}

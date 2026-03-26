@@ -588,3 +588,22 @@ export type { MultiJudgeTier } from './evaluators/multi-judge.js';
 // --- Cost Estimation ---
 export { estimateRunCost } from './cost-advisor/estimator.js';
 export type { CostEstimate, CostBreakdown } from './cost-advisor/estimator.js';
+
+// --- OTEL Observability ---
+export { buildOtelSpans, exportToElastic } from './otel/exporter.js';
+export type { OtelSpan, OtelSpanEvent } from './otel/exporter.js';
+
+// --- Snapshot Testing ---
+export { SnapshotStore, defaultSanitizers } from './snapshot/store.js';
+export type { Sanitizer, MatchResult } from './snapshot/store.js';
+
+// --- Deep Trajectory Tracing ---
+export { TraceCollector } from './tracing/observe.js';
+export type { TraceEntry, TraceSummary } from './tracing/observe.js';
+
+// --- Cost-Efficiency Scoring ---
+export { computeCostEfficiency } from './scoring/cost-efficiency.js';
+export type { CostEfficiencyScore } from './scoring/cost-efficiency.js';
+
+// --- Natural Language Scorer ---
+export { NlScorerEvaluator } from './evaluators/nl-scorer.js';

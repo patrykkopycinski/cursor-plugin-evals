@@ -1,0 +1,24 @@
+name: multi-step-reasoning
+description: Tests the agent's ability to break down and execute multi-step tasks
+evaluators: [correctness, plan-quality]
+tests:
+  - name: sequential-dependencies
+    prompt: "First find all error logs, then count them by severity, then suggest fixes for the top 3."
+    expected:
+      response_contains: ["error", "severity", "fix"]
+  - name: conditional-branching
+    prompt: "Check if the cluster is healthy. If it is, run a performance benchmark. If not, diagnose the issue."
+    expected:
+      response_contains: ["health", "check"]
+  - name: data-aggregation
+    prompt: "Collect data from 3 different sources, merge the results, and produce a summary report."
+    expected:
+      response_contains: ["source", "merge", "summary"]
+  - name: iterative-refinement
+    prompt: "Write a query, test it, and if it returns more than 100 results, add filters to narrow it down."
+    expected:
+      response_contains: ["query", "filter"]
+  - name: error-recovery
+    prompt: "Try to access the database. If the connection fails, try the backup. If that fails too, report the error with diagnostics."
+    expected:
+      response_contains: ["backup", "error", "diagnostic"]

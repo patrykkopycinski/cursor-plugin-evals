@@ -1,0 +1,17 @@
+{
+  "New Suite": {
+    "prefix": "suite",
+    "body": ["- name: ${1:suite-name}", "  layer: ${2|static,unit,integration,llm,performance,skill|}", "  tests:", "    - name: ${3:test-name}", "      ${0}"],
+    "description": "New eval suite"
+  },
+  "New LLM Test": {
+    "prefix": "llm-test",
+    "body": ["- name: ${1:test-name}", "  prompt: \"${2:prompt}\"", "  expected:", "    tools: [${3:tool}]", "  evaluators: [tool-selection, ${4:correctness}]"],
+    "description": "New LLM eval test"
+  },
+  "New Integration Test": {
+    "prefix": "int-test",
+    "body": ["- name: ${1:test-name}", "  tool: ${2:tool_name}", "  args:", "    ${3:key}: ${4:value}", "  assert:", "    - field: isError", "      op: eq", "      value: false"],
+    "description": "New integration test"
+  }
+}

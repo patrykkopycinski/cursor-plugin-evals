@@ -19,6 +19,8 @@ export { InsecureDeserializationRule } from './insecure-deserialization.js';
 export { ResourceExhaustionRule } from './resource-exhaustion.js';
 export { CrossToolContaminationRule } from './cross-tool-contamination.js';
 export { UnsafeRedirectRule } from './unsafe-redirect.js';
+export { UnicodeObfuscationRule } from './unicode-obfuscation.js';
+export { YamlAnomalyRule } from './yaml-anomaly.js';
 
 import type { SecurityRule } from './types.js';
 import { SsrfRule } from './ssrf.js';
@@ -41,6 +43,8 @@ import { InsecureDeserializationRule } from './insecure-deserialization.js';
 import { ResourceExhaustionRule } from './resource-exhaustion.js';
 import { CrossToolContaminationRule } from './cross-tool-contamination.js';
 import { UnsafeRedirectRule } from './unsafe-redirect.js';
+import { UnicodeObfuscationRule } from './unicode-obfuscation.js';
+import { YamlAnomalyRule } from './yaml-anomaly.js';
 
 export function createAllRules(): SecurityRule[] {
   return [
@@ -64,5 +68,7 @@ export function createAllRules(): SecurityRule[] {
     new ResourceExhaustionRule(),
     new CrossToolContaminationRule(),
     new UnsafeRedirectRule(),
+    new UnicodeObfuscationRule(),
+    new YamlAnomalyRule(),
   ];
 }

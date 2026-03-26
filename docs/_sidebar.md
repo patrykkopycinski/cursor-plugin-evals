@@ -32,6 +32,8 @@
   - [Ablation Testing](ablation.md)
   - [Zero-Config Skill Eval](zero-config-skill-eval.md)
   - [LLM Cost Optimization](cost-optimization.md)
+  - [Snapshot Testing](snapshot-testing.md)
+  - [Pre-Built Benchmarks](benchmarks.md)
   - [Guardrails](guardrails.md)
   - [Cost Optimization](cost-advisor.md)
   - [Dataset Management](datasets.md)
