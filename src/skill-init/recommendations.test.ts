@@ -1,4 +1,17 @@
 import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('../evaluators/llm-judge.js', () => ({
+  callJudge: vi.fn().mockResolvedValue({
+    score: 1,
+    label: 'OK',
+    explanation: JSON.stringify({
+      recommendations: [
+        { type: 'test', priority: 'high', message: 'Add a test for DISSECT pattern' },
+      ],
+    }),
+  }),
+}));
+
 import { computeDeterministicRecommendations, computeLlmRecommendations, type Recommendation } from './recommendations.js';
 import type { RunResult, SuiteResult, TestResult } from '../core/types.js';
 
@@ -111,18 +124,6 @@ describe('computeDeterministicRecommendations', () => {
 
 describe('computeLlmRecommendations', () => {
   it('returns recommendations from LLM', async () => {
-    vi.mock('../evaluators/llm-judge.js', () => ({
-      callJudge: vi.fn().mockResolvedValue({
-        score: 1,
-        label: 'OK',
-        explanation: JSON.stringify({
-          recommendations: [
-            { type: 'test', priority: 'high', message: 'Add a test for DISSECT pattern' },
-          ],
-        }),
-      }),
-    }));
-
     const result = makeRunResult([makeTest('a', 0.8)]);
     const recs = await computeLlmRecommendations(result, 'skill content', 'eval yaml content');
     expect(recs.length).toBeGreaterThan(0);

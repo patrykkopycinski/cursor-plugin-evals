@@ -550,3 +550,41 @@ export {
 export type { CoverageReport, ComponentCoverage } from './coverage/analyzer.js';
 
 export { createEvalServer, startStdioServer } from './mcp/server.js';
+
+// --- Ablation Testing ---
+export { computeAblation } from './ablation/runner.js';
+export type { AblationResult } from './ablation/runner.js';
+
+// --- Zero-Config Skill Eval ---
+export {
+  analyzeSkill,
+  generateEval,
+  selectEvaluators,
+  selectThresholds,
+  serializeEvalYaml,
+  computeDeterministicRecommendations,
+  computeLlmRecommendations,
+  applyPatches,
+} from './skill-init/index.js';
+export type {
+  SkillProfile,
+  GeneratedEval,
+  GeneratedTest as SkillGeneratedTest,
+  Recommendation,
+  EvalYamlPatch,
+} from './skill-init/index.js';
+
+// --- LLM Cost Optimization ---
+export { resolveJudgeModel, EVALUATOR_MODEL_TIERS } from './evaluators/evaluator-models.js';
+export { DedupJudge } from './evaluators/judge-dedup.js';
+export { JudgeFixtureStore } from './evaluators/judge-fixtures.js';
+export { getJudgeCache } from './evaluators/llm-judge.js';
+export {
+  MULTI_JUDGE_TIERS,
+  resolveMultiJudgeConfig,
+} from './evaluators/multi-judge.js';
+export type { MultiJudgeTier } from './evaluators/multi-judge.js';
+
+// --- Cost Estimation ---
+export { estimateRunCost } from './cost-advisor/estimator.js';
+export type { CostEstimate, CostBreakdown } from './cost-advisor/estimator.js';
