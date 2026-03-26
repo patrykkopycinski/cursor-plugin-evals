@@ -1,6 +1,6 @@
 # Evaluators Reference
 
-Complete reference for all 30 evaluators. Each evaluator scores a specific quality dimension from 0 to 1.
+Complete reference for all 32 evaluators. Each evaluator scores a specific quality dimension from 0 to 1.
 
 Evaluators are divided into two kinds:
 - **CODE** — deterministic, rule-based scoring (fast, no LLM call)

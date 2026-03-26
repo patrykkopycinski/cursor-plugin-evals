@@ -1,6 +1,6 @@
 # Evaluator Catalog
 
-Complete reference for all 30 evaluators in cursor-plugin-evals. Each evaluator scores a specific quality dimension of agent behavior, producing a score in `[0, 1]`, a pass/fail result, a label, and an explanation.
+Complete reference for all 32 evaluators in cursor-plugin-evals. Each evaluator scores a specific quality dimension of agent behavior, producing a score in `[0, 1]`, a pass/fail result, a label, and an explanation.
 
 ---
 
