@@ -1,4 +1,4 @@
-import type { RunResult, SuiteResult, TestResult, Difficulty } from '../core/types.js';
+import type { RunResult, SuiteResult, TestResult, Difficulty, TrialMetrics } from '../core/types.js';
 import { formatDuration } from '../core/utils.js';
 
 function escapeCell(s: string): string {
@@ -126,6 +126,23 @@ function confidenceIntervalsSection(result: RunResult): string {
   return lines.join('\n');
 }
 
+function trialMetricsSection(metrics: TrialMetrics): string {
+  const lines: string[] = [];
+  lines.push('## Trial Metrics\n');
+  lines.push(
+    `**Per-trial success rate (p):** ${(metrics.perTrialSuccessRate * 100).toFixed(1)}%\n`,
+  );
+  lines.push('| k | pass@k | pass^k |');
+  lines.push('|--:|-------:|-------:|');
+  for (const k of metrics.kValues) {
+    lines.push(
+      `| ${k} | ${(metrics.passAtK[k] * 100).toFixed(1)}% | ${(metrics.passHatK[k] * 100).toFixed(1)}% |`,
+    );
+  }
+  lines.push('');
+  return lines.join('\n');
+}
+
 export function generateMarkdownReport(result: RunResult): string {
   const sections: string[] = [];
 
@@ -179,6 +196,10 @@ export function generateMarkdownReport(result: RunResult): string {
   const ciSection = confidenceIntervalsSection(result);
   if (ciSection) {
     sections.push(ciSection);
+  }
+
+  if (result.trialMetrics) {
+    sections.push(trialMetricsSection(result.trialMetrics));
   }
 
   sections.push('---');

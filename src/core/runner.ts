@@ -29,6 +29,7 @@ import { computeQualityScore, DEFAULT_WEIGHTS } from '../scoring/composite.js';
 import { aggregateConfidence } from '../scoring/confidence.js';
 import { evaluateCi } from '../ci/index.js';
 import { evaluateDerivedMetrics } from '../scoring/derived.js';
+import { computeTrialMetrics } from '../utils/first-try-pass-rate.js';
 import { shardSuites } from './shard.js';
 import type { ScoreEntry } from '../scoring/confidence.js';
 import type { ShardConfig } from './shard.js';
@@ -334,6 +335,11 @@ export async function runEvaluation(
   const confidenceIntervals =
     scoreEntries.length > 1 ? aggregateConfidence(scoreEntries) : undefined;
 
+  const repetitions = options.repeat ?? 1;
+  const kValues = [...new Set([1, repetitions, 10])].sort((a, b) => a - b);
+  const trialMetrics =
+    repetitions > 1 ? computeTrialMetrics(allTests, kValues) : undefined;
+
   const runResult: RunResult = {
     runId,
     timestamp: new Date().toISOString(),
@@ -349,6 +355,7 @@ export async function runEvaluation(
     },
     qualityScore,
     confidenceIntervals,
+    trialMetrics,
   };
 
   if (config.derivedMetrics?.length) {

@@ -98,6 +98,14 @@ export interface RunResult {
   confidenceIntervals?: import('../scoring/confidence.js').AggregatedConfidence;
   ciResult?: CiResult;
   derivedMetrics?: DerivedMetricResult[];
+  trialMetrics?: TrialMetrics;
+}
+
+export interface TrialMetrics {
+  perTrialSuccessRate: number;
+  passAtK: Record<number, number>;
+  passHatK: Record<number, number>;
+  kValues: number[];
 }
 
 export interface DerivedMetricConfig {

@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { log } from '../cli/logger.js';
-import type { RunResult, SuiteResult, TestResult, Difficulty, DerivedMetricResult } from '../core/types.js';
+import type { RunResult, SuiteResult, TestResult, Difficulty, DerivedMetricResult, TrialMetrics } from '../core/types.js';
 import { formatDuration } from '../core/utils.js';
 
 const DIFFICULTY_LABELS: Record<Difficulty, string> = {
@@ -176,6 +176,24 @@ function printDerivedMetrics(metrics: DerivedMetricResult[]): void {
   log.info('');
 }
 
+function printTrialMetrics(metrics: TrialMetrics): void {
+  log.divider();
+  log.info(chalk.bold('  Trial Metrics'));
+  log.info(`  ${chalk.gray(`p = ${(metrics.perTrialSuccessRate * 100).toFixed(1)}% per-trial success rate`)}`);
+  log.info('');
+
+  const rows: string[][] = [['k', 'pass@k', 'pass^k']];
+  for (const k of metrics.kValues) {
+    rows.push([
+      String(k),
+      (metrics.passAtK[k] * 100).toFixed(1) + '%',
+      (metrics.passHatK[k] * 100).toFixed(1) + '%',
+    ]);
+  }
+  log.table(rows);
+  log.info('');
+}
+
 export function printTerminalReport(result: RunResult): void {
   log.header(`Eval Run: ${result.runId}`);
   log.info(`  Config: ${result.config}`);
@@ -188,6 +206,10 @@ export function printTerminalReport(result: RunResult): void {
 
   printFailureDetails(result);
   printConfidenceIntervals(result);
+
+  if (result.trialMetrics) {
+    printTrialMetrics(result.trialMetrics);
+  }
 
   if (result.derivedMetrics?.length) {
     printDerivedMetrics(result.derivedMetrics);
