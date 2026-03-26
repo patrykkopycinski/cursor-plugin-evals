@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>cursor-plugin-evals — The Definitive Testing Framework for Cursor Plugins</title>
-<meta name="description" content="7 testing layers, 32 evaluators, 6 adapters. The MCP-native evaluation framework with pass@k metrics, ablation testing, ES|QL execution-based scoring, snapshot testing, NL scorer, and inline script graders.">
+<meta name="description" content="7 testing layers, 35 evaluators, 6 adapters. The MCP-native evaluation framework with pass@k metrics, ablation testing, ES|QL execution-based scoring, snapshot testing, NL scorer, and inline script graders.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -175,7 +175,7 @@ tr:hover td{background:var(--surface)}
   <p class="tagline">The definitive testing framework for Cursor plugins — with an autonomous AI assistant</p>
   <div class="badges">
     <span class="badge">7 layers</span>
-    <span class="badge">32 evaluators</span>
+    <span class="badge">35 evaluators</span>
     <span class="badge">6 adapters</span>
     <span class="badge">20 security rules</span>
     <span class="badge">154 community tests</span>
@@ -266,7 +266,7 @@ tr:hover td{background:var(--surface)}
     <div class="feat"><div class="feat-icon">📼</div><h4>Fixture Record/Replay</h4><p>Deterministic offline testing with recorded calls</p></div>
     <div class="feat"><div class="feat-icon">🗄️</div><h4>LLM Cache</h4><p>Semantic caching for fast, cheap re-runs</p></div>
     <div class="feat"><div class="feat-icon">🔌</div><h4>6 Adapters</h4><p>MCP, plain-llm, cursor-cli, gemini-cli, claude-sdk, headless-coder</p></div>
-    <div class="feat"><div class="feat-icon">✅</div><h4>32 Evaluators</h4><p>16 deterministic + 12 LLM-as-judge + multi-judge panel + script graders</p></div>
+    <div class="feat"><div class="feat-icon">✅</div><h4>35 Evaluators</h4><p>16 deterministic + 12 LLM-as-judge + multi-judge panel + script graders</p></div>
     <div class="feat"><div class="feat-icon">🚦</div><h4>CI Thresholds</h4><p>Quality gates that block merges below your bar</p></div>
     <div class="feat"><div class="feat-icon">🏆</div><h4>Quality Score</h4><p>A single A–F grade for every eval run</p></div>
     <div class="feat"><div class="feat-icon">📈</div><h4>pass@k / pass^k Metrics</h4><p>Industry-standard probabilistic metrics from Anthropic's agent eval methodology. Named presets for smoke, reliable, and regression testing.</p></div>
@@ -281,6 +281,11 @@ tr:hover td{background:var(--surface)}
     <div class="feat"><div class="feat-icon">📝</div><h4>NL Scorer</h4><p>Describe what to check in plain English — gets auto-converted to an LLM evaluator.</p></div>
     <div class="feat"><div class="feat-icon">🛡️</div><h4>Unicode & YAML Security</h4><p>Detect bidi overrides, homoglyphs, zero-width chars, YAML tag injection, and anchor bombs.</p></div>
     <div class="feat"><div class="feat-icon">📦</div><h4>20 Benchmark Tests</h4><p>Pre-built evals for instruction-following, ambiguity handling, multi-step reasoning, and safety.</p></div>
+    <div class="feat"><div class="feat-icon">🎯</div><h4>Skill Routing Accuracy</h4><p>Test positive and negative triggers — does the right skill activate for matching prompts?</p></div>
+    <div class="feat"><div class="feat-icon">📋</div><h4>Description Quality</h4><p>Score skill descriptions on clarity, specificity, actionability, and uniqueness vs other skills.</p></div>
+    <div class="feat"><div class="feat-icon">📐</div><h4>Context Budget</h4><p>Per-skill token estimation with bloat detection. Know exactly how much context each skill costs.</p></div>
+    <div class="feat"><div class="feat-icon">🔄</div><h4>Skill A/B Testing</h4><p>Compare two skill versions with Welch's t-test for statistically significant differences.</p></div>
+    <div class="feat"><div class="feat-icon">🧩</div><h4>Composability Testing</h4><p>Test multi-skill scenarios for interference, chaining, and compatibility.</p></div>
   </div>
 </section>
 

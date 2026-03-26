@@ -32,6 +32,9 @@ import { EsqlExecutionEvaluator } from './esql-execution.js';
 import { EsqlPatternEvaluator } from './esql-pattern.js';
 import { EsqlResultEvaluator } from './esql-result.js';
 import { NlScorerEvaluator } from './nl-scorer.js';
+import { SkillRoutingEvaluator } from './skill-routing.js';
+import { SkillDescriptionEvaluator } from './skill-description.js';
+import { SkillComposabilityEvaluator } from './skill-composability.js';
 
 export const EVALUATOR_NAMES = [
   'tool-selection',
@@ -66,6 +69,9 @@ export const EVALUATOR_NAMES = [
   'esql-pattern',
   'esql-result',
   'nl-scorer',
+  'skill-routing',
+  'skill-description',
+  'skill-composability',
 ] as const;
 
 export type EvaluatorName = (typeof EVALUATOR_NAMES)[number];
@@ -103,6 +109,9 @@ const EVALUATOR_MAP: Record<EvaluatorName, new () => Evaluator> = {
   'esql-pattern': EsqlPatternEvaluator,
   'esql-result': EsqlResultEvaluator,
   'nl-scorer': NlScorerEvaluator,
+  'skill-routing': SkillRoutingEvaluator,
+  'skill-description': SkillDescriptionEvaluator,
+  'skill-composability': SkillComposabilityEvaluator,
 };
 
 export function createEvaluator(name: string): Evaluator {
@@ -146,6 +155,9 @@ export {
   EsqlPatternEvaluator,
   EsqlResultEvaluator,
   NlScorerEvaluator,
+  SkillRoutingEvaluator,
+  SkillDescriptionEvaluator,
+  SkillComposabilityEvaluator,
 };
 
 export type {

@@ -105,3 +105,20 @@ export async function generateEval(profile: SkillProfile, model?: string): Promi
     },
   };
 }
+
+const NEGATIVE_SYSTEM_PROMPT = `Generate 3 prompts that are clearly OFF-TOPIC for this skill — prompts where this skill should NOT activate. Include response_not_contains with domain keywords that should NOT appear.
+
+Respond ONLY with JSON:
+{"tests": [{"name": "neg-kebab-name", "prompt": "off-topic prompt", "expected": {"response_not_contains": ["domain-keyword"]}, "difficulty": "simple", "category": "negative"}]}`;
+
+export async function generateNegativeTests(profile: SkillProfile, model?: string): Promise<GeneratedTest[]> {
+  const response = await callJudge({
+    systemPrompt: NEGATIVE_SYSTEM_PROMPT,
+    userPrompt: JSON.stringify({ name: profile.name, purpose: profile.purpose, keyDomainTerms: profile.keyDomainTerms }),
+    model,
+  });
+  const jsonMatch = response.explanation.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) return [];
+  const parsed = JSON.parse(jsonMatch[0]) as { tests: GeneratedTest[] };
+  return Array.isArray(parsed.tests) ? parsed.tests : [];
+}

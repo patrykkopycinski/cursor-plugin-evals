@@ -296,7 +296,7 @@ For skills that are implemented as **Agent Builder skills** within Kibana, the [
 | :---- | :---- | :---- | :---- |
 | **Type** | LLM-driven skill | CLI framework | CLI framework + programmatic API |
 | **License** | Anthropic | MIT | MIT |
-| **Grader types** | LLM-only | 2 (deterministic bash + LLM rubric) | 32 evaluators (16 deterministic + 14 LLM-judge + multi-judge + script) |
+| **Grader types** | LLM-only | 2 (deterministic bash + LLM rubric) | 35 evaluators (16 deterministic + 14 LLM-judge + multi-judge + script) |
 | **Execution-based evaluators** | No | No | Yes — ES|QL queries executed against live ES, pattern matching with equivalence classes, result set comparison |
 | **Test structure** | Flat | Flat (tasks in single YAML) | 6 layers (static → unit → integration → llm → performance → skill) |
 | **CI integration** | Limited | `--ci` flag + threshold | `--ci` with composite gates (score, pass rate, required suites, latency) |
@@ -318,7 +318,7 @@ Based on our evaluation of tools and frameworks, we propose a three-tier approac
 
 * **Option 1: The `skill-creator` tool** is best suited as a personal utility for skill developers to write and test skills locally.
 * **Option 2: The `skillgrade` framework** is a lightweight choice for Continuous Integration testing, providing deterministic and LLM-rubric graders with minimal setup. Its simplicity makes it a good starting point for teams adopting skill evaluation.
-* **Option 3: The `cursor-plugin-evals` framework** is the recommended choice for comprehensive CI testing at scale. Its two-adapter strategy addresses the cost concern (~$0.03/eval with plain-llm vs ~$0.8/eval with full agent), while its multi-layered architecture, 32 evaluators (including execution-based ES|QL evaluators), and MCP tool testing provide deeper coverage as skill complexity grows.
+* **Option 3: The `cursor-plugin-evals` framework** is the recommended choice for comprehensive CI testing at scale. Its two-adapter strategy addresses the cost concern (~$0.03/eval with plain-llm vs ~$0.8/eval with full agent), while its multi-layered architecture, 35 evaluators (including execution-based ES|QL evaluators), and MCP tool testing provide deeper coverage as skill complexity grows.
 
 For skills that are ported to or implemented as **Agent Builder skills** within Kibana, `@kbn/evals` is the appropriate evaluation framework for server-side validation and should be used in conjunction with the above options.
 

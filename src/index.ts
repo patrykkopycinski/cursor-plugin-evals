@@ -607,3 +607,19 @@ export type { CostEfficiencyScore } from './scoring/cost-efficiency.js';
 
 // --- Natural Language Scorer ---
 export { NlScorerEvaluator } from './evaluators/nl-scorer.js';
+
+// --- Skill Testing Excellence ---
+export { SkillRoutingEvaluator } from './evaluators/skill-routing.js';
+export { SkillDescriptionEvaluator } from './evaluators/skill-description.js';
+export { SkillComposabilityEvaluator } from './evaluators/skill-composability.js';
+export { analyzeContextBudget } from './analyzers/context-budget.js';
+export type { ContextBudgetReport, SkillBudgetEntry } from './analyzers/context-budget.js';
+export { computeReadability } from './analyzers/readability.js';
+export type { ReadabilityScore } from './analyzers/readability.js';
+export { validateToolDependencies } from './analyzers/tool-deps.js';
+export type { ToolDepResult } from './analyzers/tool-deps.js';
+export { compareSkillVariants } from './skill-init/variant-compare.js';
+export type { VariantResult } from './skill-init/variant-compare.js';
+export { generateNegativeTests } from './skill-init/generator.js';
+export { buildMultiTurnPrompt, extractLastUserPrompt, turnCountByRole } from './layers/skill/multi-turn.js';
+export type { SkillTurn } from './layers/skill/multi-turn.js';

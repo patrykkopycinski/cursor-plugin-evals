@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/getting-started"><img src="https://img.shields.io/badge/layers-7-6C5CE7?style=flat-square" alt="7 Layers" /></a>
-  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/evaluators"><img src="https://img.shields.io/badge/evaluators-32-A29BFE?style=flat-square" alt="32 Evaluators" /></a>
+  <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/evaluators"><img src="https://img.shields.io/badge/evaluators-35-A29BFE?style=flat-square" alt="35 Evaluators" /></a>
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/adapters"><img src="https://img.shields.io/badge/adapters-6-74B9FF?style=flat-square" alt="6 Adapters" /></a>
   <a href="#mcp-server"><img src="https://img.shields.io/badge/MCP--tools-14-55E6C1?style=flat-square" alt="14 MCP Tools" /></a>
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/red-teaming"><img src="https://img.shields.io/badge/security--rules-20-E74C3C?style=flat-square" alt="20 Security Rules" /></a>
@@ -127,7 +127,7 @@ Auto-registers when you install the Cursor plugin (via `.mcp.json`).
 <tr><td width="50%">
 
 **Evaluation**
-- 32 evaluators (16 deterministic + 14 LLM-as-judge + multi-judge panel + inline script graders)
+- 35 evaluators (16 deterministic + 14 LLM-as-judge + multi-judge panel + inline script graders)
 - 3 ES|QL evaluators: execution scoring, pattern matching with equivalence classes, and result comparison against golden queries
 - 6 task adapters (MCP, plain-llm, cursor-cli, headless-coder, gemini-cli, claude-sdk)
 - 20 OWASP-aligned security rules with 3-pass red-teaming
@@ -149,6 +149,15 @@ Auto-registers when you install the Cursor plugin (via `.mcp.json`).
 - Natural language scorer: describe what to check in plain English, get an LLM evaluator
 - Unicode obfuscation and YAML anomaly security scanning (bidi overrides, homoglyphs, anchor bombs)
 - VS Code extension with syntax highlighting, snippets, and inline run commands
+- Skill routing evaluator: positive/negative trigger accuracy with LLM-as-judge
+- Skill description quality scorer (clarity, specificity, actionability, uniqueness)
+- Context budget analyzer: per-skill token estimation with bloat detection
+- Negative test auto-generation for off-topic prompts in skill-eval init
+- Skill composability evaluator: multi-skill interference and chaining analysis
+- Skill variant A/B testing with Welch's t-test statistical comparison
+- Flesch-Kincaid readability scoring for skill content
+- Multi-turn skill conversation support
+- Tool dependency validation against plugin manifest
 
 </td><td width="50%">
 
