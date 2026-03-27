@@ -158,6 +158,9 @@ Auto-registers when you install the Cursor plugin (via `.mcp.json`).
 - Flesch-Kincaid readability scoring for skill content
 - Multi-turn skill conversation support
 - Tool dependency validation against plugin manifest
+- CLEAR framework scoring (Cost, Latency, Efficacy, Assurance, Reliability) with Pareto efficiency detection
+- AgentRx failure taxonomy: 9-category failure diagnosis with critical step localization
+- MCP-Radar scoring: per-tool precision/recall/F1, Mean Reciprocal Rank, token waste ratio, execution speed
 
 </td><td width="50%">
 

@@ -623,3 +623,15 @@ export type { VariantResult } from './skill-init/variant-compare.js';
 export { generateNegativeTests } from './skill-init/generator.js';
 export { buildMultiTurnPrompt, extractLastUserPrompt, turnCountByRole } from './layers/skill/multi-turn.js';
 export type { SkillTurn } from './layers/skill/multi-turn.js';
+
+// --- CLEAR Framework ---
+export { computeClearReport } from './scoring/clear.js';
+export type { ClearReport, ClearDimension } from './scoring/clear.js';
+
+// --- AgentRx Failure Taxonomy ---
+export { diagnoseFailure, buildFailureTaxonomyReport } from './analyzers/failure-taxonomy.js';
+export type { FailureCategory, FailureDiagnosis, FailureTaxonomyReport } from './analyzers/failure-taxonomy.js';
+
+// --- MCP-Radar Scoring ---
+export { computeMcpRadarReport } from './scoring/mcp-radar.js';
+export type { McpRadarReport, PerToolMetrics } from './scoring/mcp-radar.js';
