@@ -630,7 +630,7 @@ export type { ClearReport, ClearDimension } from './scoring/clear.js';
 
 // --- AgentRx Failure Taxonomy ---
 export { diagnoseFailure, buildFailureTaxonomyReport } from './analyzers/failure-taxonomy.js';
-export type { FailureCategory, FailureDiagnosis, FailureTaxonomyReport } from './analyzers/failure-taxonomy.js';
+export type { FailureCategory as AgentRxFailureCategory, FailureDiagnosis, FailureTaxonomyReport } from './analyzers/failure-taxonomy.js';
 
 // --- MCP-Radar Scoring ---
 export { computeMcpRadarReport } from './scoring/mcp-radar.js';

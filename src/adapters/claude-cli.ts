@@ -115,7 +115,7 @@ export function createClaudeCliAdapter(config: AdapterConfig): TaskAdapter {
     // Add max budget to prevent runaway costs
     args.push('--max-budget-usd', '1.00');
 
-    const result = await runClaude(claudePath, args, workingDir, timeout, config.env);
+    const result = await runClaude(claudePath, args, workingDir, timeout, config.env as Record<string, string> | undefined);
 
     return {
       messages: [
