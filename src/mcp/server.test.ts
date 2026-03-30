@@ -134,7 +134,10 @@ describe('createEvalServer', () => {
       expect(names).toContain('compare_models');
       expect(names).toContain('cost_report');
       expect(names).toContain('generate_fixes');
-      expect(result.tools.length).toBe(14);
+      expect(names).toContain('evaluate_trace');
+      expect(names).toContain('harvest_traces');
+      expect(names).toContain('deploy_dashboard');
+      expect(result.tools.length).toBe(17);
     });
 
     it('each tool has name, description, and inputSchema', async () => {
