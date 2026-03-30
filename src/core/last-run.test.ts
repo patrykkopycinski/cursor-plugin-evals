@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, rmSync, readFileSync, existsSync } from 'fs';
+import { mkdirSync, rmSync, readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve, join } from 'path';
 import { saveLastRun, loadLastFailed } from './last-run.js';
 import type { RunResult } from './types.js';
@@ -144,7 +144,6 @@ describe('last-run', () => {
     it('returns empty array when file contains invalid JSON', () => {
       const dir = join(TMP_DIR, '.cursor-plugin-evals');
       mkdirSync(dir, { recursive: true });
-      const { writeFileSync } = require('fs');
       writeFileSync(join(dir, 'last-run.json'), 'not-json', 'utf-8');
 
       const failed = loadLastFailed();

@@ -20,13 +20,12 @@ export class TraceCollector {
   private entries: TraceEntry[] = [];
 
   wrap<A extends unknown[], R>(name: string, fn: (...args: A) => Promise<R>): (...args: A) => Promise<R> {
-    const self = this;
-    return async function (this: unknown, ...args: A): Promise<R> {
+    return async (...args: A): Promise<R> => {
       const start = performance.now();
       const entry: TraceEntry = { name, args, startMs: start, endMs: 0, latencyMs: 0 };
-      self.entries.push(entry);
+      this.entries.push(entry);
       try {
-        const result = await fn.apply(this, args);
+        const result = await fn(...args);
         entry.result = result;
         return result;
       } catch (err) {
