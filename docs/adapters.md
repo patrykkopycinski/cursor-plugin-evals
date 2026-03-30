@@ -76,6 +76,58 @@ Executes prompts through the Claude SDK with tool use support.
     adapter: claude-sdk
 ```
 
+### otel-trace
+
+Evaluates from recorded OTel traces without re-executing the agent. Reads traces from JSON files or Elasticsearch/EDOT.
+
+- No agent execution — scores existing traces
+- Supports Jaeger JSON and OTLP JSON formats
+- Queries Elasticsearch with APM and OTLP-native index patterns
+- Works with EDOT collector traces
+
+```yaml
+suites:
+  - name: trace-replay
+    adapter: otel-trace
+    adapter_config:
+      traceSource:
+        type: file
+        path: ./traces/*.json
+        format: auto
+    tests:
+      - name: check-tool-use
+        input: { traceId: "abc123" }
+        expected: { tools: [search_tool] }
+```
+
+#### Elasticsearch / EDOT source
+
+```yaml
+adapter_config:
+  traceSource:
+    type: elasticsearch
+    endpoint: https://my-cluster.es.io
+    apiKey: ${ES_API_KEY}
+    index: traces-apm*,traces-generic.otel-*
+    serviceName: my-agent
+    timeRange: { from: "now-1h", to: "now" }
+    docFormat: auto  # 'apm', 'otlp', or 'auto'
+```
+
+### claude-cli
+
+Runs prompts through the Claude Code CLI.
+
+- Spawns `claude -p --output-format json`
+- Supports tool calls via Claude's native tool use
+- Parses JSON output for messages and tool calls
+
+```yaml
+suites:
+  - name: claude-tests
+    adapter: claude-cli
+```
+
 ## Adapter Capabilities
 
 Each adapter declares its capabilities, which evaluators use to auto-skip inapplicable checks:
@@ -88,6 +140,8 @@ Each adapter declares its capabilities, which evaluators use to auto-skip inappl
 | **headless-coder** | Yes | Yes | No | Yes |
 | **gemini-cli** | Yes | No | No | Yes |
 | **claude-sdk** | Yes | No | No | Yes |
+| **otel-trace** | Yes (replayed) | No | No | No (from trace) |
+| **claude-cli** | Yes | Yes | No | No (estimated) |
 
 When an evaluator like `groundedness` runs against `plain-llm` (no tool calls), it automatically
 returns `skipped: true` instead of scoring 0 — this prevents false negatives from dragging down

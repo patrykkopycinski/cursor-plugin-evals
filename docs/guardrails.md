@@ -89,3 +89,73 @@ if (violation) {
 ```
 
 The `checkGuardrails` function serializes the tool name and args to a string, then tests each rule's pattern against it. Returns the first matching violation or `null`.
+
+## Eval → Guardrail Promotion
+
+Security evaluators can be promoted to runtime MCP interceptors — the same logic that catches violations in evals now blocks them live, before the tool call executes.
+
+### GuardrailEngine
+
+The `GuardrailEngine` class wraps an MCP server's tool handler and intercepts calls using promoted evaluator logic:
+
+```typescript
+import { GuardrailEngine } from 'cursor-plugin-evals';
+
+const engine = new GuardrailEngine({
+  checks: ['no-secret-leak', 'no-destructive-delete', 'no-prod-write',
+           'no-ssrf', 'no-path-traversal', 'no-privilege-escalation'],
+  action: 'block',        // 'block' | 'warn' | 'log'
+  auditLog: './audit.jsonl',
+});
+
+// Wrap your MCP tool handler
+const safeTool = engine.wrap(myToolHandler);
+```
+
+### Built-In Security Checks
+
+Six security evaluators are pre-promoted and available as runtime checks:
+
+| Check | Promoted From | Description |
+|-------|--------------|-------------|
+| `no-secret-leak` | `security` | Blocks tool calls that would expose secrets or API keys |
+| `no-destructive-delete` | `security` | Blocks `DELETE /_all`, `_delete_by_query` without filters |
+| `no-prod-write` | `security` | Blocks write operations targeting production indices |
+| `no-ssrf` | `tool-poisoning` | Blocks tool args containing internal network addresses |
+| `no-path-traversal` | `tool-poisoning` | Blocks `../` sequences in file path arguments |
+| `no-privilege-escalation` | `security` | Blocks calls requesting admin or superuser roles |
+
+### YAML Configuration
+
+```yaml
+guardrails:
+  runtime:
+    enabled: true
+    checks:
+      - no-secret-leak
+      - no-destructive-delete
+      - no-prod-write
+    action: block
+    auditLog: ./logs/guardrail-audit.jsonl
+```
+
+### Audit Logging
+
+Every intercepted call is written to the audit log as a JSONL record:
+
+```json
+{
+  "ts": "2026-03-30T10:00:00.000Z",
+  "check": "no-destructive-delete",
+  "tool": "elasticsearch_query",
+  "action": "block",
+  "args": { "method": "DELETE", "path": "/_all" },
+  "sessionId": "s-abc123"
+}
+```
+
+### Integration with MCP Tool Calls
+
+The engine intercepts calls at the MCP transport layer — before the underlying tool executes — so blocked calls never reach the server. The agent receives a structured error result indicating the block reason, which it can surface to the user or handle gracefully.
+
+See [Eval → Guardrails](./eval-guardrails.md) for the full promotion workflow and how to write custom checks.

@@ -24,6 +24,8 @@ import { initCommand } from './init.js';
 import { ciInitCommand } from './ci-init.js';
 import { externalInitCommand, applyFixesCommand, generatePrFindings } from './external.js';
 import { executePostRunHooks } from '../hooks/post-run.js';
+import { registerMonitorCommand } from './monitor.js';
+import { registerEvaluatorInitCommand } from './evaluator-init.js';
 
 const EXIT_OK = 0;
 const EXIT_FAIL = 1;
@@ -2188,107 +2190,138 @@ program
     },
   );
 
+// Enhanced live-scoring monitor (replaces basic anomaly-only monitor)
+registerMonitorCommand(program);
+
+// Custom evaluator scaffolding
+registerEvaluatorInitCommand(program);
+
+// Harvest failed production traces from ES as regression tests
 program
-  .command('monitor')
-  .description('Continuously score OTel traces and detect quality anomalies')
-  .option('--port <n>', 'HTTP port for trace ingestion (if not using stdin)', parsePositiveInt)
-  .option('--stdin', 'read OTel JSON lines from stdin')
-  .option('-e, --evaluators <names...>', 'evaluators to run on each trace')
-  .option('--window <n>', 'sliding window size for anomaly detection', parsePositiveInt, 100)
-  .option('--z-threshold <n>', 'z-score threshold for anomaly alerts', parseFloat, 2.0)
+  .command('harvest')
+  .description('Harvest failed production traces from Elasticsearch and generate regression test cases')
+  .requiredOption('--endpoint <url>', 'Elasticsearch endpoint')
+  .option('--api-key <key>', 'Elasticsearch API key')
+  .option('--index <pattern>', 'Index pattern', 'traces-apm*,traces-generic.otel-*')
+  .option('--from <date>', 'Start of time range', 'now-24h')
+  .option('--to <date>', 'End of time range', 'now')
+  .option('--score-threshold <n>', 'Score threshold for failures', parseFloat, 0.5)
+  .option('--max-tests <n>', 'Max test cases to generate', parsePositiveInt, 20)
+  .option('-o, --output <path>', 'Write YAML to file')
   .option('--verbose', 'debug logging')
   .option('--no-color', 'disable colors')
   .action(
     async (opts: {
-      port?: number;
-      stdin?: boolean;
-      evaluators?: string[];
-      window: number;
-      zThreshold: number;
+      endpoint: string;
+      apiKey?: string;
+      index: string;
+      from: string;
+      to: string;
+      scoreThreshold: number;
+      maxTests: number;
+      output?: string;
       verbose?: boolean;
       noColor?: boolean;
     }) => {
       if (opts.noColor) setNoColor(true);
       if (opts.verbose) setLogLevel('debug');
 
-      log.header('Production Monitor');
+      log.header('Harvest Production Traces');
 
       try {
-        const { consumeStdin, parseOtelJsonLine } = await import('../monitoring/consumer.js');
-        const { createAnomalyDetector } = await import('../monitoring/anomaly.js');
+        const { harvestTests, harvestedTestsToYaml } = await import('../harvest/index.js');
+        const tests = await harvestTests({
+          endpoint: opts.endpoint,
+          apiKey: opts.apiKey,
+          index: opts.index,
+          timeRange: { from: opts.from, to: opts.to },
+          scoreThreshold: opts.scoreThreshold,
+          maxTests: opts.maxTests,
+        });
 
-        const detector = createAnomalyDetector(opts.window, opts.zThreshold);
+        if (tests.length === 0) {
+          log.warn('No failed traces found matching criteria.');
+          return;
+        }
 
-        if (opts.stdin) {
-          log.info('Reading OTel JSON lines from stdin...');
-          let traceCount = 0;
-          let anomalyCount = 0;
+        log.success(`Harvested ${tests.length} test case(s) from production traces.`);
 
-          for await (const event of consumeStdin()) {
-            traceCount++;
-            const latency = event.endTime - event.startTime;
-            detector.addScore('latency', latency);
-
-            if (detector.isAnomaly('latency', latency)) {
-              anomalyCount++;
-              log.warn(
-                `ANOMALY: trace ${event.traceId} latency ${latency}ms (span: ${event.name})`,
-              );
-            }
-
-            if (traceCount % 100 === 0) {
-              const stats = detector.getStats('latency');
-              log.info(
-                `Processed ${traceCount} traces, ${anomalyCount} anomalies, mean latency: ${stats?.mean.toFixed(1) ?? 'N/A'}ms`,
-              );
-            }
-          }
-
-          log.success(`Done. Processed ${traceCount} traces, ${anomalyCount} anomalies.`);
-        } else if (opts.port) {
-          log.info(`Starting HTTP trace ingestion on port ${opts.port}...`);
-          const { serve } = await import('@hono/node-server');
-          const hono = await import('hono');
-          const HonoApp = hono.Hono;
-
-          const app = new HonoApp();
-          let traceCount = 0;
-
-          app.post('/v1/traces', async (c) => {
-            const body = await c.req.text();
-            const lines = body.split('\n').filter(Boolean);
-            for (const line of lines) {
-              const event = parseOtelJsonLine(line);
-              if (event) {
-                traceCount++;
-                const latency = event.endTime - event.startTime;
-                detector.addScore('latency', latency);
-                if (detector.isAnomaly('latency', latency)) {
-                  log.warn(`ANOMALY: trace ${event.traceId} latency ${latency}ms`);
-                }
-              }
-            }
-            return c.json({ status: 'ok', processed: lines.length });
-          });
-
-          app.get('/stats', (c) => {
-            return c.json({
-              traceCount,
-              stats: detector.getStats('latency'),
-            });
-          });
-
-          serve({ fetch: app.fetch, port: opts.port }, () => {
-            log.success(
-              `Monitor running on http://localhost:${opts.port} (POST /v1/traces, GET /stats)`,
-            );
-          });
+        const yaml = harvestedTestsToYaml(tests);
+        if (opts.output) {
+          const { writeFileSync } = await import('fs');
+          writeFileSync(resolve(process.cwd(), opts.output), yaml, 'utf-8');
+          log.success(`Written to ${opts.output}`);
         } else {
-          log.error('Specify --stdin or --port <n>');
-          process.exitCode = EXIT_CONFIG_ERROR;
+          console.log(yaml);
         }
       } catch (err) {
-        log.error('Monitor failed', err);
+        log.error('Harvest failed', err);
+        process.exitCode = EXIT_FAIL;
+      }
+    },
+  );
+
+// Deploy Kibana dashboard for eval results
+program
+  .command('dashboard-deploy')
+  .description('Deploy eval results dashboard to Kibana (dashboard-as-code)')
+  .requiredOption('--kibana-url <url>', 'Kibana URL (e.g., http://localhost:5601)')
+  .option('--space <id>', 'Kibana space ID', 'default')
+  .option('--username <user>', 'Kibana username')
+  .option('--password <pass>', 'Kibana password')
+  .option('--api-key <key>', 'Kibana API key')
+  .option('--title <title>', 'Dashboard title', 'Plugin Eval Results')
+  .option('--index-pattern <pattern>', 'Index pattern', 'traces-*')
+  .option('--export-only', 'Export NDJSON to stdout instead of deploying')
+  .option('--verbose', 'debug logging')
+  .option('--no-color', 'disable colors')
+  .action(
+    async (opts: {
+      kibanaUrl: string;
+      space: string;
+      username?: string;
+      password?: string;
+      apiKey?: string;
+      title: string;
+      indexPattern: string;
+      exportOnly?: boolean;
+      verbose?: boolean;
+      noColor?: boolean;
+    }) => {
+      if (opts.noColor) setNoColor(true);
+      if (opts.verbose) setLogLevel('debug');
+
+      const dashboardConfig = { title: opts.title, indexPattern: opts.indexPattern };
+
+      if (opts.exportOnly) {
+        const { buildDashboardNdjson } = await import('../kibana/dashboard.js');
+        console.log(buildDashboardNdjson(dashboardConfig));
+        return;
+      }
+
+      log.header('Deploy Kibana Dashboard');
+
+      try {
+        const { deployDashboard } = await import('../kibana/deploy.js');
+        const result = await deployDashboard(
+          {
+            kibanaUrl: opts.kibanaUrl,
+            spaceId: opts.space,
+            username: opts.username,
+            password: opts.password,
+            apiKey: opts.apiKey,
+          },
+          dashboardConfig,
+        );
+
+        if (result.success) {
+          log.success(`Dashboard deployed: ${result.url}`);
+        } else {
+          log.error('Dashboard deployment failed');
+          process.exitCode = EXIT_FAIL;
+        }
+      } catch (err) {
+        log.error('Dashboard deployment failed', err);
         process.exitCode = EXIT_FAIL;
       }
     },

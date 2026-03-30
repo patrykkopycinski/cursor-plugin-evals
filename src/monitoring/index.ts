@@ -4,3 +4,8 @@ export type { ScoredTrace } from './scorer.js';
 export { scoreTrace } from './scorer.js';
 export type { AnomalyDetector } from './anomaly.js';
 export { createAnomalyDetector } from './anomaly.js';
+export type { LiveScorerConfig, LiveScoreResult } from './live-scorer.js';
+export { LiveScorer } from './live-scorer.js';
+export type { Session, SessionManagerConfig } from './session-manager.js';
+export { SessionManager } from './session-manager.js';
+export { TerminalUI, type TerminalUIConfig } from './terminal-ui.js';

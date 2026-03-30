@@ -1,6 +1,6 @@
 # Production Monitoring
 
-Continuously score OTel traces in real-time and detect quality anomalies using z-score analysis.
+Continuously score OTel traces in real-time with live evaluator scoring, an ANSI terminal UI, and statistical anomaly detection.
 
 ## Architecture
 
@@ -9,9 +9,36 @@ The monitor ingests OpenTelemetry traces through two channels:
 | Mode | Description |
 |------|-------------|
 | **stdin** | Reads newline-delimited JSON from standard input (pipe from OTel collector) |
-| **HTTP** | Starts an HTTP server that accepts `POST /v1/traces` with OTel JSON lines |
+| **HTTP** | Starts an HTTP server that accepts `POST /v1/traces` with OTel JSON lines (OTLP-compatible) |
 
-Both modes feed traces into an anomaly detector with a sliding window.
+Both modes feed traces into the scoring engine and anomaly detector with a sliding window.
+
+## Live Evaluator Scoring
+
+Unlike the previous release (latency anomaly detection only), the monitor now runs evaluators against every incoming trace in real time:
+
+- **Per-evaluator breakdown** — each configured evaluator scores independently; pass/fail shown per trace
+- **Real-time terminal UI** — ANSI-colored bar charts update in place; compact mode available
+- **Session management** — sessions are tracked with configurable idle timeout; stale sessions are auto-closed
+- **HTTP OTLP receiver** — the built-in HTTP server now accepts standard OTLP JSON (`application/json`) in addition to the existing newline-delimited format
+
+### Terminal UI
+
+The default view shows a live-updating table with per-evaluator scores and a bar chart of the rolling pass rate:
+
+```
+[monitor] session: s-abc123  traces: 42  window: 100
+┌─────────────────────────┬───────┬──────┐
+│ Evaluator               │ Score │ Pass │
+├─────────────────────────┼───────┼──────┤
+│ tool-selection          │ 0.91  │  ✓   │
+│ agent-efficiency        │ 0.74  │  ✓   │
+│ security                │ 1.00  │  ✓   │
+└─────────────────────────┴───────┴──────┘
+Pass rate [████████░░] 82%  anomalies: 3
+```
+
+Use `--compact` for a single-line summary per trace, or `--json` to emit machine-readable output.
 
 ## OTel JSON Format
 
@@ -79,13 +106,36 @@ The server exposes two endpoints:
 | `/v1/traces` | POST | Ingest OTel JSON lines |
 | `/stats` | GET | Return current trace count and latency statistics |
 
+### Updated CLI Examples
+
+```bash
+# Live scoring with evaluators and terminal UI
+cursor-plugin-evals monitor --stdin -e tool-selection agent-efficiency security
+
+# Per-evaluator breakdown
+cursor-plugin-evals monitor --stdin -e tool-selection agent-efficiency --details
+
+# Compact mode (one line per trace)
+cursor-plugin-evals monitor --port 4318 --compact
+
+# Machine-readable JSON output
+cursor-plugin-evals monitor --stdin --json | jq '.score'
+
+# Custom session timeout (close idle sessions after 5 minutes)
+cursor-plugin-evals monitor --stdin --session-timeout 300
+```
+
 ### Flags
 
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--stdin` | — | Read from standard input |
-| `--port <n>` | — | Start HTTP server on this port |
+| `--port <n>` | — | Start HTTP server on this port (OTLP-compatible) |
 | `-e, --evaluators <names...>` | — | Evaluators to run on each trace |
+| `--details` | — | Show per-evaluator score breakdown per trace |
+| `--compact` | — | One-line summary per trace instead of full UI |
+| `--json` | — | Emit machine-readable JSON output |
+| `--session-timeout <s>` | `600` | Idle session timeout in seconds |
 | `--window <n>` | `100` | Sliding window size for anomaly detection |
 | `--z-threshold <n>` | `2.0` | Z-score threshold for anomaly alerts |
 

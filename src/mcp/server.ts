@@ -217,6 +217,101 @@ export function createEvalServer(): Server {
         },
       },
       {
+        name: 'evaluate_trace',
+        description:
+          'Evaluate an OTel trace file without re-executing the agent. Scores recorded traces using configured evaluators — useful for iterating on evaluation criteria cheaply.',
+        inputSchema: {
+          type: 'object' as const,
+          properties: {
+            trace_file: {
+              type: 'string',
+              description: 'Path to OTel trace JSON file (Jaeger or OTLP format)',
+            },
+            trace_id: {
+              type: 'string',
+              description: 'Specific trace ID to evaluate (if file contains multiple traces)',
+            },
+            evaluators: {
+              type: 'array',
+              items: { type: 'string' },
+              description:
+                'Evaluator names to run (default: tool-selection, response-quality, security)',
+            },
+            expected_tools: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Expected tool names for tool-selection evaluator',
+            },
+            es_endpoint: {
+              type: 'string',
+              description:
+                'Elasticsearch endpoint to read traces from (instead of file). Works with EDOT collector.',
+            },
+            es_api_key: {
+              type: 'string',
+              description: 'Elasticsearch API key for authentication',
+            },
+            es_index: {
+              type: 'string',
+              description:
+                'Elasticsearch index pattern (default: traces-apm*,traces-generic.otel-*). Supports APM and OTLP native.',
+            },
+            es_doc_format: {
+              type: 'string',
+              enum: ['apm', 'otlp', 'auto'],
+              description:
+                'Document format hint: "apm" for ECS/APM traces, "otlp" for OTLP-native (EDOT direct), "auto" to detect per-document (default: auto)',
+            },
+          },
+        },
+      },
+      {
+        name: 'harvest_traces',
+        description:
+          'Harvest failed production traces from Elasticsearch and generate regression test cases. Queries ES for low-scoring or failed traces and converts them to plugin-eval.yaml test definitions.',
+        inputSchema: {
+          type: 'object' as const,
+          properties: {
+            endpoint: {
+              type: 'string',
+              description: 'Elasticsearch endpoint URL',
+            },
+            api_key: { type: 'string', description: 'Elasticsearch API key' },
+            index: {
+              type: 'string',
+              description: 'Index pattern (default: traces-apm*,traces-generic.otel-*)',
+            },
+            time_from: { type: 'string', description: 'Start of time range (default: now-24h)' },
+            time_to: { type: 'string', description: 'End of time range (default: now)' },
+            score_threshold: {
+              type: 'number',
+              description: 'Score threshold for failures (default: 0.5)',
+            },
+            max_tests: { type: 'number', description: 'Max test cases to generate (default: 20)' },
+          },
+          required: ['endpoint'],
+        },
+      },
+      {
+        name: 'deploy_dashboard',
+        description:
+          'Deploy the eval results Kibana dashboard (dashboard-as-code). Creates visualizations for pass rate trends, evaluator scores, tool analysis, and failure tables.',
+        inputSchema: {
+          type: 'object' as const,
+          properties: {
+            kibana_url: { type: 'string', description: 'Kibana URL (e.g., http://localhost:5601)' },
+            space_id: { type: 'string', description: 'Kibana space ID (default: default)' },
+            api_key: { type: 'string', description: 'Kibana API key' },
+            title: { type: 'string', description: 'Dashboard title (default: Plugin Eval Results)' },
+            export_only: {
+              type: 'boolean',
+              description: 'Return NDJSON export instead of deploying',
+            },
+          },
+          required: ['kibana_url'],
+        },
+      },
+      {
         name: 'cost_report',
         description: 'Analyze token usage and recommend cost optimizations across models',
         inputSchema: {
@@ -691,6 +786,171 @@ export function createEvalServer(): Server {
         }
       }
 
+      case 'evaluate_trace': {
+        try {
+          const { createOtelTraceAdapter } = await import('../adapters/otel-trace.js');
+          const { createEvaluator } = await import('../evaluators/index.js');
+          const traceFile = args?.trace_file as string | undefined;
+          const traceId = args?.trace_id as string | undefined;
+          const esEndpoint = args?.es_endpoint as string | undefined;
+          const esApiKey = args?.es_api_key as string | undefined;
+          const esIndex = args?.es_index as string | undefined;
+          const esDocFormat = (args?.es_doc_format as 'apm' | 'otlp' | 'auto') ?? 'auto';
+          const evaluatorNames = (args?.evaluators as string[]) ?? [
+            'tool-selection',
+            'response-quality',
+            'security',
+          ];
+          const expectedTools = args?.expected_tools as string[] | undefined;
+
+          if (!traceFile && !esEndpoint) {
+            return errorResult('Either trace_file or es_endpoint is required');
+          }
+
+          const adapterConfig: Record<string, unknown> = {
+            name: 'otel-trace',
+            traceSource: esEndpoint
+              ? {
+                  type: 'elasticsearch',
+                  endpoint: esEndpoint,
+                  apiKey: esApiKey,
+                  index: esIndex ?? 'traces-apm*,traces-generic.otel-*',
+                  docFormat: esDocFormat,
+                }
+              : {
+                  type: 'file',
+                  path: traceFile ? resolve(process.cwd(), traceFile) : undefined,
+                  format: 'auto',
+                },
+          };
+
+          const adapter = createOtelTraceAdapter(adapterConfig as any);
+          const example = {
+            input: {
+              traceId: traceId ?? 'auto',
+              traceFile: traceFile ? resolve(process.cwd(), traceFile) : undefined,
+            },
+            output: expectedTools ? { tools: expectedTools } : undefined,
+          };
+
+          const output = await adapter(example);
+
+          const results = [];
+          for (const evalName of evaluatorNames) {
+            try {
+              const evaluator = createEvaluator(evalName);
+              const result = await evaluator.evaluate({
+                testName: `trace-eval-${traceId ?? 'auto'}`,
+                prompt: output.messages.find((m) => m.role === 'user')?.content,
+                toolCalls: output.toolCalls,
+                finalOutput: output.output,
+                expected: expectedTools ? { tools: expectedTools } : undefined,
+                tokenUsage: output.tokenUsage ?? undefined,
+                latencyMs: output.latencyMs,
+                adapterName: 'otel-trace',
+              });
+              results.push(result);
+            } catch (err) {
+              results.push({
+                evaluator: evalName,
+                score: 0,
+                pass: false,
+                explanation: `Evaluator error: ${err instanceof Error ? err.message : String(err)}`,
+              });
+            }
+          }
+
+          const avgScore =
+            results.length > 0
+              ? results.reduce((s, r) => s + r.score, 0) / results.length
+              : 0;
+
+          return textResult({
+            traceId: traceId ?? output.adapter,
+            toolsCalled: output.toolCalls.map((t) => t.tool),
+            latencyMs: output.latencyMs,
+            tokenUsage: output.tokenUsage,
+            evaluatorResults: results,
+            overallScore: avgScore,
+            pass: results.every((r) => r.pass),
+          });
+        } catch (err) {
+          return errorResult(
+            `Trace evaluation failed: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
+      }
+
+      case 'harvest_traces': {
+        try {
+          const { harvestTests, harvestedTestsToYaml } = await import('../harvest/index.js');
+          const endpoint = args?.endpoint as string;
+          if (!endpoint) return errorResult('endpoint is required');
+
+          const tests = await harvestTests({
+            endpoint,
+            apiKey: args?.api_key as string | undefined,
+            index: (args?.index as string) ?? 'traces-apm*,traces-generic.otel-*',
+            timeRange: {
+              from: (args?.time_from as string) ?? 'now-24h',
+              to: (args?.time_to as string) ?? 'now',
+            },
+            scoreThreshold: (args?.score_threshold as number) ?? 0.5,
+            maxTests: (args?.max_tests as number) ?? 20,
+          });
+
+          const yaml = harvestedTestsToYaml(tests);
+
+          return textResult({
+            testCount: tests.length,
+            tests: tests.map((t) => ({
+              name: t.name,
+              prompt: t.prompt.slice(0, 200),
+              tools: t.expected.tools,
+              score: t.source.score,
+              traceId: t.source.traceId,
+            })),
+            yaml,
+          });
+        } catch (err) {
+          return errorResult(
+            `Harvest failed: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
+      }
+
+      case 'deploy_dashboard': {
+        try {
+          const kibanaUrl = args?.kibana_url as string;
+          if (!kibanaUrl) return errorResult('kibana_url is required');
+
+          const dashboardConfig = {
+            title: (args?.title as string) ?? 'Plugin Eval Results',
+          };
+
+          if (args?.export_only) {
+            const { buildDashboardNdjson } = await import('../kibana/dashboard.js');
+            return textResult({ ndjson: buildDashboardNdjson(dashboardConfig) });
+          }
+
+          const { deployDashboard } = await import('../kibana/deploy.js');
+          const result = await deployDashboard(
+            {
+              kibanaUrl,
+              spaceId: (args?.space_id as string) ?? 'default',
+              apiKey: args?.api_key as string | undefined,
+            },
+            dashboardConfig,
+          );
+
+          return textResult(result);
+        } catch (err) {
+          return errorResult(
+            `Dashboard deployment failed: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
+      }
+
       case 'cost_report': {
         try {
           const models = args?.models as string[];
@@ -932,7 +1192,7 @@ Or read the \`eval://latest-run\` resource directly.
 For failures: read test details, fix config or plugin, re-run.
 For regressions: call \`regression_check\` against a known-good baseline.
 
-## Available Tools (14)
+## Available Tools (17)
 | Tool | Purpose |
 |------|---------|
 | discover_plugin | Find all plugin components |
@@ -948,6 +1208,9 @@ For regressions: call \`regression_check\` against a known-good baseline.
 | security_audit | 3-pass security audit |
 | regression_check | Statistical regression detection |
 | compare_models | Multi-model comparison |
+| evaluate_trace | Score OTel traces without re-execution |
+| harvest_traces | Harvest failed traces as regression tests |
+| deploy_dashboard | Deploy Kibana eval dashboard |
 | cost_report | Token usage optimization |
 
 ## Available Resources (6)

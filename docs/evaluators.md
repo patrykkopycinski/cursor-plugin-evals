@@ -1,6 +1,6 @@
 # Evaluators Reference
 
-Complete reference for all 35 evaluators. Each evaluator scores a specific quality dimension from 0 to 1.
+Complete reference for all 37 evaluators. Each evaluator scores a specific quality dimension from 0 to 1.
 
 Evaluators are divided into two kinds:
 - **CODE** — deterministic, rule-based scoring (fast, no LLM call)
@@ -241,6 +241,61 @@ expected:
 ```
 
 Column overlap measures the fraction of reference columns present in the generated output (case-insensitive, extra columns don't penalize). Row count similarity is `1 - |gen - ref| / ref`.
+
+### agent-efficiency
+
+Detects inefficient agent behavior from tool call patterns.
+
+- **Scores:** Starts at 1.0, subtracts penalties for each issue found
+- **Default threshold:** `0.5`
+- **Kind:** CODE (no LLM cost)
+
+**Detection patterns:**
+| Pattern | Penalty | Description |
+|---------|---------|-------------|
+| Redundant calls | -0.1 each | Same tool + same args called multiple times |
+| Retry bursts | -0.15 each | Same tool called 3+ times in sequence |
+| Loop detection | -0.3 each | Repeating sequence of 2+ tool calls (e.g., [A,B,A,B]) |
+| Step bloat | -0.2 | `actual.length > 2 × goldenPath.length` |
+| Idle tools | -0.05 each | Tool call with `latencyMs > 30000` |
+
+```yaml
+evaluators: [agent-efficiency]
+expected:
+  goldenPath: [search, analyze, respond]
+```
+
+Config options:
+- `threshold` — pass threshold (default: 0.5)
+- `idleThresholdMs` — idle detection threshold in ms (default: 30000)
+
+Returns detailed metadata: `{ redundantCalls, retryBursts, loops, stepBloat, idleTools }`
+
+### custom
+
+Run evaluators written in any language via stdin/stdout JSON protocol.
+
+- **Scores:** Determined by the custom evaluator subprocess
+- **Default threshold:** `0.5`
+- **Kind:** CODE
+
+Supports TypeScript, JavaScript, Python, Go, and Shell. Scaffold with:
+
+```bash
+cursor-plugin-evals evaluator init --name my-scorer --language python
+```
+
+```yaml
+evaluators:
+  add:
+    - name: custom
+      path: ./evaluators/my-scorer
+      threshold: 0.7
+      config:
+        key: value
+```
+
+See [Custom Evaluators](./custom-evaluators.md) for the full protocol reference.
 
 ## LLM Evaluators
 

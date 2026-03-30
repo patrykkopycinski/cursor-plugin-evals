@@ -7,7 +7,8 @@ export type AdapterName =
   | 'gemini-cli'
   | 'claude-sdk'
   | 'claude-cli'
-  | 'cursor-cli';
+  | 'cursor-cli'
+  | 'otel-trace';
 
 type AdapterFactory = (config: AdapterConfig) => TaskAdapter;
 
@@ -54,9 +55,14 @@ async function getAdapterFactory(name: string): Promise<AdapterFactory> {
       factory = mod.createCursorCliAdapter;
       break;
     }
+    case 'otel-trace': {
+      const mod = await import('./otel-trace.js');
+      factory = mod.createOtelTraceAdapter;
+      break;
+    }
     default:
       throw new Error(
-        `Unknown adapter "${name}". Available: mcp, plain-llm, headless-coder, gemini-cli, claude-sdk, claude-cli, cursor-cli`,
+        `Unknown adapter "${name}". Available: mcp, plain-llm, headless-coder, gemini-cli, claude-sdk, claude-cli, cursor-cli, otel-trace`,
       );
   }
 
@@ -74,3 +80,4 @@ export function createAdapter(name: AdapterName | string, config: AdapterConfig)
 
 export { createMcpAdapter } from './mcp.js';
 export { createCursorCliAdapter } from './cursor-cli.js';
+export { createOtelTraceAdapter } from './otel-trace.js';

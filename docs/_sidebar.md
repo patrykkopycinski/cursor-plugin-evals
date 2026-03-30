@@ -17,6 +17,7 @@
   - [Evaluators](evaluators.md)
   - [Task Adapters](adapters.md)
   - [Coverage Analysis](coverage.md)
+  - [Custom Evaluators](custom-evaluators.md)
 
 - **Features**
   - [Web Dashboard](dashboard.md)
@@ -38,14 +39,22 @@
   - [Failure Taxonomy](failure-taxonomy.md)
   - [MCP-Radar Scoring](mcp-radar.md)
   - [Guardrails](guardrails.md)
+  - [Agent Efficiency](agent-efficiency.md)
+  - [Conditional Evaluators](conditional-evaluators.md)
+  - [Eval → Guardrails](eval-guardrails.md)
   - [Cost Optimization](cost-advisor.md)
   - [Dataset Management](datasets.md)
   - [Multimodal Eval](multimodal.md)
 
 - **Advanced**
+  - [Trace-Based Evaluation](trace-eval.md)
   - [Trace Ingestion](trace-import.md)
   - [Visual Trace Viewer](visual-trace-viewer.md)
   - [Production Monitoring](monitoring.md)
+  - [Live Scoring](live-scoring.md)
+  - [Kibana Dashboard](kibana-dashboard.md)
+  - [Harvest Traces](harvest.md)
+  - [OTel Eval Events](otel-eval-events.md)
   - [Notifications](notifications.md)
   - [OAuth 2.0 Testing](oauth.md)
 

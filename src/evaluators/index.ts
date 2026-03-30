@@ -35,6 +35,8 @@ import { NlScorerEvaluator } from './nl-scorer.js';
 import { SkillRoutingEvaluator } from './skill-routing.js';
 import { SkillDescriptionEvaluator } from './skill-description.js';
 import { SkillComposabilityEvaluator } from './skill-composability.js';
+import { CustomEvaluator, type CustomEvaluatorConfig } from './custom-evaluator.js';
+import { agentEfficiencyEvaluator } from './agent-efficiency.js';
 
 export const EVALUATOR_NAMES = [
   'tool-selection',
@@ -72,11 +74,13 @@ export const EVALUATOR_NAMES = [
   'skill-routing',
   'skill-description',
   'skill-composability',
+  'custom',
+  'agent-efficiency',
 ] as const;
 
 export type EvaluatorName = (typeof EVALUATOR_NAMES)[number];
 
-const EVALUATOR_MAP: Record<EvaluatorName, new () => Evaluator> = {
+const EVALUATOR_MAP: Record<Exclude<EvaluatorName, 'custom' | 'agent-efficiency'>, new () => Evaluator> = {
   'tool-selection': ToolSelectionEvaluator,
   'tool-args': ToolArgsEvaluator,
   'tool-sequence': ToolSequenceEvaluator,
@@ -114,8 +118,21 @@ const EVALUATOR_MAP: Record<EvaluatorName, new () => Evaluator> = {
   'skill-composability': SkillComposabilityEvaluator,
 };
 
-export function createEvaluator(name: string): Evaluator {
-  const Ctor = EVALUATOR_MAP[name as EvaluatorName];
+export function createEvaluator(name: string, config?: Record<string, unknown>): Evaluator {
+  if (name === 'agent-efficiency') {
+    return agentEfficiencyEvaluator;
+  }
+  if (name === 'custom') {
+    return new CustomEvaluator({
+      path: (config?.path as string) ?? '',
+      name: config?.name as string | undefined,
+      threshold: config?.threshold as number | undefined,
+      timeout: config?.timeout as number | undefined,
+      config: config?.config as Record<string, unknown> | undefined,
+      runtime: config?.runtime as CustomEvaluatorConfig['runtime'],
+    });
+  }
+  const Ctor = EVALUATOR_MAP[name as Exclude<EvaluatorName, 'custom' | 'agent-efficiency'>];
   if (!Ctor) {
     throw new Error(`Unknown evaluator "${name}". Available: ${EVALUATOR_NAMES.join(', ')}`);
   }
@@ -158,7 +175,19 @@ export {
   SkillRoutingEvaluator,
   SkillDescriptionEvaluator,
   SkillComposabilityEvaluator,
+  CustomEvaluator,
 };
+
+export type { CustomEvaluatorConfig } from './custom-evaluator.js';
+export type {
+  CustomEvalInput,
+  CustomEvalOutput,
+  EvaluatorManifest,
+} from './custom-protocol.js';
+export { PROTOCOL_VERSION as CUSTOM_EVAL_PROTOCOL_VERSION } from './custom-protocol.js';
+export { agentEfficiencyEvaluator } from './agent-efficiency.js';
+export type { EvalCondition } from './eval-condition.js';
+export { shouldRunEvaluator } from './eval-condition.js';
 
 export type {
   TokenUsageConfig,
