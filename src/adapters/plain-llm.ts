@@ -108,13 +108,28 @@ function configureAzureOpenAI(model: string): ProviderConfig {
   };
 }
 
+function isClaudeModel(model: string): boolean {
+  return /claude|anthropic|sonnet|opus|haiku/i.test(model);
+}
+
 function configureOpenAI(config: AdapterConfig): ProviderConfig {
   const apiBaseUrl = config.apiBaseUrl ?? process.env.LITELLM_URL ?? 'https://api.openai.com/v1';
   const apiKey = config.apiKey ?? process.env.LITELLM_API_KEY ?? process.env.OPENAI_API_KEY ?? '';
+  const isLitellm = !!process.env.LITELLM_URL;
   return {
     url: `${apiBaseUrl}/chat/completions`,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    buildBody: (model, messages) => ({ model, messages, max_tokens: 4096 }),
+    buildBody: (model, messages) => {
+      const body: Record<string, unknown> = { model, messages, max_tokens: 4096 };
+      // When routing Claude models through LiteLLM, disable assistant prefill
+      // to avoid Azure AI rejecting requests with "does not support assistant
+      // message prefill". LiteLLM's Anthropic format converter adds a trailing
+      // empty assistant message by default; this flag suppresses it.
+      if (isLitellm && isClaudeModel(model)) {
+        body.supports_assistant_prefill = false;
+      }
+      return body;
+    },
     parseResponse: parseOpenAIResponse,
   };
 }
@@ -238,10 +253,13 @@ export function createPlainLlmAdapter(config: AdapterConfig): TaskAdapter {
           messages.push({ role: 'assistant', content: parsed.content });
         }
 
+        // Break after first content response — plain-llm is single-turn unless tool calls drive a loop.
+        // Without this, the assistant message gets pushed and the next iteration sends a conversation
+        // ending with assistant role, which Claude via OpenAI API rejects as "prefill".
         if (parsed.hasToolCalls) {
           console.debug('[plain-llm] LLM returned tool calls — breaking (plain-llm cannot execute tools)');
-          break;
         }
+        break;
       } finally {
         clearTimeout(timeoutHandle);
       }
