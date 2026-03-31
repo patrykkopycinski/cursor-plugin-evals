@@ -108,6 +108,11 @@ export function createClaudeCliAdapter(config: AdapterConfig): TaskAdapter {
       '--no-session-persistence',
     ];
 
+    // Use --bare in CI (ANTHROPIC_API_KEY auth, no hooks/keychain/OAuth)
+    if (process.env.CI || process.env.CLAUDE_CLI_BARE) {
+      args.push('--bare');
+    }
+
     if (model) {
       args.push('--model', model);
     }
