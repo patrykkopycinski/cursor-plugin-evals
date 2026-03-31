@@ -17,7 +17,7 @@ interface RawEvalYaml {
   tests?: Array<Record<string, unknown>>;
   examples?: Array<Record<string, unknown>>;
   adapters?: Array<string | Record<string, unknown>>;
-  evaluators?: string[];
+  evaluators?: Array<string | Record<string, unknown>>;
   models?: string[];
   defaults?: Record<string, unknown>;
   setup?: Record<string, unknown>;
@@ -210,6 +210,16 @@ export function loadSkillDataset(skillDir: string): EvaluationDataset {
   const models = raw.models ?? defaultsData?.models;
   const phaseGates = parsePhaseGates(raw.phase_gates ?? defaultsData?.phase_gates);
 
+  // Parse evaluator conditions from objects in evaluators list
+  const evaluatorConditions = new Map<string, Record<string, unknown>>();
+  if (evaluators && Array.isArray(evaluators)) {
+    for (const entry of evaluators) {
+      if (typeof entry === 'object' && entry !== null && 'name' in entry && 'when' in entry) {
+        evaluatorConditions.set(entry.name as string, entry.when as Record<string, unknown>);
+      }
+    }
+  }
+
   const dataset: EvaluationDataset = {
     name,
     description: raw.description ?? '',
@@ -218,7 +228,11 @@ export function loadSkillDataset(skillDir: string): EvaluationDataset {
   };
 
   if (adapters) dataset.adapters = adapters;
-  if (evaluators) dataset.evaluators = evaluators;
+  if (evaluators) {
+    // Normalize evaluators to string names only (objects use name+when format)
+    dataset.evaluators = evaluators.map((e) => (typeof e === 'string' ? e : (e.name as string)));
+  }
+  if (evaluatorConditions.size > 0) dataset.evaluatorConditions = evaluatorConditions;
   if (models) dataset.models = models;
   if (phaseGates) dataset.phaseGates = phaseGates;
 

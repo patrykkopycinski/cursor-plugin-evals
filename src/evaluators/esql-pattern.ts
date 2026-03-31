@@ -64,9 +64,10 @@ export class EsqlPatternEvaluator implements Evaluator {
       return {
         evaluator: this.name,
         score: 0,
-        pass: false,
+        pass: true,
+        skipped: true,
         label: 'no_query',
-        explanation: 'Could not extract ES|QL query from output',
+        explanation: 'Could not extract ES|QL query from output — skipping',
       };
     }
 

@@ -11,6 +11,7 @@ import type {
   AdapterCapabilities,
   SuiteEvaluatorOverrides,
 } from '../../core/types.js';
+import { shouldRunEvaluator, type EvalCondition } from '../../evaluators/eval-condition.js';
 import { createAdapter } from '../../adapters/index.js';
 import { loadSkillDataset } from './loader.js';
 import { mergeDefaults, getMissingEnvVars } from '../../core/utils.js';
@@ -257,6 +258,21 @@ export async function runSkillSuite(
               log.warn(`Evaluator "${evalName}" not found, skipping`);
               continue;
             }
+
+            // Check conditional activation (when clause)
+            const evalWhen = dataset.evaluatorConditions?.get(evalName);
+            if (evalWhen && !shouldRunEvaluator(evalWhen as EvalCondition, evaluatorContext)) {
+              evaluatorResults.push({
+                evaluator: evalName,
+                score: 0,
+                pass: true,
+                skipped: true,
+                label: 'condition_not_met',
+                explanation: `Evaluator skipped: condition not met`,
+              });
+              continue;
+            }
+
             try {
               const evalResult = await evaluator.evaluate(evaluatorContext);
               evaluatorResults.push(evalResult);

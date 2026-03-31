@@ -597,6 +597,7 @@ export interface EvaluationDataset<T extends Example = Example> {
   examples: T[];
   adapters?: string[] | EvalAdapterConfig[];
   evaluators?: string[];
+  evaluatorConditions?: Map<string, Record<string, unknown>>;
   defaults?: EvalDefaultsConfig;
   setup?: EvalSetupConfig;
   models?: string[];
