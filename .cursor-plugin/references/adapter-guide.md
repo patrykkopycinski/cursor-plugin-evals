@@ -13,7 +13,7 @@ cursor-plugin-evals supports multiple adapters for executing test prompts. Each 
 | `mcp` | Fast | Yes (direct MCP calls) | No | Integration/unit tests |
 | `headless-coder` | Moderate | Yes | Depends on config | Headless coding agent |
 | `gemini-cli` | Moderate | Yes | No | Gemini model testing |
-| `claude-sdk` | Moderate | Yes | No | Claude SDK testing |
+| `claude-sdk` | Moderate | Yes (full agent) | Yes (workspace isolation) | E2E Claude agent testing, CI/Docker |
 
 ---
 
@@ -197,6 +197,73 @@ Cursor CLI uses internal tool call keys that get mapped to standard names:
 
 ---
 
+## `claude-sdk` — Claude Agent SDK Adapter
+
+Full e2e agent execution using `@anthropic-ai/claude-agent-sdk` ("Claude Code as a library"). Equivalent fidelity to `cursor-cli` but runs as a pure Node.js library — no external binary needed, containerizable for CI/Docker.
+
+### How It Works
+
+1. Dynamically imports `@anthropic-ai/claude-agent-sdk` (optional dependency)
+2. Creates an isolated workspace (same infrastructure as cursor-cli)
+3. Calls `query()` with `bypassPermissions` mode for autonomous execution
+4. Streams events via async generator: `assistant`, `user`, `result`
+5. Tracks tool calls via `PreToolUse`/`PostToolUse`/`PostToolUseFailure` hooks
+6. Returns full conversation with tool interactions and token usage
+
+### Configuration
+
+```yaml
+suites:
+  - name: claude-e2e-tools
+    layer: skill
+    adapter: claude-sdk
+    skill_dir: skills/security/alert-triage
+    defaults:
+      timeout: 300000
+    tests:
+      - name: full tool workflow
+        prompt: "Triage the latest critical alerts"
+        expected:
+          tools: [search_alerts, get_alert_details]
+        evaluators: [tool-selection, correctness]
+```
+
+### Capabilities
+
+| Capability | Supported |
+|---|---|
+| Tool calls | **Yes** — full built-in tools (Bash, Read, Write, Edit, Glob, Grep) |
+| Skill injection | Yes (via systemPrompt) |
+| Multi-turn | Yes (full agent conversation) |
+| Token tracking | Yes (from result event usage) |
+| Concurrency | 5 parallel (workspace pool) |
+| Cost | Moderate (per Anthropic API pricing) |
+| File operations | Yes |
+| Shell commands | Yes |
+| Docker/CI | **Yes** — pure Node.js, no GUI/keychain |
+
+### Tool Name Normalization
+
+| Agent SDK Name | Normalized Name |
+|---|---|
+| `Bash` | `shell` |
+| `Read` | `read_file` |
+| `Write` | `write_file` |
+| `Edit` | `edit_file` |
+| `Glob` | `glob` |
+| `Grep` | `grep` |
+| `LS` | `list_dir` |
+
+### When to Use
+
+- CI/Docker-based eval pipelines (no desktop app dependency)
+- Full e2e agent testing with tool call tracking
+- Testing skill execution with file system access
+- Cross-agent comparison (run same tests on claude-sdk AND cursor-cli)
+- Production eval monitoring in containerized environments
+
+---
+
 ## `mcp` — Direct MCP Client Adapter
 
 Connects directly to the plugin's MCP server for integration and unit tests. No LLM involved — calls tools directly with specified arguments.
@@ -237,19 +304,21 @@ npx cursor-plugin-evals run --suite "cursor-e2e-*" --verbose
 |---|---|---|
 | `plain-llm` | `correctness`, `content-quality`, `keywords`, `similarity` | LLM (Azure GPT-4.1) |
 | `cursor-cli` | `tool-selection`, `keywords`, `task-completion`, `workflow` | Keywords (CODE) — no API key needed |
+| `claude-sdk` | `tool-selection`, `keywords`, `task-completion`, `correctness` | LLM or CODE |
 
-Use LLM evaluators with `plain-llm` for richer signal during iteration. Use code-based evaluators with `cursor-cli` to avoid requiring a separate API key for the evaluator during e2e runs.
+Use LLM evaluators with `plain-llm` for richer signal during iteration. Use code-based evaluators with `cursor-cli`/`claude-sdk` for e2e runs. `claude-sdk` is preferred for CI/Docker since it doesn't require a desktop app binary.
 
 ---
 
 ## Performance Comparison
 
-| Metric | `plain-llm` | `cursor-cli` | `mcp` |
-|---|---|---|---|
-| Avg time per test | ~1.6s | ~44s | <1s |
-| Concurrency | 4+ parallel | 3 parallel | Unlimited |
-| Token usage per test | 150-775 | 500-7400 | 0 |
-| Requires Cursor CLI | No | Yes | No |
-| Requires LLM API key | Yes | No (uses Cursor subscription) | No |
-| Tests tool calls | No | Yes | Yes (direct) |
-| Tests skill discovery | No | Yes | No |
+| Metric | `plain-llm` | `cursor-cli` | `claude-sdk` | `mcp` |
+|---|---|---|---|---|
+| Avg time per test | ~1.6s | ~44s | ~30-60s | <1s |
+| Concurrency | 4+ parallel | 3 parallel | 5 parallel | Unlimited |
+| Token usage per test | 150-775 | 500-7400 | 500-7400 | 0 |
+| Requires external binary | No | Yes (Cursor CLI) | No (pure Node.js) | No |
+| Requires LLM API key | Yes | No (uses Cursor subscription) | Yes (`ANTHROPIC_API_KEY`) | No |
+| Tests tool calls | No | Yes | Yes | Yes (direct) |
+| Tests skill discovery | No | Yes | Yes (via systemPrompt) | No |
+| Docker/CI compatible | Yes | No (needs GUI) | **Yes** | Yes |

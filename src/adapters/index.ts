@@ -6,7 +6,6 @@ export type AdapterName =
   | 'headless-coder'
   | 'gemini-cli'
   | 'claude-sdk'
-  | 'claude-cli'
   | 'cursor-cli'
   | 'otel-trace';
 
@@ -45,11 +44,6 @@ async function getAdapterFactory(name: string): Promise<AdapterFactory> {
       factory = mod.createClaudeSdkAdapter;
       break;
     }
-    case 'claude-cli': {
-      const mod = await import('./claude-cli.js');
-      factory = mod.createClaudeCliAdapter;
-      break;
-    }
     case 'cursor-cli': {
       const mod = await import('./cursor-cli.js');
       factory = mod.createCursorCliAdapter;
@@ -62,7 +56,7 @@ async function getAdapterFactory(name: string): Promise<AdapterFactory> {
     }
     default:
       throw new Error(
-        `Unknown adapter "${name}". Available: mcp, plain-llm, headless-coder, gemini-cli, claude-sdk, claude-cli, cursor-cli, otel-trace`,
+        `Unknown adapter "${name}". Available: mcp, plain-llm, headless-coder, gemini-cli, claude-sdk, cursor-cli, otel-trace`,
       );
   }
 

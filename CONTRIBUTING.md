@@ -44,7 +44,7 @@ All of the above must pass before submitting changes.
 
 ```
 src/
-  adapters/       Task adapter implementations (mcp, plain-llm, headless-coder, gemini-cli, claude-sdk, cursor-cli)
+  adapters/       Task adapter implementations (mcp, plain-llm, headless-coder, gemini-cli, claude-sdk, cursor-cli, otel-trace)
   analyzers/      Skill collision detection and security lint
   auth/           Authentication providers (API key, bearer, OAuth2)
   cache/          LLM response cache with disk persistence and TTL

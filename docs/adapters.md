@@ -67,12 +67,21 @@ Executes prompts through the Gemini CLI interface.
 
 ### claude-sdk
 
-Executes prompts through the Claude SDK with tool use support.
+Executes prompts through the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) — "Claude Code as a library". Provides full e2e agent execution with tool tracking, workspace isolation, and built-in tools.
 
-- Uses the Anthropic SDK directly
-- Supports Claude's native tool use format
+- Uses the `query()` async generator with streaming events
+- Built-in tools: Bash, Read, Write, Edit, Glob, Grep (no external binary needed)
+- Workspace isolation via `createIsolatedWorkspace` (same as cursor-cli)
+- Hook-based tool call tracking (PreToolUse/PostToolUse)
+- Permission bypass for autonomous eval execution
+- Budget control via `maxBudgetUsd`
+- Containerizable for CI (works in Docker without GUI/keychain)
+- Requires `ANTHROPIC_API_KEY` environment variable
 
 ```yaml
+suites:
+  - name: claude-tests
+    layer: skill
     adapter: claude-sdk
 ```
 
@@ -114,20 +123,6 @@ adapter_config:
     docFormat: auto  # 'apm', 'otlp', or 'auto'
 ```
 
-### claude-cli
-
-Runs prompts through the Claude Code CLI.
-
-- Spawns `claude -p --output-format json`
-- Supports tool calls via Claude's native tool use
-- Parses JSON output for messages and tool calls
-
-```yaml
-suites:
-  - name: claude-tests
-    adapter: claude-cli
-```
-
 ## Adapter Capabilities
 
 Each adapter declares its capabilities, which evaluators use to auto-skip inapplicable checks:
@@ -137,11 +132,10 @@ Each adapter declares its capabilities, which evaluators use to auto-skip inappl
 | **mcp** | Yes | No | No | Yes |
 | **plain-llm** | No | No | No | Yes |
 | **cursor-cli** | Yes | Yes | Yes | No (estimated) |
+| **claude-sdk** | Yes | Yes | Yes | Yes |
 | **headless-coder** | Yes | Yes | No | Yes |
 | **gemini-cli** | Yes | No | No | Yes |
-| **claude-sdk** | Yes | No | No | Yes |
 | **otel-trace** | Yes (replayed) | No | No | No (from trace) |
-| **claude-cli** | Yes | Yes | No | No (estimated) |
 
 When an evaluator like `groundedness` runs against `plain-llm` (no tool calls), it automatically
 returns `skipped: true` instead of scoring 0 — this prevents false negatives from dragging down

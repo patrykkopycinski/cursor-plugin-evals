@@ -22,7 +22,7 @@ Initial release of the cursor-plugin-evals framework.
 - Configurable LLM judge model via `JUDGE_MODEL` and `LITELLM_URL`
 
 ### Task Adapters
-- 5 pluggable adapters: mcp, plain-llm, headless-coder, gemini-cli, claude-sdk
+- 7 pluggable adapters: mcp, plain-llm, headless-coder, gemini-cli, claude-sdk, cursor-cli, otel-trace
 - Dynamic import with adapter factory caching
 - Per-suite adapter selection (single or multiple)
 

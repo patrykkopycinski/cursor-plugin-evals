@@ -129,7 +129,7 @@ Auto-registers when you install the Cursor plugin (via `.mcp.json`).
 **Evaluation**
 - 35 evaluators (19 deterministic + 16 LLM-as-judge + multi-judge panel)
 - 3 ES|QL evaluators: execution scoring, pattern matching with equivalence classes, and result comparison against golden queries
-- 6 task adapters (MCP, plain-llm, cursor-cli, headless-coder, gemini-cli, claude-sdk)
+- 7 task adapters (MCP, plain-llm, cursor-cli, headless-coder, gemini-cli, claude-sdk, otel-trace)
 - 22 security rules (20 OWASP-aligned + unicode obfuscation + YAML anomaly detection) with 3-pass red-teaming
 - SAFE-MCP compliance with 26 attack techniques
 - Regression detection via Welch's t-test
