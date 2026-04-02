@@ -20,10 +20,12 @@ import { calculateCost } from '../../pricing/index.js';
 import { readFileSync, existsSync } from 'fs';
 import { resolve, join } from 'path';
 import { setCursorConcurrency, createWorkspacePool, type WorkspacePool } from '../../adapters/cursor-cli.js';
+import { setClaudeSdkConcurrency } from '../../adapters/claude-sdk.js';
 
 const DEFAULT_ADAPTER = 'mcp';
 const DEFAULT_MODEL = 'gpt-5.2';
 const CURSOR_CLI_CONCURRENCY = 5;
+const CLAUDE_SDK_DEFAULT_CONCURRENCY = 5;
 
 const ADAPTER_CAPABILITIES: Record<string, AdapterCapabilities> = {
   'cursor-cli': {
@@ -31,6 +33,12 @@ const ADAPTER_CAPABILITIES: Record<string, AdapterCapabilities> = {
     hasFileAccess: true,
     hasWorkspaceIsolation: true,
     reportsInputTokens: false,
+  },
+  'claude-sdk': {
+    hasToolCalls: true,
+    hasFileAccess: true,
+    hasWorkspaceIsolation: true,
+    reportsInputTokens: true,
   },
   'plain-llm': {
     hasToolCalls: false,
@@ -82,7 +90,7 @@ function resolveEvaluators(
   return result;
 }
 
-function resolveSkillContent(pluginDir?: string, skillPath?: string): string | undefined {
+function resolveSkillContent(pluginDir?: string, skillPath?: string, skillDir?: string): string | undefined {
   if (skillPath) {
     const abs = pluginDir ? resolve(pluginDir, skillPath) : skillPath;
     if (existsSync(abs)) return readFileSync(abs, 'utf-8');
@@ -90,6 +98,11 @@ function resolveSkillContent(pluginDir?: string, skillPath?: string): string | u
   if (pluginDir) {
     const rootSkill = join(pluginDir, 'SKILL.md');
     if (existsSync(rootSkill)) return readFileSync(rootSkill, 'utf-8');
+  }
+  // Fallback: check SKILL.md inside the skill directory itself
+  if (skillDir) {
+    const dirSkill = join(skillDir, 'SKILL.md');
+    if (existsSync(dirSkill)) return readFileSync(dirSkill, 'utf-8');
   }
   return undefined;
 }
@@ -146,30 +159,43 @@ export async function runSkillSuite(
   const skillContent = resolveSkillContent(
     pluginConfig.dir,
     suite.skillPath,
+    skillDir,
   );
+
+  if (skillContent) {
+    log.debug(`Loaded SKILL.md (${skillContent.length} chars) for suite "${suite.name}"`);
+  } else {
+    log.warn(`No SKILL.md found for suite "${suite.name}" — agent will not receive skill instructions`);
+  }
 
   for (const adapterName of adapterNames) {
     const isCursorCli = adapterName === 'cursor-cli';
+    const isClaudeSdk = adapterName === 'claude-sdk';
+    const needsWorkspacePool = isCursorCli || isClaudeSdk;
+
     if (isCursorCli) {
       setCursorConcurrency(true);
     }
+    if (isClaudeSdk) {
+      setClaudeSdkConcurrency(true);
+    }
 
     let wsPool: WorkspacePool | undefined;
-    if (isCursorCli && skillDir && !suite.skipIsolation) {
+    if (needsWorkspacePool && skillDir && !suite.skipIsolation) {
       wsPool = await createWorkspacePool(
         skillDir,
         pluginConfig.dir ?? process.cwd(),
         CURSOR_CLI_CONCURRENCY,
         pluginConfig.dir,
       );
-    } else if (isCursorCli && suite.skipIsolation) {
+    } else if (needsWorkspacePool && suite.skipIsolation) {
       log.debug(`Skipping workspace isolation for suite "${suite.name}" (skip_isolation: true)`);
     }
 
     const adapterConfig = {
       name: pluginConfig.name,
-      model: isCursorCli ? 'auto' : (mergedDefaults.judgeModel ?? DEFAULT_MODEL),
-      timeout: mergedDefaults.timeout ?? 120_000,
+      model: isCursorCli ? 'auto' : isClaudeSdk ? (mergedDefaults.judgeModel ?? 'claude-sonnet-4-6') : (mergedDefaults.judgeModel ?? DEFAULT_MODEL),
+      timeout: mergedDefaults.timeout ?? (isClaudeSdk ? 300_000 : 120_000),
       workingDir: pluginConfig.dir,
       entry: pluginConfig.entry,
       env: pluginConfig.env,
@@ -182,7 +208,7 @@ export async function runSkillSuite(
     };
 
     const adapter = createAdapter(adapterName, adapterConfig);
-    const readOnlyAdapter = isCursorCli
+    const readOnlyAdapter = (isCursorCli || isClaudeSdk)
       ? createAdapter(adapterName, { ...adapterConfig, readOnly: true })
       : null;
 
@@ -199,13 +225,17 @@ export async function runSkillSuite(
         (example.metadata?.name as string) ??
         (example.input.prompt as string)?.slice(0, 50) ??
         'unnamed';
+
+      // Apply name/pattern filters (--filter and --last-failed)
+      if (suite.testFilter?.names && !suite.testFilter.names.has(testName)) continue;
+      if (suite.testFilter?.pattern && !suite.testFilter.pattern.test(testName)) continue;
       const perTestEvaluators = resolveEvaluators(
         (example.metadata?.evaluators as string[]) ?? suiteEvaluators,
         suite.evaluators,
       );
 
       const expected = example.output as ExpectedOutput | undefined;
-      const isReadOnly = isCursorCli && !expected?.tools?.length && !expected?.toolSequence?.length;
+      const isReadOnly = (isCursorCli || isClaudeSdk) && !expected?.tools?.length && !expected?.toolSequence?.length;
 
       for (let rep = 1; rep <= repetitions; rep++) {
         const displayName =
@@ -322,7 +352,10 @@ export async function runSkillSuite(
       }
     }
 
-    const effectiveConcurrency = isCursorCli ? CURSOR_CLI_CONCURRENCY : tasks.length;
+    // Bound concurrency for agent adapters even without workspace pools (skipIsolation mode)
+    const effectiveConcurrency = needsWorkspacePool
+      ? (suite.concurrency ?? (isClaudeSdk ? CLAUDE_SDK_DEFAULT_CONCURRENCY : CURSOR_CLI_CONCURRENCY))
+      : tasks.length;
     const taskResults = await runWithConcurrency(tasks, effectiveConcurrency);
     results.push(...taskResults);
 
@@ -332,6 +365,9 @@ export async function runSkillSuite(
 
     if (isCursorCli) {
       setCursorConcurrency(false);
+    }
+    if (isClaudeSdk) {
+      setClaudeSdkConcurrency(false);
     }
   }
 

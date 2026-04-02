@@ -1,5 +1,5 @@
 import type { Evaluator, EvaluatorContext, EvaluatorResult, EvaluatorKind } from '../core/types.js';
-import { extractEsql } from './esql-utils.js';
+import { extractEsqlFull } from './esql-utils.js';
 
 /**
  * ES|QL command equivalence classes.
@@ -59,7 +59,7 @@ export class EsqlPatternEvaluator implements Evaluator {
       };
     }
 
-    const query = extractEsql(context.finalOutput ?? '');
+    const query = extractEsqlFull(context.finalOutput ?? '', context.toolCalls);
     if (!query) {
       return {
         evaluator: this.name,

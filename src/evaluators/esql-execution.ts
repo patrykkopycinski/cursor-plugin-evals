@@ -1,5 +1,5 @@
 import type { Evaluator, EvaluatorContext, EvaluatorResult, EvaluatorKind } from '../core/types.js';
-import { extractEsql, executeEsql, buildEsHeaders, resolveEsUrl } from './esql-utils.js';
+import { extractEsqlFull, executeEsql, buildEsHeaders, resolveEsUrl } from './esql-utils.js';
 
 export class EsqlExecutionEvaluator implements Evaluator {
   name = 'esql-execution';
@@ -17,14 +17,14 @@ export class EsqlExecutionEvaluator implements Evaluator {
       };
     }
 
-    const query = extractEsql(context.finalOutput ?? '');
+    const query = extractEsqlFull(context.finalOutput ?? '', context.toolCalls);
     if (!query) {
       return {
         evaluator: this.name,
         score: 0,
         pass: false,
         label: 'no_query',
-        explanation: 'Could not extract ES|QL query from output',
+        explanation: 'Could not extract ES|QL query from output or tool calls',
       };
     }
 

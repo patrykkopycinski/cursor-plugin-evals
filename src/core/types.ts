@@ -425,8 +425,11 @@ export interface SuiteConfig {
   skillPath?: string;
   skipIsolation?: boolean;
   evaluators?: SuiteEvaluatorOverrides;
+  concurrency?: number;
   testFilter?: {
     adapters?: string[];
+    names?: Set<string>;
+    pattern?: RegExp;
   };
   tests: TestConfig[];
   matrix?: Record<string, (string | number)[]>;

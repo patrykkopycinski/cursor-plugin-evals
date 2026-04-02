@@ -63,8 +63,9 @@ describe('rowCountSimilarity', () => {
     expect(rowCountSimilarity(10, 10)).toBe(1.0);
   });
 
-  it('returns 0.5 when generated has half the rows', () => {
-    expect(rowCountSimilarity(10, 5)).toBe(0.5);
+  it('is forgiving when generated has half the rows (log-scale)', () => {
+    // Log-scale: 1 - |log(6) - log(11)| / log(11) ≈ 0.747
+    expect(rowCountSimilarity(10, 5)).toBe(0.747);
   });
 
   it('returns 0 when generated has zero rows and ref has rows', () => {

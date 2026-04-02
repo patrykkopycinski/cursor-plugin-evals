@@ -2,7 +2,7 @@
 
 import { Command, InvalidArgumentError } from 'commander';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
-import { resolve, dirname } from 'path';
+import { resolve, dirname, join } from 'path';
 import { loadConfig } from '../core/config.js';
 import { runEvaluation } from '../core/runner.js';
 import { printTerminalReport } from '../reporting/terminal.js';
@@ -959,6 +959,10 @@ program
   .option('-o, --output <path>', 'write report to file')
   .option('--optimize', 'apply AI recommendations to eval.yaml after run')
   .option('--no-llm-recommendations', 'skip LLM-powered recommendations (deterministic only)')
+  .option('--skip-isolation', 'skip workspace isolation (run in skill dir directly)')
+  .option('--concurrency <n>', 'max parallel tests (default: 5 for agent adapters)', parsePositiveInt)
+  .option('--filter <pattern>', 'run only tests whose name matches this substring or regex')
+  .option('--last-failed', 'run only tests that failed in the previous output file')
   .option('--verbose', 'debug logging')
   .option('--no-color', 'disable colors')
   .action(
@@ -972,6 +976,10 @@ program
       output?: string;
       optimize?: boolean;
       llmRecommendations?: boolean;
+      skipIsolation?: boolean;
+      concurrency?: number;
+      filter?: string;
+      lastFailed?: boolean;
       verbose?: boolean;
       noColor?: boolean;
     }) => {
@@ -990,6 +998,44 @@ program
       }
 
       const skillDir = resolve(process.cwd(), opts.skillDir);
+
+      // Check if plugin-eval.yaml has a matching suite with skip_isolation
+      const matchingSuite = (config as any).suites?.find(
+        (s: any) => s.skillDir === skillDir || s.skillDir === opts.skillDir,
+      );
+      const skipIsolation = opts.skipIsolation ?? matchingSuite?.skipIsolation ?? false;
+
+      // Load last-failed test names from previous output file
+      let testFilter: { names?: Set<string>; pattern?: RegExp } | undefined;
+      if (opts.lastFailed && opts.output) {
+        const prevPath = resolve(process.cwd(), opts.output);
+        if (existsSync(prevPath)) {
+          try {
+            const prev = JSON.parse(readFileSync(prevPath, 'utf-8')) as RunResult;
+            const failedNames = prev.suites?.[0]?.tests
+              ?.filter((t) => !t.pass)
+              .map((t) => t.name) ?? [];
+            if (failedNames.length > 0) {
+              testFilter = { names: new Set(failedNames) };
+              log.info(`Re-running ${failedNames.length} previously failed tests`);
+            } else {
+              log.info('No failed tests in previous run — running all tests');
+            }
+          } catch {
+            log.warn('Could not parse previous output for --last-failed, running all tests');
+          }
+        }
+      }
+      if (opts.filter) {
+        try {
+          testFilter = { ...testFilter, pattern: new RegExp(opts.filter, 'i') };
+        } catch {
+          // Treat as substring match if not valid regex
+          testFilter = { ...testFilter, pattern: new RegExp(opts.filter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') };
+        }
+        log.info(`Filtering tests matching: ${opts.filter}`);
+      }
+
       const syntheticSuite = {
         name: `skill:${opts.skillDir}`,
         layer: 'skill' as const,
@@ -1002,6 +1048,13 @@ program
         },
         adapter: opts.adapter,
         skillDir,
+        skillPath: join(skillDir, 'SKILL.md'),
+        skipIsolation,
+        concurrency: opts.concurrency,
+        testFilter: testFilter ? {
+          names: testFilter.names,
+          pattern: testFilter.pattern,
+        } : undefined,
       };
 
       try {
