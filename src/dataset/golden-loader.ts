@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { readFileSync } from 'node:fs';
 import type { LlmTestConfig } from '../core/types.js';
 
 export interface GoldenEntry {

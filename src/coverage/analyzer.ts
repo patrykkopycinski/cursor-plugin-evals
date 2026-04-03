@@ -1,5 +1,5 @@
-import { readFileSync } from 'fs';
-import { resolve, isAbsolute, basename, dirname } from 'path';
+import { readFileSync } from 'node:fs';
+import { resolve, isAbsolute, basename, dirname } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { discoverPlugin } from '../plugin/discovery.js';
 import type {
@@ -92,7 +92,7 @@ function loadConfigLoose(configPath: string): EvalConfig {
             camelSuites.push(snakeToCamelSuite(s as Record<string, unknown>));
           }
         }
-      } catch {
+      } catch (_e) {
         // Skip unreadable suite files
       }
     } else if (typeof entry === 'object' && entry !== null && 'name' in entry && 'layer' in entry) {
@@ -448,7 +448,7 @@ export function analyzeCoverage(pluginDir: string, configPath: string): Coverage
   let manifest: PluginManifest;
   try {
     manifest = discoverPlugin(absPluginDir, pluginRoot);
-  } catch {
+  } catch (_e) {
     manifest = {
       name: config.plugin.name || basename(absPluginDir),
       dir: absPluginDir,

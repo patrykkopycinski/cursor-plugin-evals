@@ -6,10 +6,10 @@ import type {
   ToolCallRecord,
   ToolResult,
 } from '../core/types.js';
-import { resolve, join, dirname } from 'path';
-import fs from 'fs';
+import { resolve, join, dirname } from 'node:path';
+import fs from 'node:fs';
 import { createRequire } from 'module';
-import { spawn, execSync } from 'child_process';
+import { spawn, execSync } from 'node:child_process';
 import {
   createIsolatedWorkspace,
   createSimpleWorkspaceCopy,
@@ -155,7 +155,7 @@ function extractToolArgs(toolCall: Record<string, unknown>): Record<string, unkn
   if (fn?.arguments) {
     try {
       return JSON.parse(fn.arguments) as Record<string, unknown>;
-    } catch {
+    } catch (_e) {
       return { raw: fn.arguments };
     }
   }
@@ -263,7 +263,7 @@ function resolveCursorAgentCli(): string {
         return wrapperPath;
       }
     }
-  } catch {
+  } catch (_e) {
     // no local versions found — continue
   }
 
@@ -278,7 +278,7 @@ function resolveCursorAgentCli(): string {
       cachedAgentPath = binaryPath;
       return binaryPath;
     }
-  } catch {
+  } catch (_e) {
     // SDK not installed — continue
   }
 
@@ -286,7 +286,7 @@ function resolveCursorAgentCli(): string {
     const found = execSync('which agent', { encoding: 'utf-8' }).trim();
     cachedAgentPath = found;
     return found;
-  } catch {
+  } catch (_e) {
     throw new Error(
       'cursor-cli adapter requires the Cursor Agent CLI. ' +
         'Install: curl https://cursor.com/install -fsS | bash, ' +
@@ -517,7 +517,7 @@ function runAgent(
         let event: CursorEvent;
         try {
           event = JSON.parse(line) as CursorEvent;
-        } catch {
+        } catch (_e) {
           continue;
         }
 
@@ -600,7 +600,7 @@ function runAgent(
               outputTokens += usage.output_tokens ?? 0;
             }
           }
-        } catch {
+        } catch (_e) {
           // incomplete final line — ignore
         }
       }

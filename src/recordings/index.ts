@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir, readdir } from 'fs/promises';
-import { join } from 'path';
-import { gzipSync, gunzipSync } from 'zlib';
-import { randomUUID } from 'crypto';
+import { join } from 'node:path';
+import { gzipSync, gunzipSync } from 'node:zlib';
+import { randomUUID } from 'node:crypto';
 
 export interface RecordedRun {
   runId: string;
@@ -68,7 +68,7 @@ async function parseRecordingFile(filePath: string): Promise<RecordedRun | null>
   let compressed: Buffer;
   try {
     compressed = await readFile(filePath);
-  } catch {
+  } catch (_e) {
     return null;
   }
 
@@ -91,7 +91,7 @@ export async function listRecordings(
   let skills: string[];
   try {
     skills = skill ? [skill] : await readdir(dir);
-  } catch {
+  } catch (_e) {
     return results;
   }
 
@@ -100,7 +100,7 @@ export async function listRecordings(
     let files: string[];
     try {
       files = await readdir(skillDir);
-    } catch {
+    } catch (_e) {
       continue;
     }
 

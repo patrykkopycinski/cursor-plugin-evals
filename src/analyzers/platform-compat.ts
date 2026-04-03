@@ -1,5 +1,5 @@
-import { readFileSync, existsSync, statSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, existsSync, statSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 
 export type Platform = 'cursor' | 'claude-code' | 'chatgpt' | 'generic-mcp';
 
@@ -38,7 +38,7 @@ const ALL_PLATFORMS: Platform[] = ['cursor', 'claude-code', 'chatgpt', 'generic-
 function readJsonSafe(filePath: string): unknown | null {
   try {
     return JSON.parse(readFileSync(filePath, 'utf-8'));
-  } catch {
+  } catch (_e) {
     return null;
   }
 }
@@ -50,7 +50,7 @@ function fileExists(path: string): boolean {
 function isDir(path: string): boolean {
   try {
     return statSync(path).isDirectory();
-  } catch {
+  } catch (_e) {
     return false;
   }
 }
@@ -58,7 +58,7 @@ function isDir(path: string): boolean {
 function listDir(dir: string): string[] {
   try {
     return readdirSync(dir);
-  } catch {
+  } catch (_e) {
     return [];
   }
 }
@@ -402,7 +402,7 @@ function checkGenericMcp(pluginDir: string): PlatformCheckResult[] {
           noPlatformAssumptions = false;
           break;
         }
-      } catch {
+      } catch (_e) {
         /* skip unreadable files */
       }
     }

@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
-import { join } from 'path';
-import { mkdirSync, rmSync, writeFileSync } from 'fs';
+import { join } from 'node:path';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { checkPlatformCompatibility, formatCompatibilityReport } from './platform-compat.js';
 
 const TMP_DIR = join(__dirname, '__tmp_platform_compat_test__');

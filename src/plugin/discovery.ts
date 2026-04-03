@@ -1,5 +1,5 @@
-import { readFileSync, readdirSync, existsSync, statSync } from 'fs';
-import { join, resolve } from 'path';
+import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import type {
   PluginManifest,
   SkillComponent,

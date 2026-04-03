@@ -1,5 +1,5 @@
-import { resolve, join } from 'path';
-import { mkdirSync, writeFileSync, rmSync } from 'fs';
+import { resolve, join } from 'node:path';
+import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import {
   resolveCollectionPath,
   loadCollectionSuite,

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildLeaderboard } from './builder.js';
 import { formatLeaderboardTerminal, formatLeaderboardMarkdown, formatLeaderboardHtml } from './formatter.js';
+import { SERVICE_NAME } from '../core/constants.js';
 import type { RunResult } from '../core/types.js';
 import type { Leaderboard } from './types.js';
 
@@ -334,7 +335,7 @@ describe('formatLeaderboardHtml', () => {
 
   it('includes footer with project link', () => {
     const output = formatLeaderboardHtml(makeLb());
-    expect(output).toContain('cursor-plugin-evals');
+    expect(output).toContain(SERVICE_NAME);
     expect(output).toContain('github.com');
   });
 

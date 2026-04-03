@@ -1,7 +1,8 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, unlinkSync } from 'fs';
-import { join } from 'path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, unlinkSync } from 'node:fs';
+import { join } from 'node:path';
+import { DATA_DIR } from '../core/constants.js';
 
-const DATASETS_DIR = '.cursor-plugin-evals/datasets';
+const DATASETS_DIR = join(DATA_DIR, 'datasets');
 
 function ensureDir(dir: string): void {
   if (!existsSync(dir)) {

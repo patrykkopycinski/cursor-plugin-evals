@@ -1,6 +1,7 @@
 import { readdir, readFile, stat, access } from 'node:fs/promises';
 import { join, relative, basename, dirname } from 'node:path';
 import { discoverPlugin } from '../plugin/discovery.js';
+import { CLI_NAME, DATA_DIR } from '../core/constants.js';
 import type {
   Layer,
   PluginManifest,
@@ -296,7 +297,7 @@ function checkConfigQuality(evalFiles: EvalFileInfo[], hasCI: boolean, hasCiThre
       severity: 'error',
       category: 'config',
       message: 'No evaluation config files found (plugin-eval.yaml or eval.yaml)',
-      fix: 'Run `npx cursor-plugin-evals init` to generate a starter config',
+      fix: `Run \`npx ${CLI_NAME} init\` to generate a starter config`,
     });
   }
 
@@ -371,7 +372,7 @@ function checkConfigQuality(evalFiles: EvalFileInfo[], hasCI: boolean, hasCiThre
       severity: 'info',
       category: 'ci',
       message: 'No CI configuration found — evaluations are not enforced automatically',
-      fix: 'Run `npx cursor-plugin-evals ci-init` to scaffold CI config',
+      fix: `Run \`npx ${CLI_NAME} ci-init\` to scaffold CI config`,
     });
   }
 
@@ -434,8 +435,8 @@ export async function scanCodebase(rootDir: string): Promise<CodebaseProfile> {
     }
   }
 
-  const hasFixtures = await exists(join(rootDir, '.cursor-plugin-evals', 'fixtures'));
-  const hasFingerprints = await exists(join(rootDir, '.cursor-plugin-evals', 'fingerprints'));
+  const hasFixtures = await exists(join(rootDir, DATA_DIR, 'fixtures'));
+  const hasFingerprints = await exists(join(rootDir, DATA_DIR, 'fingerprints'));
 
   const configIssues = checkConfigQuality(evalFiles, hasCI, hasCiThresholds, manifest);
 

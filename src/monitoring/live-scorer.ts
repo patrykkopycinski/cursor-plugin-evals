@@ -218,7 +218,7 @@ export class LiveScorer {
         anomaly: isAnomaly,
         anomalyDetails: anomalyDetails.length > 0 ? anomalyDetails : undefined,
       };
-    } catch {
+    } catch (_e) {
       return null;
     }
   }

@@ -29,7 +29,7 @@ export function createHeadlessCoderAdapter(config: AdapterConfig): TaskAdapter {
     try {
       // @ts-expect-error optional dependency — guarded by try/catch
       sdk = (await import('@headless-coder-sdk/core')) as unknown as HeadlessCoderSdk;
-    } catch {
+    } catch (_e) {
       throw new Error(
         'headless-coder adapter requires @headless-coder-sdk/core. Install with: npm install @headless-coder-sdk/core',
       );

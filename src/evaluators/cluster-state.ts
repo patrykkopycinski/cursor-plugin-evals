@@ -64,7 +64,7 @@ function checkAssertion(value: unknown, op: AssertionOp, expected?: unknown): bo
           typeof expected === 'string' &&
           new RegExp(expected).test(value)
         );
-      } catch {
+      } catch (_e) {
         return false;
       }
     case 'one_of':
@@ -180,7 +180,7 @@ async function executeScriptCheck(
       const result = JSON.parse(output.trim()) as Record<string, unknown>;
       const passed = result.passed === true || result.success === true;
       return { passed, details: (result.message as string) ?? output.trim().slice(0, 200) };
-    } catch {
+    } catch (_e) {
       return { passed: true, details: output.trim().slice(0, 200) };
     }
   } catch (err) {

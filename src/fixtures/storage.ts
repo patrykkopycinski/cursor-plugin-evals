@@ -13,7 +13,7 @@ function parseJsonlLines(content: string): unknown[] {
     .map((line, idx) => {
       try {
         return JSON.parse(line);
-      } catch {
+      } catch (_e) {
         throw new Error(`Invalid JSON at line ${idx + 1}: ${line.slice(0, 120)}`);
       }
     });

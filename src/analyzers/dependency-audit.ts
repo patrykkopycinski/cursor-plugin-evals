@@ -1,5 +1,5 @@
 import { readFile } from 'fs/promises';
-import { join } from 'path';
+import { join } from 'node:path';
 
 export interface DependencyNode {
   name: string;
@@ -200,7 +200,7 @@ export async function auditPluginDependencies(pluginDir: string): Promise<Depend
   let raw: string;
   try {
     raw = await readFile(join(pluginDir, 'package.json'), 'utf-8');
-  } catch {
+  } catch (_e) {
     return {
       totalDependencies: 0,
       directDependencies: 0,
@@ -212,7 +212,7 @@ export async function auditPluginDependencies(pluginDir: string): Promise<Depend
   let pkg: PackageJson;
   try {
     pkg = JSON.parse(raw) as PackageJson;
-  } catch {
+  } catch (_e) {
     return {
       totalDependencies: 0,
       directDependencies: 0,

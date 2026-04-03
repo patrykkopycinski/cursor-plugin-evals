@@ -1,5 +1,5 @@
-import { writeFileSync } from 'fs';
-import { resolve } from 'path';
+import { writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { log } from './logger.js';
 import { generateGitHubActionsYaml } from '../templates/github-actions.js';
 import { generateGitLabCiYaml } from '../templates/gitlab-ci.js';

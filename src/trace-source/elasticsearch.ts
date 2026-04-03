@@ -257,7 +257,7 @@ export class ElasticsearchTraceSource implements TraceSource {
     let json: EsSearchResponse;
     try {
       json = (await response.json()) as EsSearchResponse;
-    } catch {
+    } catch (_e) {
       throw new Error(
         `[ElasticsearchTraceSource] Non-JSON response from ES (status ${response.status})`,
       );

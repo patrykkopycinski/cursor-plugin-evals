@@ -1,6 +1,7 @@
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 import { readFile, writeFile, mkdir, readdir, unlink } from 'fs/promises';
-import { join } from 'path';
+import { join } from 'node:path';
+import { DATA_DIR } from '../core/constants.js';
 
 export interface CacheConfig {
   enabled: boolean;
@@ -21,7 +22,7 @@ interface CacheEntry {
 const DEFAULT_CONFIG: CacheConfig = {
   enabled: true,
   ttl: '7d',
-  dir: '.cursor-plugin-evals/cache',
+  dir: join(DATA_DIR, 'cache'),
 };
 
 const TTL_MULTIPLIERS: Record<string, number> = {
@@ -133,7 +134,7 @@ export class LlmCache {
           await unlink(filePath);
           evicted++;
         }
-      } catch {
+      } catch (_e) {
         // Corrupted or concurrently removed — skip
       }
     }

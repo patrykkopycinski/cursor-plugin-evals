@@ -14,7 +14,7 @@ export class EvalEventEmitter {
     for (const cb of this.listeners) {
       try {
         cb(event);
-      } catch {
+      } catch (_e) {
         // Don't let a failing subscriber break the emitter
       }
     }

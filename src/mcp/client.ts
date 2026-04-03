@@ -1,9 +1,10 @@
-import { execSync } from 'child_process';
+import { execSync } from 'node:child_process';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import type { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import type { TransportConfig } from '../transports/types.js';
 import { createTransport } from '../transports/index.js';
+import { SERVICE_NAME } from '../core/constants.js';
 import type { ToolResult, McpToolDefinition, McpResource, JsonSchema } from '../core/types.js';
 
 export interface McpConnectConfig {
@@ -76,7 +77,7 @@ export class McpPluginClient {
 
     const transport = createTransport(transportConfig);
 
-    const client = new Client({ name: 'cursor-plugin-evals', version: '0.1.0' });
+    const client = new Client({ name: SERVICE_NAME, version: '0.1.0' });
 
     try {
       await client.connect(transport, { timeout });
@@ -190,7 +191,7 @@ export class McpPluginClient {
         ? setTimeout(() => {
             try {
               process.kill(pid, 'SIGKILL');
-            } catch {
+            } catch (_e) {
               // Process already exited
             }
           }, DISCONNECT_GRACE_MS)

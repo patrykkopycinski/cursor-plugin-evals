@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Architecture
+
+- **Single source of truth**: All branding/naming constants (`SERVICE_NAME`, `DATA_DIR`, `CLI_NAME`, `REPO_URL`) centralized in `core/constants.ts` — renaming the project changes one file
+- **CLI modularization**: Split `cli/main.ts` (2,785 lines) into 11 focused command group modules under `cli/commands/` (~260 lines each); main.ts reduced to 55-line orchestrator
+- **MCP server modularization**: Split `mcp/server.ts` (1,282 lines) into `tool-definitions.ts`, `tool-handlers.ts`, and `resource-handlers.ts`; server.ts reduced to 44-line setup
+- **Dynamic imports in runner**: All non-core dependencies in `core/runner.ts` (evaluators, tracing, scoring, CI, MCP) are now lazy-loaded via `await import()` for faster CLI startup
+- **MCP coupling removed**: Extracted `buildConnectConfig` from `core/utils.ts` into `mcp/connect.ts` to keep core free of MCP dependencies
+- **ToolCaller interface**: Extracted minimal `{ callTool }` interface replacing direct `McpPluginClient` dependency in performance runner
+- **Types split**: Monolithic `core/types.ts` split into sub-modules (adapter, common, config, evaluator, plugin, result)
+
+### Code Quality
+
+- **Zero `as any`**: Eliminated all 9 `as any` casts from production code with proper types
+- **`node:` protocol**: Standardized all ~66 files from bare builtin imports (`fs`, `path`, etc.) to `node:` protocol
+- **Catch blocks**: All 129 empty `catch {}` blocks replaced with `catch (_e) {}` for explicit error acknowledgment
+- **Test coverage**: Added 327 new tests (1,443 → 1,770) across new and refactored modules
+- **MCP tools**: 14 → 17 tools (added `evaluate_trace`, `harvest_traces`, `deploy_dashboard`)
+
 ## [0.0.1] - 2026-03-12
 
 Initial release of the cursor-plugin-evals framework.

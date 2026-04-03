@@ -1,6 +1,6 @@
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 import { readFile, writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { join } from 'node:path';
 import type { JudgeRequest, JudgeResponse } from './llm-judge.js';
 
 interface FixtureEntry {

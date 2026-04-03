@@ -63,7 +63,7 @@ export async function scoreTrace(
         toolCalls,
       });
       scores[name] = result.score;
-    } catch {
+    } catch (_e) {
       // evaluator not available or failed — skip
     }
   }

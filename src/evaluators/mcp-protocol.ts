@@ -31,7 +31,7 @@ function validateToolCall(tc: ToolCallRecord): ValidationResult {
   } else {
     try {
       JSON.stringify(tc.args);
-    } catch {
+    } catch (_e) {
       issues.push('Arguments are not JSON-serializable.');
     }
   }

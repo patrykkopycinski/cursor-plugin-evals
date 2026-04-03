@@ -40,7 +40,7 @@ async function readManifest(dir: string): Promise<EvaluatorManifest | null> {
   try {
     const raw = await readFile(manifestPath, 'utf-8');
     return JSON.parse(raw) as EvaluatorManifest;
-  } catch {
+  } catch (_e) {
     return null;
   }
 }
@@ -192,7 +192,7 @@ function extractJson(stdout: string): unknown {
     if (line.startsWith('{')) {
       try {
         return JSON.parse(line);
-      } catch {
+      } catch (_e) {
         // Not valid JSON, try next line
       }
     }
@@ -201,7 +201,7 @@ function extractJson(stdout: string): unknown {
   // Fallback: try parsing the entire stdout
   try {
     return JSON.parse(stdout.trim());
-  } catch {
+  } catch (_e) {
     // Fall through to error
   }
 

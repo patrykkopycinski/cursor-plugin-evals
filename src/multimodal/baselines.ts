@@ -1,7 +1,8 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { DATA_DIR } from '../core/constants.js';
 
-const DEFAULT_DIR = '.cursor-plugin-evals/baselines';
+const DEFAULT_DIR = path.join(DATA_DIR, 'baselines');
 
 function resolveDir(dir?: string): string {
   return dir ?? DEFAULT_DIR;
@@ -25,7 +26,7 @@ export async function loadBaseline(name: string, dir?: string): Promise<Buffer |
 
   try {
     return await fs.readFile(filePath);
-  } catch {
+  } catch (_e) {
     return null;
   }
 }

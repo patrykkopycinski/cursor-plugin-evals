@@ -1,6 +1,6 @@
 import { loadConfig } from './config.js';
-import { writeFileSync, mkdirSync, rmSync } from 'fs';
-import { join } from 'path';
+import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 
 const TMP_DIR = join(__dirname, '__tmp_config_test__');
 

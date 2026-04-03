@@ -131,7 +131,7 @@ function parseGeneratedPrompts(raw: string): LlmGeneratedPrompt[] {
         'prompt' in item &&
         typeof (item as LlmGeneratedPrompt).prompt === 'string',
     );
-  } catch {
+  } catch (_e) {
     return [];
   }
 }

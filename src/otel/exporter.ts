@@ -1,5 +1,6 @@
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import type { RunResult } from '../core/types.js';
+import { SERVICE_NAME } from '../core/constants.js';
 
 export interface OtelSpanEvent {
   name: string;
@@ -80,9 +81,9 @@ export function buildOtelSpans(result: RunResult): OtelSpan[] {
 
 export async function exportToElastic(spans: OtelSpan[], endpoint: string): Promise<void> {
   const resourceSpans = [{
-    resource: { attributes: [{ key: 'service.name', value: { stringValue: 'cursor-plugin-evals' } }] },
+    resource: { attributes: [{ key: 'service.name', value: { stringValue: SERVICE_NAME } }] },
     scopeSpans: [{
-      scope: { name: 'cursor-plugin-evals' },
+      scope: { name: SERVICE_NAME },
       spans: spans.map(s => ({
         traceId: s.traceId, spanId: s.spanId, parentSpanId: s.parentSpanId ?? '',
         name: s.name,

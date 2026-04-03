@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import type { RunResult, TestResult } from '../core/types.js';
 
 export function mergeReports(reports: RunResult[]): RunResult {

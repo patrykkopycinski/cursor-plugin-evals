@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import type { RunResult, TestResult } from '../core/types.js';
 import type { TestResultForClustering } from '../reporting/failure-clustering.js';
 import { clusterFailures } from '../reporting/failure-clustering.js';
+import { DATA_DIR } from '../core/constants.js';
 import type {
   AnalysisReport,
   FailureClusterSummary,
@@ -13,14 +14,14 @@ import type {
   CoverageGap,
 } from './types.js';
 
-const RESULTS_DIR = '.cursor-plugin-evals';
+const RESULTS_DIR = DATA_DIR;
 
 export async function findLatestRunResult(rootDir: string): Promise<RunResult | null> {
   const resultsDir = join(rootDir, RESULTS_DIR, 'results');
   let files: string[];
   try {
     files = await readdir(resultsDir);
-  } catch {
+  } catch (_e) {
     return null;
   }
 
@@ -30,7 +31,7 @@ export async function findLatestRunResult(rootDir: string): Promise<RunResult | 
   try {
     const raw = await readFile(join(resultsDir, jsonFiles[0]), 'utf-8');
     return JSON.parse(raw) as RunResult;
-  } catch {
+  } catch (_e) {
     return null;
   }
 }

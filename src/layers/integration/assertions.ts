@@ -108,7 +108,7 @@ const OPERATORS: Record<BaseAssertionOp, (actual: unknown, expected: unknown) =>
     if (typeof actual !== 'string' || typeof expected !== 'string') return false;
     try {
       return new RegExp(expected).test(actual);
-    } catch {
+    } catch (_e) {
       return false;
     }
   },

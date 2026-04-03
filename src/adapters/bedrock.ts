@@ -1,4 +1,4 @@
-import { createHmac, createHash } from 'crypto';
+import { createHmac, createHash } from 'node:crypto';
 
 export interface BedrockConfig {
   accessKeyId: string;

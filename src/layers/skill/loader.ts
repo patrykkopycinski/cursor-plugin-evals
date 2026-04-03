@@ -1,5 +1,5 @@
-import { readFileSync, existsSync } from 'fs';
-import { resolve, dirname } from 'path';
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import type {
   EvaluationDataset,
@@ -153,6 +153,7 @@ function parseExamples(
       ...(ex.metadata as Record<string, unknown> | undefined),
     };
     if (ex.name) metadata.testName = ex.name;
+    if (ex.timeout != null) metadata.timeout = ex.timeout;
 
     return {
       input: normalizedInput as Record<string, unknown>,
@@ -193,7 +194,7 @@ export function loadSkillDataset(skillDir: string): EvaluationDataset {
   if (defaultsPath) {
     try {
       defaultsData = loadYamlFile(defaultsPath) as RawDefaultsYaml;
-    } catch {
+    } catch (_e) {
       // defaults file exists but is invalid — proceed without it
     }
   }

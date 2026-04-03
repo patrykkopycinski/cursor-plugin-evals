@@ -1,5 +1,5 @@
-import { writeFileSync } from 'fs';
-import { resolve } from 'path';
+import { writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { stringify as yamlStringify } from 'yaml';
 import { discoverPlugin } from '../plugin/discovery.js';
 import { log } from './logger.js';

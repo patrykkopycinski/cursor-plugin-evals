@@ -1,4 +1,5 @@
 import type { SpanContext } from './spans.js';
+import { SERVICE_NAME } from '../core/constants.js';
 
 interface OtlpSpan {
   traceId: string;
@@ -62,7 +63,7 @@ export async function exportToOtlp(spans: SpanContext[], endpoint: string): Prom
         resource: { attributes: [] },
         scopeSpans: [
           {
-            scope: { name: 'cursor-plugin-evals' },
+            scope: { name: SERVICE_NAME },
             spans: toOtlpSpans(spans),
           },
         ],
@@ -105,7 +106,7 @@ function toEsDocuments(spans: SpanContext[]): EsSpanDocument[] {
     duration_ms: (span.endTime ?? span.startTime) - span.startTime,
     status: span.status ?? 'ok',
     attributes: span.attributes,
-    service: { name: String(span.attributes['service.name'] ?? 'cursor-plugin-evals') },
+    service: { name: String(span.attributes['service.name'] ?? SERVICE_NAME) },
   }));
 }
 
@@ -117,7 +118,7 @@ export async function exportToElasticsearch(
   const docs = toEsDocuments(spans);
   if (docs.length === 0) return;
 
-  const index = 'traces-cursor-plugin-evals';
+  const index = `traces-${SERVICE_NAME}`;
   const bulkLines: string[] = [];
   for (const doc of docs) {
     bulkLines.push(JSON.stringify({ index: { _index: index } }));

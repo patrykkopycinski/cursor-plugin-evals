@@ -1,4 +1,5 @@
 import type { CodebaseProfile, CoverageAuditReport, CoverageGap } from './types.js';
+import { CLI_NAME } from '../core/constants.js';
 
 const RECOMMENDED_LAYERS = ['unit', 'integration', 'llm', 'static'] as const;
 const SECURITY_EVALUATORS = ['security', 'tool-poisoning'];
@@ -87,7 +88,7 @@ export function auditCoverage(profile: CodebaseProfile): CoverageAuditReport {
       category: 'infrastructure',
       title: 'No recorded fixtures for mock mode',
       description: 'Without fixtures, CI runs require a live MCP server',
-      recommendation: 'Run `npx cursor-plugin-evals run --record` to capture fixtures',
+      recommendation: `Run \`npx ${CLI_NAME} run --record\` to capture fixtures`,
       autoFixable: false,
     });
   }
@@ -111,7 +112,7 @@ export function auditCoverage(profile: CodebaseProfile): CoverageAuditReport {
       category: 'infrastructure',
       title: 'No CI configuration',
       description: 'Evaluations are not enforced in CI/CD pipelines',
-      recommendation: 'Run `npx cursor-plugin-evals ci-init` to scaffold CI config',
+      recommendation: `Run \`npx ${CLI_NAME} ci-init\` to scaffold CI config`,
       autoFixable: true,
     });
   }

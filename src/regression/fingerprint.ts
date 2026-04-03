@@ -1,6 +1,7 @@
 import { writeFile, readFile, readdir, mkdir } from 'fs/promises';
-import { resolve } from 'path';
+import { join, resolve } from 'node:path';
 import type { TestResult } from '../core/types.js';
+import { DATA_DIR } from '../core/constants.js';
 
 export interface Fingerprint {
   runId: string;
@@ -8,7 +9,7 @@ export interface Fingerprint {
   scores: Record<string, number[]>;
 }
 
-const DEFAULT_DIR = '.cursor-plugin-evals/fingerprints';
+const DEFAULT_DIR = join(DATA_DIR, 'fingerprints');
 
 function resolveDir(dir?: string): string {
   return resolve(process.cwd(), dir ?? DEFAULT_DIR);
@@ -53,7 +54,7 @@ export async function loadFingerprint(runId: string, dir?: string): Promise<Fing
   try {
     const raw = await readFile(filePath, 'utf-8');
     return JSON.parse(raw) as Fingerprint;
-  } catch {
+  } catch (_e) {
     return null;
   }
 }
@@ -66,7 +67,7 @@ export async function listFingerprints(dir?: string): Promise<string[]> {
       .filter((f) => f.endsWith('.json'))
       .map((f) => f.replace(/\.json$/, ''))
       .sort();
-  } catch {
+  } catch (_e) {
     return [];
   }
 }

@@ -59,7 +59,7 @@ export class CriteriaEvaluator implements Evaluator {
           criteria?: CriterionResult[];
         };
         criteriaResults = parsed.criteria ?? [];
-      } catch {
+      } catch (_e) {
         criteriaResults = [];
       }
 

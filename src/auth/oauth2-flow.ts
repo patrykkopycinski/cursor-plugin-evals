@@ -1,6 +1,6 @@
-import { createHash, randomBytes } from 'crypto';
-import { createServer } from 'http';
-import type { Server } from 'http';
+import { createHash, randomBytes } from 'node:crypto';
+import { createServer } from 'node:http';
+import type { Server } from 'node:http';
 
 export interface OAuthFlowConfig {
   discoveryUrl?: string;
@@ -150,7 +150,7 @@ export async function runOAuthPkceFlow(config: OAuthFlowConfig): Promise<OAuthTo
   try {
     const openModule = await import('open');
     await openModule.default(authUrl);
-  } catch {
+  } catch (_e) {
     console.log(`Open this URL in your browser:\n  ${authUrl}`);
   }
 

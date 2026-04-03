@@ -1,5 +1,5 @@
 import { readdir, readFile } from 'fs/promises';
-import { join } from 'path';
+import { join } from 'node:path';
 import type { SkillInfo, CollisionPair, CollisionReport } from '../core/types.js';
 
 const ROUTING_ERROR = 0.85;
@@ -18,7 +18,7 @@ export async function scanSkills(skillsDir: string): Promise<SkillInfo[]> {
       const content = await readFile(directSkillMd, 'utf-8');
       skills.push(parseSkillMd(entry.name, content));
       continue;
-    } catch {
+    } catch (_e) {
       // Check nested children
     }
 
@@ -30,11 +30,11 @@ export async function scanSkills(skillsDir: string): Promise<SkillInfo[]> {
         try {
           const content = await readFile(childSkillPath, 'utf-8');
           skills.push(parseSkillMd(child.name, content));
-        } catch {
+        } catch (_e) {
           // No SKILL.md — skip
         }
       }
-    } catch {
+    } catch (_e) {
       // Can't read directory — skip
     }
   }

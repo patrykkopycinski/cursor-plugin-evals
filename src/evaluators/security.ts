@@ -66,7 +66,7 @@ async function verifyFindingsWithLLM(
     };
     const indices = new Set((parsed.actual_violations ?? []).map((n) => n - 1));
     return findings.filter((_, i) => indices.has(i));
-  } catch {
+  } catch (_e) {
     return findings;
   }
 }

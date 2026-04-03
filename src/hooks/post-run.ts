@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { execSync } from 'node:child_process';
 import type { PostRunHook, RunResult } from '../core/types.js';
 import { log } from '../cli/logger.js';
 

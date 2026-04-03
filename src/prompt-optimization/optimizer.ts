@@ -66,7 +66,7 @@ export async function generatePromptVariants(
       if (Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')) {
         return parsed.slice(0, count);
       }
-    } catch {
+    } catch (_e) {
       // fall through to line-based parsing
     }
   }

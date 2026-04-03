@@ -1,4 +1,4 @@
-import { existsSync } from 'fs';
+import { existsSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { scanCodebase, formatCodebaseReport } from './codebase-scanner.js';
 import { auditCoverage, formatAuditReport } from './coverage-analyzer.js';

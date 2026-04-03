@@ -1,10 +1,11 @@
 import {
-  getBedrockConfig,
   signBedrockRequest,
   buildBedrockBody,
   parseBedrockResponse,
 } from '../adapters/bedrock.js';
 import { LlmCache } from '../cache/index.js';
+import { DATA_DIR } from '../core/constants.js';
+import { detectProvider, hasProviderCredentials } from '../providers/detect.js';
 
 export interface JudgeRequest {
   systemPrompt: string;
@@ -36,7 +37,7 @@ export function isContentFilterError(err: unknown): err is ContentFilterError {
 
 const DEFAULT_JUDGE_MODEL = 'llm-gateway/gpt-5.4';
 
-const judgeCache = new LlmCache({ ttl: '24h', dir: '.cursor-plugin-evals/judge-cache' });
+const judgeCache = new LlmCache({ ttl: '24h', dir: `${DATA_DIR}/judge-cache` });
 
 export function getJudgeCache(): LlmCache {
   return judgeCache;
@@ -54,20 +55,10 @@ export async function callJudge(request: JudgeRequest): Promise<JudgeResponse> {
     }
   }
 
-  const isAzure =
-    !!process.env.AZURE_OPENAI_API_KEY && !!process.env.AZURE_OPENAI_ENDPOINT;
-  const bedrock = !isAzure ? getBedrockConfig() : null;
-  const isAnthropic = !isAzure && !bedrock && !!process.env.ANTHROPIC_API_KEY;
-  const isLiteLLM = !isAzure && !bedrock && !isAnthropic && !!process.env.LITELLM_API_KEY;
-  const apiKey = isAzure
-    ? process.env.AZURE_OPENAI_API_KEY!
-    : isAnthropic
-      ? process.env.ANTHROPIC_API_KEY!
-      : isLiteLLM
-        ? process.env.LITELLM_API_KEY!
-        : (process.env.OPENAI_API_KEY ?? '');
+  const detected = detectProvider();
+  const { provider, bedrock, apiKey } = detected;
 
-  if (!apiKey && !bedrock) {
+  if (!hasProviderCredentials()) {
     throw new Error(
       'LLM judge requires AZURE_OPENAI_API_KEY, AWS_ACCESS_KEY_ID+AWS_SECRET_ACCESS_KEY, ' +
         'ANTHROPIC_API_KEY, LITELLM_API_KEY, or OPENAI_API_KEY. Set the environment variable before running LLM evaluators.',
@@ -78,7 +69,7 @@ export async function callJudge(request: JudgeRequest): Promise<JudgeResponse> {
   let headers: Record<string, string>;
   let bodyStr: string;
 
-  if (isAzure) {
+  if (provider === 'azure-openai') {
     const endpoint = process.env.AZURE_OPENAI_ENDPOINT!.replace(/\/+$/, '');
     const deployment =
       process.env.AZURE_JUDGE_DEPLOYMENT ?? process.env.AZURE_OPENAI_DEPLOYMENT ?? model;
@@ -93,18 +84,18 @@ export async function callJudge(request: JudgeRequest): Promise<JudgeResponse> {
       temperature: 0,
       max_completion_tokens: 1024,
     });
-  } else if (bedrock) {
-    const judgeModel = process.env.AWS_BEDROCK_JUDGE_MODEL ?? bedrock.model;
+  } else if (provider === 'bedrock') {
+    const judgeModel = process.env.AWS_BEDROCK_JUDGE_MODEL ?? bedrock!.model;
     const { modelId, body: bedrockBody } = buildBedrockBody(
       judgeModel,
       [{ role: 'user', content: request.userPrompt }],
       request.systemPrompt,
     );
-    const signed = signBedrockRequest(bedrock, modelId, bedrockBody);
+    const signed = signBedrockRequest(bedrock!, modelId, bedrockBody);
     url = signed.url;
     headers = signed.headers;
     bodyStr = bedrockBody;
-  } else if (isAnthropic) {
+  } else if (provider === 'anthropic') {
     url = 'https://api.anthropic.com/v1/messages';
     headers = {
       'Content-Type': 'application/json',
@@ -121,7 +112,7 @@ export async function callJudge(request: JudgeRequest): Promise<JudgeResponse> {
   } else {
     const apiBaseUrl = process.env.LITELLM_URL ?? 'https://api.openai.com/v1';
     url = `${apiBaseUrl}/chat/completions`;
-    headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.LITELLM_API_KEY ?? apiKey}` };
+    headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` };
     bodyStr = JSON.stringify({
       model,
       messages: [
@@ -151,10 +142,10 @@ export async function callJudge(request: JudgeRequest): Promise<JudgeResponse> {
   const data = await response.json();
   let content: string;
 
-  if (bedrock) {
+  if (provider === 'bedrock') {
     const parsed = parseBedrockResponse(data);
     content = parsed.content ?? '';
-  } else if (isAnthropic) {
+  } else if (provider === 'anthropic') {
     const resp = data as { content?: Array<{ type: string; text?: string }> };
     content = resp.content?.find((c) => c.type === 'text')?.text ?? '';
   } else {
@@ -198,7 +189,7 @@ function parseJudgeResponse(content: string): JudgeResponse {
         explanation: parsed.explanation ?? content,
       };
     }
-  } catch {
+  } catch (_e) {
     // Fall back to heuristic parsing
   }
 

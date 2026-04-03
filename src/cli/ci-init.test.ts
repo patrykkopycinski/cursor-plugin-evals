@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { generateGitHubActionsYaml } from '../templates/github-actions.js';
 import { generateGitLabCiYaml } from '../templates/gitlab-ci.js';
 import { generateShellScript } from '../templates/shell-script.js';
+import { CLI_NAME, DATA_DIR } from '../core/constants.js';
 
 describe('GitHub Actions template', () => {
   const yaml = generateGitHubActionsYaml();
@@ -29,11 +30,11 @@ describe('GitHub Actions template', () => {
 
   it('contains fixture caching', () => {
     expect(yaml).toContain('actions/cache@v4');
-    expect(yaml).toContain('.cursor-plugin-evals/fixtures');
+    expect(yaml).toContain(`${DATA_DIR}/fixtures`);
   });
 
-  it('contains docker compose lifecycle', () => {
-    expect(yaml).toContain('docker compose up -d');
+  it('contains ES lifecycle via start-local', () => {
+    expect(yaml).toContain('start-local');
     expect(yaml).toContain('docker compose down');
   });
 
@@ -123,7 +124,7 @@ describe('Shell script template', () => {
   });
 
   it('runs eval with --ci flag', () => {
-    expect(script).toContain('cursor-plugin-evals run');
+    expect(script).toContain(`${CLI_NAME} run`);
     expect(script).toContain('--ci');
   });
 

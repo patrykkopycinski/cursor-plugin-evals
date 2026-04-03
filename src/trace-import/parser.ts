@@ -71,7 +71,7 @@ function tryParseJson(value: unknown): Record<string, unknown> | undefined {
   try {
     const parsed = JSON.parse(value);
     if (typeof parsed === 'object' && parsed !== null) return parsed as Record<string, unknown>;
-  } catch {
+  } catch (_e) {
     // not JSON
   }
   return undefined;

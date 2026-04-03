@@ -141,7 +141,7 @@ export class CliFixtureResponder {
     try {
       const metaRaw = await readFile(join(this.fixtureDir, 'metadata.json'), 'utf-8');
       this.metadata = JSON.parse(metaRaw) as CliFixtureMetadata;
-    } catch {
+    } catch (_e) {
       // metadata is optional
     }
 
@@ -161,7 +161,7 @@ export class CliFixtureResponder {
             `Re-record with --record to ensure freshness.`,
         );
       }
-    } catch {
+    } catch (_e) {
       // stat failed — no file
     }
   }

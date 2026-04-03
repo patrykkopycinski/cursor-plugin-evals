@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { computePercentile, runPerformanceSuite } from './runner.js';
+import { computePercentile, runPerformanceSuite, type ToolCaller } from './runner.js';
 import type { SuiteConfig } from '../../core/types.js';
-import type { McpPluginClient } from '../../mcp/client.js';
 
 describe('computePercentile', () => {
   it('returns 0 for empty array', () => {
@@ -36,7 +35,7 @@ describe('computePercentile', () => {
   });
 });
 
-function createMockClient(latencyMs = 1): McpPluginClient {
+function createMockClient(latencyMs = 1): ToolCaller {
   return {
     callTool: vi.fn().mockImplementation(async () => {
       if (latencyMs > 0) {
@@ -44,8 +43,7 @@ function createMockClient(latencyMs = 1): McpPluginClient {
       }
       return { content: [{ type: 'text', text: 'ok' }], isError: false };
     }),
-    disconnect: vi.fn(),
-  } as unknown as McpPluginClient;
+  };
 }
 
 describe('runPerformanceSuite', () => {
@@ -148,10 +146,9 @@ describe('runPerformanceSuite', () => {
   });
 
   it('handles tool call errors gracefully', async () => {
-    const client = {
+    const client: ToolCaller = {
       callTool: vi.fn().mockRejectedValue(new Error('connection refused')),
-      disconnect: vi.fn(),
-    } as unknown as McpPluginClient;
+    };
 
     const suite: SuiteConfig = {
       name: 'perf-suite',

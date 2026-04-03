@@ -1,7 +1,8 @@
-import { existsSync, copyFileSync } from 'fs';
-import { resolve } from 'path';
-import { execSync } from 'child_process';
+import { existsSync, copyFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { execSync } from 'node:child_process';
 import { log } from './logger.js';
+import { CLI_NAME } from '../core/constants.js';
 
 export interface SetupOptions {
   dir: string;
@@ -143,7 +144,7 @@ async function checkConfig(): Promise<StepResult> {
     label: 'Config file',
     ok: false,
     detail: 'plugin-eval.yaml not found',
-    action: 'npx cursor-plugin-evals init',
+    action: 'npx ${CLI_NAME} init',
   };
 }
 
@@ -287,7 +288,7 @@ export async function setupCommand(opts: SetupOptions): Promise<void> {
 
     console.log();
     log.info('After fixing these, run the setup again:');
-    log.info('  npx cursor-plugin-evals setup');
+    log.info('  npx ${CLI_NAME} setup');
   } else {
     console.log();
     log.success('All issues resolved — you are ready to run evals!');
@@ -304,23 +305,23 @@ function printNextSteps(): void {
   log.header('Next Steps');
   console.log();
   log.info('  1. Run static analysis (no infra needed):');
-  log.info('     npx cursor-plugin-evals run --layer static');
+  log.info('     npx ${CLI_NAME} run --layer static');
   console.log();
   log.info('  2. Run unit tests (spawns MCP server):');
-  log.info('     npx cursor-plugin-evals run --layer unit');
+  log.info('     npx ${CLI_NAME} run --layer unit');
   console.log();
   log.info('  3. Run integration tests (needs Docker):');
-  log.info('     npx cursor-plugin-evals run --layer integration');
+  log.info('     npx ${CLI_NAME} run --layer integration');
   console.log();
   log.info('  4. Run LLM evals (needs OPENAI_API_KEY or AZURE_OPENAI_API_KEY):');
-  log.info('     npx cursor-plugin-evals run --layer llm');
+  log.info('     npx ${CLI_NAME} run --layer llm');
   console.log();
   log.info('  5. Run skill evaluation:');
-  log.info('     npx cursor-plugin-evals skill-eval --skill-dir ./skills/my-skill');
+  log.info('     npx ${CLI_NAME} skill-eval --skill-dir ./skills/my-skill');
   console.log();
   log.info('  6. Full quality score:');
-  log.info('     npx cursor-plugin-evals score');
+  log.info('     npx ${CLI_NAME} score');
   console.log();
   log.info('  7. Compare models:');
-  log.info('     npx cursor-plugin-evals compare --model gpt-5.2 --model claude-opus-4-6');
+  log.info('     npx ${CLI_NAME} compare --model gpt-5.2 --model claude-opus-4-6');
 }

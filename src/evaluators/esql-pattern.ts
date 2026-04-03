@@ -15,7 +15,7 @@ export const ESQL_EQUIVALENCES: [string, string][] = [
 function matchesWithEquivalence(query: string, pattern: string): boolean {
   try {
     if (new RegExp(pattern, 'i').test(query)) return true;
-  } catch {
+  } catch (_e) {
     if (query.toLowerCase().includes(pattern.toLowerCase())) return true;
   }
 
@@ -24,7 +24,7 @@ function matchesWithEquivalence(query: string, pattern: string): boolean {
       const altPattern = pattern.replace(new RegExp(a.replace(/\s+/g, '\\s+'), 'gi'), b);
       try {
         if (new RegExp(altPattern, 'i').test(query)) return true;
-      } catch {
+      } catch (_e) {
         if (query.toLowerCase().includes(altPattern.toLowerCase())) return true;
       }
     }
@@ -32,7 +32,7 @@ function matchesWithEquivalence(query: string, pattern: string): boolean {
       const altPattern = pattern.replace(new RegExp(b.replace(/\s+/g, '\\s+'), 'gi'), a);
       try {
         if (new RegExp(altPattern, 'i').test(query)) return true;
-      } catch {
+      } catch (_e) {
         if (query.toLowerCase().includes(altPattern.toLowerCase())) return true;
       }
     }

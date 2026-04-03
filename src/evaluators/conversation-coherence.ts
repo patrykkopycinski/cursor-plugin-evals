@@ -85,7 +85,7 @@ export class ConversationCoherenceEvaluator implements Evaluator {
         consistency = parsed.consistency ?? result.score;
         goalProgression = parsed.goal_progression ?? result.score;
         explanation = parsed.explanation ?? result.explanation;
-      } catch {
+      } catch (_e) {
         turnRelevance = result.score;
         consistency = result.score;
         goalProgression = result.score;

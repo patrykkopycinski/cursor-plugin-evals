@@ -1,6 +1,6 @@
 import { writeJsonl, readJsonl, writeJsonlGz, readJsonlGz, appendJsonlGz } from './storage.js';
-import { mkdirSync, rmSync } from 'fs';
-import { join } from 'path';
+import { mkdirSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 
 const TMP_DIR = join(__dirname, '__tmp_storage_test__');
 

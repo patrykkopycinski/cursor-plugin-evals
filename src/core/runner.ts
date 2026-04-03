@@ -1,5 +1,5 @@
-import { randomUUID } from 'crypto';
-import { resolve } from 'path';
+import { randomUUID } from 'node:crypto';
+import { resolve } from 'node:path';
 import pLimit from 'p-limit';
 import type {
   EvalConfig,
@@ -10,26 +10,13 @@ import type {
   Evaluator,
   EvaluatorResult,
 } from './types.js';
-import { McpPluginClient } from '../mcp/client.js';
-import { runUnitSuite } from '../layers/unit/index.js';
-import { runStaticSuite } from '../layers/static/index.js';
-import { runIntegrationSuite } from '../layers/integration/index.js';
-import { runLlmSuite } from '../layers/llm/index.js';
-import { runPerformanceSuite } from '../layers/performance/index.js';
-import { runSkillSuite } from '../layers/skill/index.js';
-import { createEvaluator, EVALUATOR_NAMES } from '../evaluators/index.js';
-import { createTracer, withRunSpan, withSuiteSpan } from '../tracing/spans.js';
-import { mergeDefaults, buildConnectConfig } from './utils.js';
+// Non-core modules (evaluators, tracing, scoring, ci, mcp) are imported
+// dynamically inside runEvaluation() / runSuiteByLayer() so the runner
+// doesn't eagerly pull in heavy dependency trees at import time.
+import { mergeDefaults } from './utils.js';
 import { expandMatrix } from './matrix.js';
 import { loadLastFailed, saveLastRun } from './last-run.js';
-import { discoverPlugin } from '../plugin/discovery.js';
 import { log } from '../cli/logger.js';
-import { computeDimensions } from '../scoring/dimensions.js';
-import { computeQualityScore, DEFAULT_WEIGHTS } from '../scoring/composite.js';
-import { aggregateConfidence } from '../scoring/confidence.js';
-import { evaluateCi } from '../ci/index.js';
-import { evaluateDerivedMetrics } from '../scoring/derived.js';
-import { computeTrialMetrics } from '../utils/first-try-pass-rate.js';
 import { shardSuites } from './shard.js';
 import type { ScoreEntry } from '../scoring/confidence.js';
 import type { ShardConfig } from './shard.js';
@@ -47,7 +34,8 @@ export interface RunOptions {
   shard?: ShardConfig;
 }
 
-function buildEvaluatorRegistry(): Map<string, Evaluator> {
+async function buildEvaluatorRegistry(): Promise<Map<string, Evaluator>> {
+  const { createEvaluator, EVALUATOR_NAMES } = await import('../evaluators/index.js');
   const registry = new Map<string, Evaluator>();
   for (const name of EVALUATOR_NAMES) {
     registry.set(name, createEvaluator(name));
@@ -126,6 +114,7 @@ async function runSuiteByLayer(
 
   switch (suite.layer) {
     case 'unit': {
+      const { runUnitSuite } = await import('../layers/unit/index.js');
       const tests = await runUnitSuite(suite, config.plugin);
       return buildSuiteResult(suite.name, suite.layer, tests, performance.now() - start);
     }
@@ -133,6 +122,7 @@ async function runSuiteByLayer(
     case 'static': {
       let manifest;
       try {
+        const { discoverPlugin } = await import('../plugin/discovery.js');
         manifest = discoverPlugin(config.plugin.dir ?? '.', config.plugin.pluginRoot);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -155,6 +145,7 @@ async function runSuiteByLayer(
           performance.now() - start,
         );
       }
+      const { runStaticSuite } = await import('../layers/static/index.js');
       const tests = await runStaticSuite(suite, manifest);
       return buildSuiteResult(suite.name, suite.layer, tests, performance.now() - start);
     }
@@ -164,10 +155,13 @@ async function runSuiteByLayer(
         throw new Error('plugin.entry or plugin.transport is required for integration layer');
       }
 
+      const { McpPluginClient } = await import('../mcp/client.js');
+      const { buildConnectConfig } = await import('../mcp/connect.js');
       const connectConfig = buildConnectConfig(config.plugin);
       const client = await McpPluginClient.connect(connectConfig);
 
       try {
+        const { runIntegrationSuite } = await import('../layers/integration/index.js');
         const tests = await runIntegrationSuite(suite, client, mergedDefaults);
         return buildSuiteResult(suite.name, suite.layer, tests, performance.now() - start);
       } finally {
@@ -176,6 +170,7 @@ async function runSuiteByLayer(
     }
 
     case 'llm': {
+      const { runLlmSuite } = await import('../layers/llm/index.js');
       const tests = await runLlmSuite(suite, config.plugin, mergedDefaults, evaluatorRegistry);
       return buildSuiteResult(suite.name, suite.layer, tests, performance.now() - start);
     }
@@ -185,10 +180,13 @@ async function runSuiteByLayer(
         throw new Error('plugin.entry or plugin.transport is required for performance layer');
       }
 
-      const connectConfig = buildConnectConfig(config.plugin);
-      const client = await McpPluginClient.connect(connectConfig);
+      const { McpPluginClient: McpClient } = await import('../mcp/client.js');
+      const { buildConnectConfig: buildPerfConnectConfig } = await import('../mcp/connect.js');
+      const connectConfig = buildPerfConnectConfig(config.plugin);
+      const client = await McpClient.connect(connectConfig);
 
       try {
+        const { runPerformanceSuite } = await import('../layers/performance/index.js');
         const tests = await runPerformanceSuite(suite, client, mergedDefaults);
         return buildSuiteResult(suite.name, suite.layer, tests, performance.now() - start);
       } finally {
@@ -197,6 +195,7 @@ async function runSuiteByLayer(
     }
 
     case 'skill': {
+      const { runSkillSuite } = await import('../layers/skill/index.js');
       const tests = await runSkillSuite(suite, config.plugin, mergedDefaults, evaluatorRegistry);
       return buildSuiteResult(suite.name, suite.layer, tests, performance.now() - start);
     }
@@ -216,8 +215,10 @@ export async function runEvaluation(
   const runStart = performance.now();
   const concurrency = options.concurrency ?? 4;
 
-  const evaluatorRegistry = buildEvaluatorRegistry();
-  const tracer = createTracer('cursor-plugin-evals');
+  const evaluatorRegistry = await buildEvaluatorRegistry();
+  const { SERVICE_NAME } = await import('./constants.js');
+  const { createTracer, withRunSpan, withSuiteSpan } = await import('../tracing/spans.js');
+  const tracer = createTracer(SERVICE_NAME);
 
   let filteredSuites = config.suites.flatMap(expandMatrix);
 
@@ -302,6 +303,8 @@ export async function runEvaluation(
 
   log.summary(allTests.length, passed, failed, duration, skipped);
 
+  const { computeDimensions } = await import('../scoring/dimensions.js');
+  const { computeQualityScore, DEFAULT_WEIGHTS } = await import('../scoring/composite.js');
   const dimensions = computeDimensions({
     runId,
     timestamp: new Date().toISOString(),
@@ -332,11 +335,13 @@ export async function runEvaluation(
       }
     }
   }
+  const { aggregateConfidence } = await import('../scoring/confidence.js');
   const confidenceIntervals =
     scoreEntries.length > 1 ? aggregateConfidence(scoreEntries) : undefined;
 
   const repetitions = options.repeat ?? 1;
   const kValues = [...new Set([1, repetitions, 10])].sort((a, b) => a - b);
+  const { computeTrialMetrics } = await import('../utils/first-try-pass-rate.js');
   const trialMetrics =
     repetitions > 1 ? computeTrialMetrics(allTests, kValues) : undefined;
 
@@ -374,10 +379,12 @@ export async function runEvaluation(
         e.max = Math.max(e.max, summary.max);
       }
     }
+    const { evaluateDerivedMetrics } = await import('../scoring/derived.js');
     runResult.derivedMetrics = evaluateDerivedMetrics(config.derivedMetrics, evalSummary);
   }
 
   if (options.ci && config.ci) {
+    const { evaluateCi } = await import('../ci/index.js');
     runResult.ciResult = evaluateCi(allTests, config.ci, {
       firstTryPassRate: runResult.overall.passRate,
       derivedMetrics: runResult.derivedMetrics,
@@ -385,7 +392,8 @@ export async function runEvaluation(
   }
 
   try {
-    const dbPath = resolve(process.cwd(), '.cursor-plugin-evals', 'dashboard.db');
+    const { DATA_DIR } = await import('./constants.js');
+    const dbPath = resolve(process.cwd(), DATA_DIR, 'dashboard.db');
     const { initDb, saveRun } = await import('../dashboard/db.js');
     const db = initDb(dbPath);
     try {
@@ -393,7 +401,7 @@ export async function runEvaluation(
     } finally {
       db.close();
     }
-  } catch {
+  } catch (_e) {
     // Dashboard db is optional — silently skip if better-sqlite3 isn't available
   }
 
@@ -401,7 +409,7 @@ export async function runEvaluation(
     const { buildFingerprint, saveFingerprint } = await import('../regression/fingerprint.js');
     const fp = buildFingerprint(runId, allTests);
     await saveFingerprint(fp);
-  } catch {
+  } catch (_e) {
     // Fingerprint save is best-effort
   }
 
@@ -415,13 +423,13 @@ export async function runEvaluation(
         log.debug(line);
       }
     }
-  } catch {
+  } catch (_e) {
     // Score history is best-effort
   }
 
   try {
     saveLastRun(runResult);
-  } catch {
+  } catch (_e) {
     // Last-run persistence is best-effort
   }
 

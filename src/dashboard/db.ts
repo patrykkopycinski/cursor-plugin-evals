@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
-import { randomUUID } from 'crypto';
-import { mkdirSync } from 'fs';
-import { dirname } from 'path';
+import { randomUUID } from 'node:crypto';
+import { mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
 import type { RunResult, SuiteResult } from '../core/types.js';
 
 export interface StoredRun {

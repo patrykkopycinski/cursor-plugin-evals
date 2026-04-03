@@ -68,7 +68,7 @@ describe('computeDeterministicRecommendations', () => {
   it('warns when evaluator scores very low', () => {
     const result = makeRunResult([makeTest('a', 0.1), makeTest('b', 0.2)]);
     const recs = computeDeterministicRecommendations(result, {});
-    expect(recs.some((r) => r.message.includes('scores very low'))).toBe(true);
+    expect(recs.some((r) => r.message.includes('scored below 0.3'))).toBe(true);
   });
 
   it('suggests more tests when fewer than 5', () => {
@@ -118,7 +118,7 @@ describe('computeDeterministicRecommendations', () => {
       makeTest('b', 0.2, 'keywords'),
     ]);
     const recs = computeDeterministicRecommendations(result, {});
-    expect(recs.filter((r) => r.message.includes('scores very low') || r.message.includes('below 0.3')).length).toBeGreaterThanOrEqual(1);
+    expect(recs.filter((r) => r.message.includes('scored below 0.3')).length).toBeGreaterThanOrEqual(1);
   });
 });
 
@@ -128,6 +128,130 @@ describe('computeLlmRecommendations', () => {
     const recs = await computeLlmRecommendations(result, 'skill content', 'eval yaml content');
     expect(recs.length).toBeGreaterThan(0);
     expect(recs[0].message).toContain('DISSECT');
+  });
+});
+
+describe('SKILL.md improvement recommendations', () => {
+  function makeFailedTestWithPattern(name: string, unmatched: string[]): TestResult {
+    return {
+      name,
+      suite: 'skill-suite',
+      layer: 'skill',
+      pass: false,
+      toolCalls: [],
+      evaluatorResults: [{
+        evaluator: 'esql-pattern',
+        score: 0.5,
+        pass: false,
+        explanation: `Missing: ${unmatched.join(', ')}`,
+        metadata: { matched: [], unmatched, query: 'FROM logs-test | LIMIT 10' },
+      }],
+      latencyMs: 100,
+    };
+  }
+
+  function makeFailedTestWithSyntaxError(name: string, error: string): TestResult {
+    return {
+      name,
+      suite: 'skill-suite',
+      layer: 'skill',
+      pass: false,
+      toolCalls: [],
+      evaluatorResults: [{
+        evaluator: 'esql-execution',
+        score: 0,
+        pass: false,
+        label: 'error',
+        explanation: `Query failed: ${error}`,
+        metadata: { query: 'SELECT * FROM logs', error },
+      }],
+      latencyMs: 100,
+    };
+  }
+
+  function makeFailedTestNoQuery(name: string): TestResult {
+    return {
+      name,
+      suite: 'skill-suite',
+      layer: 'skill',
+      pass: false,
+      toolCalls: [],
+      evaluatorResults: [{
+        evaluator: 'esql-execution',
+        score: 0,
+        pass: false,
+        label: 'no_query',
+        explanation: 'Could not extract ES|QL query from output or tool calls',
+      }],
+      latencyMs: 100,
+    };
+  }
+
+  it('suggests intent-to-command mapping when commands are missing', () => {
+    const tests = [
+      makeFailedTestWithPattern('test1', ['STATS.*BY']),
+      makeFailedTestWithPattern('test2', ['WHERE', 'STATS.*BY']),
+      makeTest('passing1', 1.0),
+      makeTest('passing2', 1.0),
+    ];
+    const result = makeRunResult(tests);
+    const recs = computeDeterministicRecommendations(result, {}, 'Some skill content');
+    const skillRecs = recs.filter((r) => r.type === 'skill_improvement');
+    expect(skillRecs.length).toBeGreaterThan(0);
+    expect(skillRecs.some((r) => r.message.toLowerCase().includes('command'))).toBe(true);
+    expect(skillRecs[0].estimatedImpact).toBeDefined();
+    expect(skillRecs[0].skillSuggestion).toBeDefined();
+  });
+
+  it('suggests syntax rules when syntax errors occur', () => {
+    const tests = [
+      makeFailedTestWithSyntaxError('test1', 'syntax error: unexpected SELECT'),
+      makeTest('passing1', 1.0),
+    ];
+    const result = makeRunResult(tests);
+    const recs = computeDeterministicRecommendations(result, {}, 'Some skill content');
+    const skillRecs = recs.filter((r) => r.type === 'skill_improvement');
+    expect(skillRecs.some((r) => r.message.toLowerCase().includes('syntax'))).toBe(true);
+  });
+
+  it('suggests query generation rules when no query is extracted', () => {
+    const tests = [
+      makeFailedTestNoQuery('test1'),
+      makeFailedTestNoQuery('test2'),
+      makeTest('passing1', 1.0),
+    ];
+    const result = makeRunResult(tests);
+    const recs = computeDeterministicRecommendations(result, {}, 'Some skill content');
+    const skillRecs = recs.filter((r) => r.type === 'skill_improvement');
+    expect(skillRecs.some((r) => r.message.includes("didn't output a query"))).toBe(true);
+  });
+
+  it('skips skill improvements when all tests pass', () => {
+    const tests = [makeTest('a', 1.0), makeTest('b', 1.0)];
+    const result = makeRunResult(tests);
+    const recs = computeDeterministicRecommendations(result, {}, 'Some skill content');
+    const skillRecs = recs.filter((r) => r.type === 'skill_improvement');
+    expect(skillRecs.length).toBe(0);
+  });
+
+  it('skips skill improvements when no skill content provided', () => {
+    const tests = [
+      makeFailedTestWithPattern('test1', ['STATS.*BY']),
+    ];
+    const result = makeRunResult(tests);
+    const recs = computeDeterministicRecommendations(result, {});
+    const skillRecs = recs.filter((r) => r.type === 'skill_improvement');
+    expect(skillRecs.length).toBe(0);
+  });
+
+  it('detects existing intent-to-command mapping and suggests strengthening', () => {
+    const tests = [
+      makeFailedTestWithPattern('test1', ['STATS.*BY']),
+    ];
+    const result = makeRunResult(tests);
+    const recs = computeDeterministicRecommendations(result, {}, 'intent-to-command mapping table\nWhen to use STATS');
+    const skillRecs = recs.filter((r) => r.type === 'skill_improvement');
+    expect(skillRecs.some((r) => r.message.toLowerCase().includes('strengthen'))).toBe(true);
   });
 });
 

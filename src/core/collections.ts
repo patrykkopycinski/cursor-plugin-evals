@@ -1,7 +1,7 @@
-import { readFileSync, readdirSync, existsSync } from 'fs';
-import { resolve, join, isAbsolute } from 'path';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { resolve, join, isAbsolute } from 'node:path';
 import { parse as parseYaml } from 'yaml';
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from 'node:url';
 import type { SuiteConfig } from './types.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -61,7 +61,7 @@ export function listCollections(): Array<{ name: string; path: string; testCount
           const raw = readFileSync(suiteFile, 'utf-8');
           const parsed = parseYaml(raw);
           testCount = Array.isArray(parsed?.tests) ? parsed.tests.length : 0;
-        } catch {
+        } catch (_e) {
           // skip malformed suites
         }
       }

@@ -197,21 +197,74 @@ function printTrialMetrics(metrics: TrialMetrics): void {
 export function printRecommendations(recommendations: RunResult['recommendations']): void {
   if (!recommendations || recommendations.length === 0) return;
 
-  log.divider();
-  log.info(chalk.bold('  Recommendations'));
-  log.info('');
-
   const priorityIcon: Record<string, string> = {
     high: chalk.red('\u25cf'),
     medium: chalk.yellow('\u25cf'),
     low: chalk.dim('\u25cf'),
   };
 
-  for (const rec of recommendations.slice(0, 5)) {
-    const icon = priorityIcon[rec.priority] ?? chalk.dim('\u25cf');
-    log.info(`  ${icon} ${rec.message}`);
+  // Separate skill improvements from other recommendations
+  const skillRecs = recommendations.filter((r) => r.type === 'skill_improvement');
+  const otherRecs = recommendations.filter((r) => r.type !== 'skill_improvement');
+
+  // Print general recommendations
+  if (otherRecs.length > 0) {
+    log.divider();
+    log.info(chalk.bold('  Recommendations'));
+    log.info('');
+
+    for (const rec of otherRecs.slice(0, 5)) {
+      const icon = priorityIcon[rec.priority] ?? chalk.dim('\u25cf');
+      log.info(`  ${icon} ${rec.message}`);
+      if ((rec as { estimatedImpact?: string }).estimatedImpact) {
+        log.info(chalk.gray(`      Impact: ${(rec as { estimatedImpact?: string }).estimatedImpact}`));
+      }
+    }
+    log.info('');
   }
-  log.info('');
+
+  // Print SKILL.md improvement suggestions
+  if (skillRecs.length > 0) {
+    log.divider();
+    log.info(chalk.bold('  SKILL.md Improvement Suggestions'));
+    log.info('');
+    log.info(chalk.gray('  These changes to your SKILL.md can improve eval scores:'));
+    log.info('');
+
+    for (let i = 0; i < Math.min(skillRecs.length, 8); i++) {
+      const rec = skillRecs[i];
+      const icon = priorityIcon[rec.priority] ?? chalk.dim('\u25cf');
+      const suggestion = (rec as { skillSuggestion?: { section: string; action: string; content: string; rationale: string } }).skillSuggestion;
+      const impact = (rec as { estimatedImpact?: string }).estimatedImpact;
+
+      log.info(`  ${icon} ${chalk.bold(`${i + 1}. ${rec.message}`)}`);
+
+      if (impact) {
+        log.info(chalk.cyan(`      Impact: ${impact}`));
+      }
+
+      if (suggestion) {
+        const actionLabel = suggestion.action === 'add' ? 'Add section' : suggestion.action === 'modify' ? 'Modify section' : 'Add examples to';
+        log.info(chalk.gray(`      ${actionLabel}: "${suggestion.section}"`));
+        log.info('');
+
+        // Show the suggested content indented
+        const contentLines = suggestion.content.split('\n');
+        for (const line of contentLines.slice(0, 10)) {
+          log.info(chalk.gray(`        ${line}`));
+        }
+        if (contentLines.length > 10) {
+          log.info(chalk.gray(`        ... (${contentLines.length - 10} more lines)`));
+        }
+        log.info('');
+      }
+    }
+
+    if (skillRecs.length > 8) {
+      log.info(chalk.gray(`  ... and ${skillRecs.length - 8} more suggestion(s)`));
+      log.info('');
+    }
+  }
 }
 
 export function printTerminalReport(result: RunResult): void {

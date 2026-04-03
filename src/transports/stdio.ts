@@ -1,6 +1,6 @@
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { resolve, isAbsolute } from 'path';
-import { tmpdir } from 'os';
+import { resolve, isAbsolute } from 'node:path';
+import { tmpdir } from 'node:os';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import type { TransportConfig } from './types.js';
 

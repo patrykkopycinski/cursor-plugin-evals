@@ -1,4 +1,5 @@
 import { log } from './logger.js';
+import { DATA_DIR } from '../core/constants.js';
 
 const SENSITIVE_PATTERN = /KEY|TOKEN|SECRET/i;
 
@@ -51,7 +52,7 @@ const ENV_VARS = [
   {
     name: 'CPE_CACHE_DIR',
     description: 'Cache directory path',
-    default: '.cursor-plugin-evals/cache',
+    default: `${DATA_DIR}/cache`,
   },
 ] as const;
 

@@ -122,7 +122,7 @@ async function evaluateGoalAchievement(
       return parsed.achieved ?? false;
     }
     return result.score >= 0.5;
-  } catch {
+  } catch (_e) {
     return false;
   }
 }

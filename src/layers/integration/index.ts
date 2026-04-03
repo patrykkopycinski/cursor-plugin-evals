@@ -54,7 +54,7 @@ function parseToolResponse(result: {
   let parsed: unknown;
   try {
     parsed = JSON.parse(joined);
-  } catch {
+  } catch (_e) {
     parsed = joined;
   }
 

@@ -1,5 +1,5 @@
 import { readFile, readdir, stat } from 'fs/promises';
-import { join, dirname, basename, relative } from 'path';
+import { join, dirname, basename, relative } from 'node:path';
 
 export interface SkillMeta {
   name: string;
@@ -69,7 +69,7 @@ async function findSkillFiles(dir: string): Promise<string[]> {
   let entries;
   try {
     entries = await readdir(dir, { withFileTypes: true });
-  } catch {
+  } catch (_e) {
     return results;
   }
 
@@ -143,7 +143,7 @@ function escapeRegex(s: string): string {
 export async function isDirectory(path: string): Promise<boolean> {
   try {
     return (await stat(path)).isDirectory();
-  } catch {
+  } catch (_e) {
     return false;
   }
 }

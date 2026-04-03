@@ -44,7 +44,7 @@ export function parseGeneratedTests(response: string): GeneratedTest[] {
   let parsed: unknown;
   try {
     parsed = JSON.parse(jsonMatch[0]);
-  } catch {
+  } catch (_e) {
     return [];
   }
 

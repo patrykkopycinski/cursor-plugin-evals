@@ -1,5 +1,5 @@
-import { readFileSync } from 'fs';
-import { resolve, dirname, isAbsolute } from 'path';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname, isAbsolute } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import fg from 'fast-glob';
 import { z } from 'zod';

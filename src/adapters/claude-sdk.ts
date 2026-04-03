@@ -6,8 +6,8 @@ import type {
   ToolCallRecord,
   ToolResult,
 } from '../core/types.js';
-import { resolve } from 'path';
-import { execSync } from 'child_process';
+import { resolve } from 'node:path';
+import { execSync } from 'node:child_process';
 import {
   createIsolatedWorkspace,
   findSkillsRoot,
@@ -27,7 +27,7 @@ function resolveClaudeExecutable(): string {
   if (_claudeExePath) return _claudeExePath;
   try {
     _claudeExePath = execSync('which claude', { encoding: 'utf-8' }).trim();
-  } catch {
+  } catch (_e) {
     _claudeExePath = 'claude'; // fall back to PATH lookup at spawn time
   }
   return _claudeExePath;
@@ -143,7 +143,7 @@ export function createClaudeSdkAdapter(config: AdapterConfig): TaskAdapter {
       try {
         const sdk = await import('@anthropic-ai/claude-agent-sdk');
         query = sdk.query;
-      } catch {
+      } catch (_e) {
         throw new Error(
           'claude-sdk adapter requires @anthropic-ai/claude-agent-sdk. ' +
             'Install with: npm install @anthropic-ai/claude-agent-sdk',
@@ -290,6 +290,7 @@ export function createClaudeSdkAdapter(config: AdapterConfig): TaskAdapter {
       ];
 
       // --- Abort controller for timeout ---
+      const perTestTimeout = (example.metadata?.timeout as number | undefined) ?? timeout;
       const abortController = new AbortController();
       options.abortController = abortController;
 
@@ -306,7 +307,7 @@ export function createClaudeSdkAdapter(config: AdapterConfig): TaskAdapter {
 
       const timer = setTimeout(() => {
         abortController.abort();
-      }, timeout);
+      }, perTestTimeout);
 
       // --- Run the query and collect messages ---
       const messages: Array<{ role: string; content: string }> = [];
@@ -392,7 +393,7 @@ export function createClaudeSdkAdapter(config: AdapterConfig): TaskAdapter {
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         if (abortController.signal.aborted) {
-          throw new Error(`Claude SDK timed out after ${timeout}ms`);
+          throw new Error(`Claude SDK timed out after ${perTestTimeout}ms`);
         }
         throw new Error(`Claude SDK error: ${msg}`);
       } finally {

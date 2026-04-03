@@ -2,6 +2,7 @@ import { writeFileSync, mkdirSync, existsSync, chmodSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import type { Command } from 'commander';
 import { log } from './logger.js';
+import { SERVICE_NAME } from '../core/constants.js';
 
 type Language = 'typescript' | 'javascript' | 'python' | 'shell';
 
@@ -205,7 +206,7 @@ evaluators:
 
 ## Protocol
 
-This evaluator uses the cursor-plugin-evals custom evaluator protocol v1.0.
+This evaluator uses the ${SERVICE_NAME} custom evaluator protocol v1.0.
 
 **Input:** Full evaluation context (prompt, output, tool calls, expected, messages, tokens, latency)
 **Output:** \`{ score: 0-1, pass: boolean, label?, explanation?, metadata? }\`
@@ -240,7 +241,7 @@ function scaffoldEvaluator(opts: EvaluatorInitOptions): void {
   if (opts.language === 'python' || opts.language === 'shell') {
     try {
       chmodSync(entryPath, 0o755);
-    } catch {
+    } catch (_e) {
       // Non-fatal — user can chmod manually
     }
   }

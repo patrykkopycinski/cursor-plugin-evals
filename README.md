@@ -6,7 +6,7 @@
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/getting-started"><img src="https://img.shields.io/badge/layers-7-6C5CE7?style=flat-square" alt="7 Layers" /></a>
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/evaluators"><img src="https://img.shields.io/badge/evaluators-35-A29BFE?style=flat-square" alt="35 Evaluators" /></a>
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/adapters"><img src="https://img.shields.io/badge/adapters-6-74B9FF?style=flat-square" alt="6 Adapters" /></a>
-  <a href="#mcp-server"><img src="https://img.shields.io/badge/MCP--tools-14-55E6C1?style=flat-square" alt="14 MCP Tools" /></a>
+  <a href="#mcp-server"><img src="https://img.shields.io/badge/MCP--tools-17-55E6C1?style=flat-square" alt="17 MCP Tools" /></a>
   <a href="https://patrykkopycinski.github.io/cursor-plugin-evals/docs/#/red-teaming"><img src="https://img.shields.io/badge/security--rules-22-E74C3C?style=flat-square" alt="22 Security Rules" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Elastic--2.0-00E676?style=flat-square" alt="Elastic License 2.0" /></a>
 </p>
@@ -71,7 +71,7 @@ Expose the framework as an MCP server so any agent (Cursor, Claude Desktop, cust
 npx cursor-plugin-evals serve          # Start stdio MCP server
 ```
 
-**14 tools available:**
+**17 tools available:**
 
 | Tool | What it does |
 |------|-------------|
@@ -88,6 +88,9 @@ npx cursor-plugin-evals serve          # Start stdio MCP server
 | `security_audit` | 3-pass security audit |
 | `regression_check` | Welch's t-test regression detection |
 | `compare_models` | Multi-model comparison matrix |
+| `evaluate_trace` | Score OTel traces without re-execution |
+| `harvest_traces` | Harvest failed traces as regression tests |
+| `deploy_dashboard` | Deploy Kibana eval dashboard |
 | `cost_report` | Token usage and cost optimization |
 
 **6 resources:** `eval://config`, `eval://latest-run`, `eval://coverage`, `eval://history`, `eval://quickstart`, `eval://evaluators`
@@ -171,7 +174,7 @@ Auto-registers when you install the Cursor plugin (via `.mcp.json`).
 - Coverage analysis with CLI, API, dashboard, and SVG badge
 - Test sharding (`--shard`) and last-failed mode (`--lf`, `--ff`)
 - Post-run hooks (webhooks, scripts) with template interpolation
-- MCP server with 14 tools and 6 resources for native agent integration
+- MCP server with 17 tools and 6 resources for native agent integration
 
 </td></tr>
 <tr><td>
@@ -393,12 +396,57 @@ Full docs at **[patrykkopycinski.github.io/cursor-plugin-evals/docs](https://pat
 
 ---
 
+## Architecture
+
+```
+src/
+├── core/               # Config, runner, types, constants — zero non-core deps
+│   ├── constants.ts    # Single source of truth: SERVICE_NAME, DATA_DIR, CLI_NAME, REPO_URL
+│   ├── runner.ts       # Evaluation orchestrator (all non-core imports are dynamic)
+│   ├── config.ts       # YAML config parser and validator
+│   └── types/          # Split type definitions (adapter, common, config, evaluator, plugin, result)
+├── cli/
+│   ├── main.ts         # Thin orchestrator — registers command groups
+│   └── commands/       # 11 command group modules (~260 lines each)
+│       ├── run.ts          # run, score
+│       ├── skill-eval.ts   # skill-eval, skill-eval-init
+│       ├── analysis.ts     # merge-reports, discover, coverage, collections, collision-check
+│       ├── generation.ts   # gen-tests, gen-conversations, mock-gen
+│       ├── security.ts     # security-lint, lint-tools, red-team
+│       ├── regression.ts   # regression, compare, history, replay, prompt-sensitivity
+│       ├── dashboard.ts    # dashboard, dashboard-deploy
+│       ├── infrastructure.ts  # init, external-init, apply-fixes, ci-init, setup, env
+│       ├── doctor.ts       # doctor
+│       ├── advanced.ts     # trace-import, optimize, harvest, cost-report, registry, dataset, serve
+│       └── helpers.ts      # Shared exit codes, parsePositiveInt
+├── mcp/
+│   ├── server.ts           # MCP server setup — wires handlers to SDK
+│   ├── tool-definitions.ts # 17 tool schemas
+│   ├── tool-handlers.ts    # Tool call dispatch (switch/case)
+│   ├── resource-handlers.ts # 6 resource schemas + read handlers
+│   ├── client.ts           # MCP plugin client
+│   └── connect.ts          # buildConnectConfig (extracted from core)
+├── evaluators/         # 35 evaluators (19 deterministic + 16 LLM-as-judge)
+├── layers/             # Layer runners: static, unit, integration, llm, performance, skill, conformance
+├── adapters/           # 7 task adapters: mcp, plain-llm, cursor-cli, headless-coder, gemini-cli, claude-sdk, otel-trace
+├── scoring/            # Quality score, dimensions, confidence intervals, badges
+├── reporting/          # Terminal, markdown, JSON, HTML, JUnit XML reporters
+└── ...                 # 20+ additional modules (red-team, harvest, cost-advisor, etc.)
+```
+
+**Design principles:**
+- `core/` never imports from `cli/`, `adapters/`, `layers/`, or `mcp/` (except logger)
+- All branding strings flow through `core/constants.ts` — renaming the project changes one file
+- Non-core dependencies in `runner.ts` are lazy-loaded via `await import()` for fast CLI startup
+- All Node.js builtins use the `node:` protocol prefix
+- No `as any` in production code
+
 ## Development
 
 ```bash
 npm install
 npm run typecheck    # TypeScript check
-npm test             # Run framework tests (1443 tests)
+npm test             # Run framework tests (1770 tests)
 npm run build        # Build CLI binary
 npm run lint:fix     # Fix linting issues
 ```

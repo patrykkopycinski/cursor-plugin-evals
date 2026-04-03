@@ -18,7 +18,7 @@ export async function applyFixes(rootDir: string, fixes: GeneratedFix[]): Promis
         let existing = '';
         try {
           existing = await rf(fullPath, 'utf-8');
-        } catch {
+        } catch (_e) {
           // file doesn't exist — create it
         }
         await writeFile(fullPath, existing + file.content, 'utf-8');
@@ -39,7 +39,7 @@ export async function createPr(request: PrRequest): Promise<PrResult> {
 
   try {
     execSync('which gh', { encoding: 'utf-8', cwd });
-  } catch {
+  } catch (_e) {
     return { success: false, error: 'GitHub CLI (gh) not found. Install: https://cli.github.com' };
   }
 

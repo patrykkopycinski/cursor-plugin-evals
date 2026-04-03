@@ -1,6 +1,7 @@
 import { writeFile, readFile, mkdir } from 'fs/promises';
-import { resolve } from 'path';
+import { join, resolve } from 'node:path';
 import type { RunResult } from '../core/types.js';
+import { DATA_DIR } from '../core/constants.js';
 
 export interface HistoryEntry {
   runId: string;
@@ -23,7 +24,7 @@ export interface ScoreHistory {
   entries: HistoryEntry[];
 }
 
-const DEFAULT_PATH = '.cursor-plugin-evals/score-history.json';
+const DEFAULT_PATH = join(DATA_DIR, 'score-history.json');
 
 function resolvePath(path?: string): string {
   return resolve(process.cwd(), path ?? DEFAULT_PATH);
@@ -33,7 +34,7 @@ export async function loadHistory(path?: string): Promise<ScoreHistory> {
   try {
     const raw = await readFile(resolvePath(path), 'utf-8');
     return JSON.parse(raw) as ScoreHistory;
-  } catch {
+  } catch (_e) {
     return { entries: [] };
   }
 }

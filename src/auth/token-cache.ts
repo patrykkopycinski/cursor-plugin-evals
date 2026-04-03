@@ -1,8 +1,9 @@
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
-import { resolve, dirname } from 'path';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
 import type { OAuthTokens } from './oauth2-flow.js';
+import { DATA_DIR } from '../core/constants.js';
 
-const DEFAULT_CACHE_DIR = resolve(process.cwd(), '.cursor-plugin-evals', 'tokens');
+const DEFAULT_CACHE_DIR = resolve(process.cwd(), DATA_DIR, 'tokens');
 
 function cacheFilePath(key: string, dir: string): string {
   const safeKey = key.replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -29,7 +30,7 @@ export async function loadCachedTokens(key: string, dir?: string): Promise<OAuth
     const data = JSON.parse(raw) as OAuthTokens;
     if (!data.accessToken) return null;
     return data;
-  } catch {
+  } catch (_e) {
     return null;
   }
 }

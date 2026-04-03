@@ -1,4 +1,4 @@
-import { resolve, isAbsolute } from 'path';
+import { resolve, isAbsolute } from 'node:path';
 import type { Evaluator, PluginsConfig, RunResult } from '../core/types.js';
 
 export interface LoadedPlugins {

@@ -1,5 +1,5 @@
-import { existsSync, statSync } from 'fs';
-import { resolve, isAbsolute, relative } from 'path';
+import { existsSync, statSync } from 'node:fs';
+import { resolve, isAbsolute, relative } from 'node:path';
 import type {
   TestResult,
   SuiteConfig,

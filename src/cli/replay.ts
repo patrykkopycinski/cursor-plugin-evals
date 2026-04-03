@@ -1,6 +1,8 @@
+import { join } from 'node:path';
 import { log } from './logger.js';
 import { loadRecording } from '../recordings/index.js';
 import { createEvaluator } from '../evaluators/index.js';
+import { DATA_DIR } from '../core/constants.js';
 import type {
   EvaluatorContext,
   EvaluatorResult,
@@ -25,7 +27,7 @@ export async function replayCommand(opts: {
   evaluators?: string[];
   judge?: string;
 }): Promise<void> {
-  const recordingsDir = opts.recordingsDir ?? '.cursor-plugin-evals/recordings';
+  const recordingsDir = opts.recordingsDir ?? join(DATA_DIR, 'recordings');
 
   if (opts.judge) {
     process.env.JUDGE_MODEL = opts.judge;

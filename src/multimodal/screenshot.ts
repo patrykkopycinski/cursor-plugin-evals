@@ -30,7 +30,7 @@ export async function captureScreenshot(
     } finally {
       await browser.close();
     }
-  } catch {
+  } catch (_e) {
     console.warn('puppeteer not installed — visual regression tests will be skipped');
     return null;
   }

@@ -16,7 +16,7 @@ import {
   copyDirFiltered,
   type IsolatedWorkspace,
 } from './cursor-cli-workspace.js';
-import { resolve, join } from 'path';
+import { resolve, join } from 'node:path';
 
 export function createGeminiCliAdapter(config: AdapterConfig): TaskAdapter {
   const timeout = config.timeout ?? 120_000;
@@ -39,7 +39,7 @@ export function createGeminiCliAdapter(config: AdapterConfig): TaskAdapter {
     try {
       const { execSync } = await import('child_process');
       geminiPath = execSync('which gemini', { encoding: 'utf-8' }).trim();
-    } catch {
+    } catch (_e) {
       throw new Error(
         'gemini-cli adapter requires the Gemini CLI. Install from: https://github.com/google-gemini/gemini-cli',
       );
@@ -160,7 +160,7 @@ function runGeminiProcess(
         let event: GeminiJsonlEvent;
         try {
           event = JSON.parse(line) as GeminiJsonlEvent;
-        } catch {
+        } catch (_e) {
           continue;
         }
 

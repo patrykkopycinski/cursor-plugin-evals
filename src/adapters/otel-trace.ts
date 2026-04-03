@@ -92,7 +92,7 @@ function safeParseJson(val: unknown): unknown {
   if (typeof val !== 'string') return val ?? {};
   try {
     return JSON.parse(val);
-  } catch {
+  } catch (_e) {
     return val;
   }
 }

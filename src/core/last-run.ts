@@ -1,8 +1,7 @@
-import { readFileSync, writeFileSync, mkdirSync } from 'fs';
-import { resolve } from 'path';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { resolve } from 'node:path';
 import type { RunResult } from './types.js';
-
-const STATE_DIR = '.cursor-plugin-evals';
+import { DATA_DIR } from './constants.js';
 const LAST_RUN_FILE = 'last-run.json';
 
 interface LastRunData {
@@ -12,7 +11,7 @@ interface LastRunData {
 }
 
 function lastRunPath(): string {
-  return resolve(process.cwd(), STATE_DIR, LAST_RUN_FILE);
+  return resolve(process.cwd(), DATA_DIR, LAST_RUN_FILE);
 }
 
 export function saveLastRun(result: RunResult): void {
@@ -33,7 +32,7 @@ export function saveLastRun(result: RunResult): void {
   };
 
   const filePath = lastRunPath();
-  mkdirSync(resolve(process.cwd(), STATE_DIR), { recursive: true });
+  mkdirSync(resolve(process.cwd(), DATA_DIR), { recursive: true });
   writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
@@ -42,7 +41,7 @@ export function loadLastFailed(): string[] {
     const raw = readFileSync(lastRunPath(), 'utf-8');
     const data: LastRunData = JSON.parse(raw);
     return data.failed ?? [];
-  } catch {
+  } catch (_e) {
     return [];
   }
 }

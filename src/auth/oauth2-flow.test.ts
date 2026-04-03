@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createHash, randomBytes } from 'crypto';
+import { createHash, randomBytes } from 'node:crypto';
 
 // Direct unit tests for PKCE generation (imported separately to avoid side effects)
 describe('PKCE code generation', () => {

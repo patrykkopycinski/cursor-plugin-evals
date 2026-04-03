@@ -264,7 +264,7 @@ const toolCallUnknownTool = makeSkippableCheck(
       return result.isError
         ? { passed: true, message: 'Server returned error for unknown tool' }
         : { passed: false, message: 'Server did not return error for unknown tool' };
-    } catch {
+    } catch (_e) {
       return { passed: true, message: 'Server threw error for unknown tool' };
     }
   },
@@ -316,7 +316,7 @@ const resourceUriFormat = makeSkippableCheck(
       try {
         new URL(r.uri);
         return false;
-      } catch {
+      } catch (_e) {
         return true;
       }
     });
@@ -361,7 +361,7 @@ const resourceReadUnknown = makeSkippableCheck(
     try {
       await client.readResource('urn:nonexistent:' + Date.now());
       return { passed: false, message: 'Server did not error for unknown resource' };
-    } catch {
+    } catch (_e) {
       return { passed: true, message: 'Server errored for unknown resource' };
     }
   },
@@ -432,7 +432,7 @@ const promptGetUnknown = makeSkippableCheck(
     try {
       await client.rawClient.getPrompt({ name: '__nonexistent_prompt_' + Date.now() });
       return { passed: false, message: 'Server did not error for unknown prompt' };
-    } catch {
+    } catch (_e) {
       return { passed: true, message: 'Server errored for unknown prompt' };
     }
   },
@@ -453,7 +453,7 @@ const errorInvalidMethod = makeCheck(
         {} as never,
       );
       return { passed: false, message: 'Server did not reject invalid method' };
-    } catch {
+    } catch (_e) {
       return { passed: true, message: 'Server rejected invalid method' };
     }
   },
@@ -469,7 +469,7 @@ const errorMalformedParams = makeCheck(
     try {
       await client.callTool('', { [Symbol() as unknown as string]: true });
       return { passed: true, message: 'Server handled malformed params without crash' };
-    } catch {
+    } catch (_e) {
       return { passed: true, message: 'Server rejected malformed params gracefully' };
     }
   },
@@ -524,7 +524,7 @@ const capOnlyDeclared = makeCheck(
         if (tools.length > 0) {
           issues.push('tools not declared but listTools returned results');
         }
-      } catch {
+      } catch (_e) {
         // Expected — capability not declared
       }
     }
@@ -535,7 +535,7 @@ const capOnlyDeclared = makeCheck(
         if (resources.length > 0) {
           issues.push('resources not declared but listResources returned results');
         }
-      } catch {
+      } catch (_e) {
         // Expected
       }
     }
@@ -546,7 +546,7 @@ const capOnlyDeclared = makeCheck(
         if (result.prompts.length > 0) {
           issues.push('prompts not declared but listPrompts returned results');
         }
-      } catch {
+      } catch (_e) {
         // Expected
       }
     }

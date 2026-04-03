@@ -157,7 +157,7 @@ function evaluateSingleCheck(check: RunCheck, ctx: RunCheckContext): RunCheckRes
       let pass: boolean;
       try {
         pass = new RegExp(pattern).test(ctx.finalOutput);
-      } catch {
+      } catch (_e) {
         pass = false;
       }
       return {

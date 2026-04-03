@@ -1,5 +1,6 @@
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import type { EvaluatorResult, TestResult, RunResult } from '../core/types.js';
+import { SERVICE_NAME } from '../core/constants.js';
 
 /** OTel GenAI standard evaluation event */
 export interface OtelEvalEvent {
@@ -135,12 +136,12 @@ export function buildEvalEventSpans(
       {
         resource: {
           attributes: [
-            { key: 'service.name', value: { stringValue: 'cursor-plugin-evals' } },
+            { key: 'service.name', value: { stringValue: SERVICE_NAME } },
           ],
         },
         scopeSpans: [
           {
-            scope: { name: 'cursor-plugin-evals/eval-events' },
+            scope: { name: `${SERVICE_NAME}/eval-events` },
             spans,
           },
         ],

@@ -31,7 +31,7 @@ export async function applyFault(
       try {
         const parsed = JSON.parse(corrupted);
         return { result: parsed, survived: true };
-      } catch {
+      } catch (_e) {
         return { result: corrupted, survived: false, error: `Chaos: corrupted response from ${toolName}` };
       }
     }

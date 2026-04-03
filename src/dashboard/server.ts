@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
-import { resolve } from 'path';
-import { readFileSync, existsSync } from 'fs';
+import { resolve } from 'node:path';
+import { readFileSync, existsSync } from 'node:fs';
+import { SERVICE_NAME } from '../core/constants.js';
 import { streamSSE } from 'hono/streaming';
 import { initDb, getRuns, getRun, getLatestRuns } from './db.js';
 import { globalEmitter } from './events.js';
@@ -214,7 +215,7 @@ export function createApp(dbPath: string): { app: Hono; db: Database.Database } 
       .map((line) => {
         try {
           return JSON.parse(line);
-        } catch {
+        } catch (_e) {
           return null;
         }
       })
@@ -554,7 +555,7 @@ function dashboardHtml(): string {
   <aside class="sidebar">
     <div class="logo">
       <h1>Plugin Evals</h1>
-      <div class="subtitle">cursor-plugin-evals</div>
+      <div class="subtitle">${SERVICE_NAME}</div>
     </div>
     <nav>
       <div class="section">Overview</div>

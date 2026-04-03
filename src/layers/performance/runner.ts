@@ -1,7 +1,11 @@
 import pLimit from 'p-limit';
 import type { TestResult, SuiteConfig, DefaultsConfig } from '../../core/types.js';
-import type { McpPluginClient } from '../../mcp/client.js';
 import type { PerformanceTestConfig, PerformanceMetrics } from './types.js';
+
+/** Minimal interface for executing tool calls — satisfied by McpPluginClient and others. */
+export interface ToolCaller {
+  callTool(name: string, args: Record<string, unknown>): Promise<unknown>;
+}
 import { DEFAULT_WARMUP, DEFAULT_ITERATIONS, DEFAULT_CONCURRENCY } from './types.js';
 import { mergeDefaults, getMissingEnvVars } from '../../core/utils.js';
 import { log } from '../../cli/logger.js';
@@ -61,7 +65,7 @@ function checkThresholds(
 async function runSinglePerformanceTest(
   test: PerformanceTestConfig,
   suiteName: string,
-  client: McpPluginClient,
+  client: ToolCaller,
 ): Promise<TestResult> {
   const warmup = test.warmup ?? DEFAULT_WARMUP;
   const iterations = test.iterations ?? DEFAULT_ITERATIONS;
@@ -122,7 +126,7 @@ async function runSinglePerformanceTest(
 
 export async function runPerformanceSuite(
   suite: SuiteConfig,
-  client: McpPluginClient,
+  client: ToolCaller,
   defaults: DefaultsConfig,
 ): Promise<TestResult[]> {
   const results: TestResult[] = [];

@@ -1,5 +1,5 @@
 import { vi, beforeEach, type Mock } from 'vitest';
-import { execSync } from 'child_process';
+import { execSync } from 'node:child_process';
 import { createEvalServer } from './server.js';
 
 vi.mock('child_process', () => ({

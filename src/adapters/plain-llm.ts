@@ -6,25 +6,14 @@ import type {
   ToolCallRecord,
 } from '../core/types.js';
 import {
-  getBedrockConfig,
   signBedrockRequest,
   buildBedrockBody,
   parseBedrockResponse,
   type BedrockConfig,
 } from './bedrock.js';
-
-type Provider = 'bedrock' | 'anthropic' | 'azure-openai' | 'openai';
+import { detectProvider, isClaudeModel } from '../providers/detect.js';
 
 const DEFAULT_MODEL = 'us.anthropic.claude-opus-4-6-v1';
-
-function detectProvider(): { provider: Provider; bedrock?: BedrockConfig } {
-  const bedrock = getBedrockConfig();
-  if (bedrock) return { provider: 'bedrock', bedrock };
-  if (process.env.ANTHROPIC_API_KEY) return { provider: 'anthropic' };
-  if (process.env.AZURE_OPENAI_API_KEY && process.env.AZURE_OPENAI_ENDPOINT)
-    return { provider: 'azure-openai' };
-  return { provider: 'openai' };
-}
 
 interface ProviderConfig {
   url: string;
@@ -106,10 +95,6 @@ function configureAzureOpenAI(model: string): ProviderConfig {
     buildBody: (_model, messages) => ({ messages, max_tokens: 4096 }),
     parseResponse: parseOpenAIResponse,
   };
-}
-
-function isClaudeModel(model: string): boolean {
-  return /claude|anthropic|sonnet|opus|haiku/i.test(model);
 }
 
 function configureOpenAI(config: AdapterConfig): ProviderConfig {
@@ -211,8 +196,9 @@ export function createPlainLlmAdapter(config: AdapterConfig): TaskAdapter {
     messages.push({ role: 'user', content: prompt });
 
     for (let turn = 0; turn < maxTurns; turn++) {
+      const perTestTimeout = (example.metadata?.timeout as number | undefined) ?? timeout;
       const controller = new AbortController();
-      const timeoutHandle = setTimeout(() => controller.abort(), timeout);
+      const timeoutHandle = setTimeout(() => controller.abort(), perTestTimeout);
 
       try {
         let reqUrl: string;

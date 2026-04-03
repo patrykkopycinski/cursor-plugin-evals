@@ -1,4 +1,4 @@
-import { resolve, isAbsolute } from 'path';
+import { resolve, isAbsolute } from 'node:path';
 import { loadConfig } from '../core/config.js';
 import { runEvaluation, type RunOptions } from '../core/runner.js';
 import { printTerminalReport } from '../reporting/terminal.js';
@@ -50,7 +50,7 @@ export async function watchAndRun(
   let chokidar: typeof import('chokidar');
   try {
     chokidar = await import('chokidar');
-  } catch {
+  } catch (_e) {
     throw new Error('chokidar is required for watch mode. Install it with: npm install chokidar');
   }
 

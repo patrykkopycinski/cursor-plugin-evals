@@ -1,3 +1,5 @@
+import { DATA_DIR, CLI_NAME } from '../core/constants.js';
+
 export function generateGitLabCiYaml(): string {
   return `stages:
   - eval
@@ -12,14 +14,14 @@ variables:
   cache:
     key: eval-fixtures
     paths:
-      - .cursor-plugin-evals/fixtures/
+      - ${DATA_DIR}/fixtures/
       - node_modules/
 
 eval-static:
   extends: .eval-base
   stage: eval
   script:
-    - npx cursor-plugin-evals run --layer static --ci --report json --output eval-static.json
+    - npx ${CLI_NAME} run --layer static --ci --report json --output eval-static.json
   artifacts:
     when: always
     paths:
@@ -31,7 +33,7 @@ eval-unit:
   extends: .eval-base
   stage: eval
   script:
-    - npx cursor-plugin-evals run --layer unit --ci --report json --output eval-unit.json
+    - npx ${CLI_NAME} run --layer unit --ci --report json --output eval-unit.json
   artifacts:
     when: always
     paths:
@@ -47,7 +49,7 @@ eval-integration:
   script:
     - docker compose -f docker/docker-compose.yml up -d
     - sleep 10
-    - npx cursor-plugin-evals run --layer integration --ci --report json --output eval-integration.json
+    - npx ${CLI_NAME} run --layer integration --ci --report json --output eval-integration.json
     - docker compose -f docker/docker-compose.yml down
   artifacts:
     when: always
@@ -64,7 +66,7 @@ eval-llm:
   script:
     - docker compose -f docker/docker-compose.yml up -d
     - sleep 10
-    - npx cursor-plugin-evals run --layer llm --ci --report json --output eval-llm.json
+    - npx ${CLI_NAME} run --layer llm --ci --report json --output eval-llm.json
     - docker compose -f docker/docker-compose.yml down
   artifacts:
     when: always

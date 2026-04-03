@@ -33,7 +33,7 @@ async function esRequest(
   let data: unknown;
   try {
     data = await res.json();
-  } catch {
+  } catch (_e) {
     data = null;
   }
 

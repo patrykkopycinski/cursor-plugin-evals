@@ -123,7 +123,7 @@ export async function runAgentLoop(config: AgentLoopConfig): Promise<AgentLoopRe
         let toolArgs: Record<string, unknown>;
         try {
           toolArgs = JSON.parse(toolCall.function.arguments);
-        } catch {
+        } catch (_e) {
           toolArgs = {};
         }
 

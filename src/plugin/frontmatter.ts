@@ -35,7 +35,7 @@ export function parseFrontmatter(content: string): FrontmatterResult {
       return { attributes: {}, body };
     }
     return { attributes: attributes as Record<string, unknown>, body };
-  } catch {
+  } catch (_e) {
     // YAML parsing can fail on glob patterns containing * (alias syntax in YAML).
     // Fall back to line-by-line key: value extraction for simple frontmatter.
     const attrs: Record<string, unknown> = {};

@@ -3,12 +3,11 @@ import { join } from 'node:path';
 import { mkdir } from 'node:fs/promises';
 import type { RunResult } from '../core/types.js';
 import type { ScoreSnapshot, DriftAlert } from './types.js';
-
-const DB_DIR = '.cursor-plugin-evals';
+import { DATA_DIR } from '../core/constants.js';
 const DB_NAME = 'score-history.db';
 
 function openDb(rootDir: string): Database.Database {
-  const dbPath = join(rootDir, DB_DIR, DB_NAME);
+  const dbPath = join(rootDir, DATA_DIR, DB_NAME);
   const db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
 
@@ -30,7 +29,7 @@ function openDb(rootDir: string): Database.Database {
 }
 
 export async function ensureDbDir(rootDir: string): Promise<void> {
-  await mkdir(join(rootDir, DB_DIR), { recursive: true });
+  await mkdir(join(rootDir, DATA_DIR), { recursive: true });
 }
 
 export function recordSnapshot(rootDir: string, result: RunResult): ScoreSnapshot {

@@ -1,5 +1,5 @@
 import { readFile, readdir } from 'fs/promises';
-import { join } from 'path';
+import { join } from 'node:path';
 
 export interface SecurityCheckResult {
   check: string;
@@ -55,7 +55,7 @@ async function loadFiles(dir: string): Promise<FileContent[]> {
 
   try {
     names = await readdir(dir);
-  } catch {
+  } catch (_e) {
     return files;
   }
 
@@ -67,7 +67,7 @@ async function loadFiles(dir: string): Promise<FileContent[]> {
     try {
       const content = await readFile(filePath, 'utf-8');
       files.push({ path: filePath, content, lines: content.split('\n') });
-    } catch {
+    } catch (_e) {
       // Unreadable file (or directory with matching extension) — skip
     }
   }
@@ -496,7 +496,7 @@ export async function runAllSkillSecurityChecks(pluginDir: string): Promise<Skil
 
   try {
     names = await readdir(skillsDir);
-  } catch {
+  } catch (_e) {
     return [];
   }
 
@@ -507,7 +507,7 @@ export async function runAllSkillSecurityChecks(pluginDir: string): Promise<Skil
       const content = await readFile(join(childPath, 'SKILL.md'), 'utf-8');
       // Only scan directories that contain a SKILL.md
       if (content) reports.push(await runSkillSecurityChecks(childPath));
-    } catch {
+    } catch (_e) {
       // Not a skill directory — skip
     }
   }

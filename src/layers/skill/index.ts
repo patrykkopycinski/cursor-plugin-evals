@@ -17,10 +17,12 @@ import { loadSkillDataset } from './loader.js';
 import { mergeDefaults, getMissingEnvVars } from '../../core/utils.js';
 import { log } from '../../cli/logger.js';
 import { calculateCost } from '../../pricing/index.js';
-import { readFileSync, existsSync } from 'fs';
-import { resolve, join } from 'path';
-import { setCursorConcurrency, createWorkspacePool, type WorkspacePool } from '../../adapters/cursor-cli.js';
-import { setClaudeSdkConcurrency } from '../../adapters/claude-sdk.js';
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve, join } from 'node:path';
+// Cursor-cli and claude-sdk runtime imports are dynamic to avoid eagerly
+// pulling in their dependency trees when the skill layer runs with other adapters.
+// Type-only imports have no runtime cost.
+import type { WorkspacePool } from '../../adapters/cursor-cli.js';
 
 const DEFAULT_ADAPTER = 'mcp';
 const DEFAULT_MODEL = 'gpt-5.2';
@@ -174,14 +176,17 @@ export async function runSkillSuite(
     const needsWorkspacePool = isCursorCli || isClaudeSdk;
 
     if (isCursorCli) {
+      const { setCursorConcurrency } = await import('../../adapters/cursor-cli.js');
       setCursorConcurrency(true);
     }
     if (isClaudeSdk) {
+      const { setClaudeSdkConcurrency } = await import('../../adapters/claude-sdk.js');
       setClaudeSdkConcurrency(true);
     }
 
     let wsPool: WorkspacePool | undefined;
     if (needsWorkspacePool && skillDir && !suite.skipIsolation) {
+      const { createWorkspacePool } = await import('../../adapters/cursor-cli.js');
       wsPool = await createWorkspacePool(
         skillDir,
         pluginConfig.dir ?? process.cwd(),
@@ -364,9 +369,11 @@ export async function runSkillSuite(
     }
 
     if (isCursorCli) {
+      const { setCursorConcurrency } = await import('../../adapters/cursor-cli.js');
       setCursorConcurrency(false);
     }
     if (isClaudeSdk) {
+      const { setClaudeSdkConcurrency } = await import('../../adapters/claude-sdk.js');
       setClaudeSdkConcurrency(false);
     }
   }

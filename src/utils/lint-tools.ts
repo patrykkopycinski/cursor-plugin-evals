@@ -77,7 +77,7 @@ async function discoverScripts(
   let entries: string[];
   try {
     entries = await readdir(dir);
-  } catch {
+  } catch (_e) {
     return results;
   }
 

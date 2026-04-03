@@ -1,6 +1,7 @@
-import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'fs';
-import { resolve, basename } from 'path';
+import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs';
+import { resolve, basename } from 'node:path';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
+import { REPO_URL } from '../core/constants.js';
 
 export interface RegistryEntry {
   name: string;
@@ -16,8 +17,7 @@ interface RegistryManifest {
   suites: RegistryEntry[];
 }
 
-const DEFAULT_REGISTRY_URL =
-  'https://raw.githubusercontent.com/patrykkopycinski/cursor-plugin-evals/main/registry.json';
+const DEFAULT_REGISTRY_URL = `${REPO_URL.replace('github.com', 'raw.githubusercontent.com')}/main/registry.json`;
 
 export async function fetchRegistry(registryUrl?: string): Promise<RegistryEntry[]> {
   const url = registryUrl ?? DEFAULT_REGISTRY_URL;

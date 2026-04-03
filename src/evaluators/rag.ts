@@ -16,7 +16,7 @@ function extractRetrievedDocIds(context: EvaluatorContext): string[] {
         } else if (typeof parsed === 'object' && parsed !== null && 'id' in parsed) {
           ids.push(String((parsed as { id: unknown }).id));
         }
-      } catch {
+      } catch (_e) {
         // Not JSON — try extracting doc-like identifiers from text
         const matches = content.text.match(/\bid["\s:=]+["']?([^"'\s,}\]]+)/gi);
         if (matches) {

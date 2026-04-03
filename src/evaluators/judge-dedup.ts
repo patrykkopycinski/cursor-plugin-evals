@@ -1,4 +1,4 @@
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 import type { JudgeRequest, JudgeResponse } from './llm-judge.js';
 
 type JudgeFn = (request: JudgeRequest) => Promise<JudgeResponse>;

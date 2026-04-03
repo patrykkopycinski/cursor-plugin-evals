@@ -38,7 +38,7 @@ export function parseOtelJsonLine(line: string): TraceEvent | null {
     if (!traceId || !spanId) return null;
 
     return { traceId, spanId, name, attributes, startTime, endTime, parentSpanId };
-  } catch {
+  } catch (_e) {
     return null;
   }
 }

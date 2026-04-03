@@ -52,7 +52,7 @@ export class OAuth2AuthProvider implements AuthProvider {
         this.cachedToken = refreshed.accessToken;
         this.expiresAt = refreshed.expiresAt ?? 0;
         return { Authorization: `Bearer ${refreshed.accessToken}` };
-      } catch {
+      } catch (_e) {
         // Refresh failed — fall through to full PKCE flow
       }
     }

@@ -125,7 +125,7 @@ async function resolveGlob(pattern: string): Promise<string[]> {
         .filter((entry) => regex.test(entry))
         .map((entry) => resolve(dir, entry))
         .sort();
-    } catch {
+    } catch (_e) {
       // Directory doesn't exist — return empty
       return [];
     }

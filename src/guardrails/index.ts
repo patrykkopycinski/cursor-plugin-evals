@@ -89,7 +89,7 @@ export class GuardrailEngine {
       if (this.config.auditLog) {
         try {
           appendFileSync(this.config.auditLog, JSON.stringify(event) + '\n', 'utf8');
-        } catch {
+        } catch (_e) {
           // Best-effort audit logging — don't crash the interceptor on I/O errors
         }
       }

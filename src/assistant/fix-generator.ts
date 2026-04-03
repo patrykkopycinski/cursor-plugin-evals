@@ -1,4 +1,5 @@
 import type { DetectedGap, GeneratedFix } from './types.js';
+import { CLI_NAME } from '../core/constants.js';
 
 export function generateFix(gap: DetectedGap): GeneratedFix | null {
   if (!gap.autoFixable) return null;
@@ -28,7 +29,7 @@ function generateToolCoverageFix(gap: DetectedGap): GeneratedFix {
     gapId: gap.id,
     description: 'Generate tests for uncovered tools using schema-walker and smart-gen',
     files: [],
-    testCommand: 'npx cursor-plugin-evals gen-tests --output generated-tests.yaml',
+    testCommand: `npx ${CLI_NAME} gen-tests --output generated-tests.yaml`,
   };
 }
 
@@ -52,7 +53,7 @@ function generateLayerFix(gap: DetectedGap): GeneratedFix {
       action: 'append' as const,
       content: template,
     }] : [],
-    testCommand: `npx cursor-plugin-evals run --layer ${layer}`,
+    testCommand: `npx ${CLI_NAME} run --layer ${layer}`,
   };
 }
 
@@ -61,7 +62,7 @@ function generateSecurityFix(gap: DetectedGap): GeneratedFix {
     gapId: gap.id,
     description: 'Add security evaluator to existing LLM tests',
     files: [],
-    testCommand: 'npx cursor-plugin-evals security-lint',
+    testCommand: `npx ${CLI_NAME} security-lint`,
   };
 }
 
@@ -70,7 +71,7 @@ function generateEvaluatorFix(gap: DetectedGap): GeneratedFix {
     gapId: gap.id,
     description: 'Add recommended evaluators to test configuration',
     files: [],
-    testCommand: 'npx cursor-plugin-evals run',
+    testCommand: `npx ${CLI_NAME} run`,
   };
 }
 
@@ -80,7 +81,7 @@ function generateInfraFix(gap: DetectedGap): GeneratedFix {
       gapId: gap.id,
       description: 'Scaffold CI configuration',
       files: [],
-      testCommand: 'npx cursor-plugin-evals ci-init',
+      testCommand: `npx ${CLI_NAME} ci-init`,
     };
   }
   return {
@@ -95,7 +96,7 @@ function generateTestQualityFix(gap: DetectedGap): GeneratedFix {
     gapId: gap.id,
     description: 'Generate diverse difficulty test cases',
     files: [],
-    testCommand: 'npx cursor-plugin-evals gen-tests --personas adversarial,expert --output advanced-tests.yaml',
+    testCommand: `npx ${CLI_NAME} gen-tests --personas adversarial,expert --output advanced-tests.yaml`,
   };
 }
 
@@ -104,7 +105,7 @@ function generateConfigFix(gap: DetectedGap): GeneratedFix {
     gapId: gap.id,
     description: gap.suggestedFix,
     files: [],
-    testCommand: 'npx cursor-plugin-evals doctor',
+    testCommand: `npx ${CLI_NAME} doctor`,
   };
 }
 

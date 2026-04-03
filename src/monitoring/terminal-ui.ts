@@ -1,4 +1,5 @@
 import type { LiveScoreResult } from './live-scorer.js';
+import { SERVICE_NAME } from '../core/constants.js';
 
 const C = {
   reset: '\x1b[0m',
@@ -66,7 +67,7 @@ export class TerminalUI {
     const line = '─'.repeat(60);
     process.stdout.write(`\n${C.bold}${C.cyan}┌${line}┐${C.reset}\n`);
     process.stdout.write(
-      `${C.bold}${C.cyan}│${C.reset}  ${C.bold}cursor-plugin-evals${C.reset} ${C.dim}live monitor${C.reset}${' '.repeat(38)}${C.bold}${C.cyan}│${C.reset}\n`,
+      `${C.bold}${C.cyan}│${C.reset}  ${C.bold}${SERVICE_NAME}${C.reset} ${C.dim}live monitor${C.reset}${' '.repeat(38)}${C.bold}${C.cyan}│${C.reset}\n`,
     );
     process.stdout.write(`${C.bold}${C.cyan}├${line}┤${C.reset}\n`);
     process.stdout.write(

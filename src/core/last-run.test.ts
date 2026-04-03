@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, rmSync, readFileSync, writeFileSync, existsSync } from 'fs';
-import { resolve, join } from 'path';
+import { mkdirSync, rmSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { resolve, join } from 'node:path';
 import { saveLastRun, loadLastFailed } from './last-run.js';
+import { DATA_DIR } from './constants.js';
 import type { RunResult } from './types.js';
 
 const TMP_DIR = resolve(__dirname, '../../.test-tmp-last-run');
@@ -65,7 +66,7 @@ describe('last-run', () => {
 
       saveLastRun(result);
 
-      const filePath = join(TMP_DIR, '.cursor-plugin-evals', 'last-run.json');
+      const filePath = join(TMP_DIR, DATA_DIR, 'last-run.json');
       expect(existsSync(filePath)).toBe(true);
 
       const data = JSON.parse(readFileSync(filePath, 'utf-8'));
@@ -86,7 +87,7 @@ describe('last-run', () => {
 
       saveLastRun(result);
 
-      const filePath = join(TMP_DIR, '.cursor-plugin-evals', 'last-run.json');
+      const filePath = join(TMP_DIR, DATA_DIR, 'last-run.json');
       const data = JSON.parse(readFileSync(filePath, 'utf-8'));
       expect(data.failed).toEqual(['suite-a/test-2']);
     });
@@ -104,13 +105,13 @@ describe('last-run', () => {
 
       saveLastRun(result);
 
-      const filePath = join(TMP_DIR, '.cursor-plugin-evals', 'last-run.json');
+      const filePath = join(TMP_DIR, DATA_DIR, 'last-run.json');
       const data = JSON.parse(readFileSync(filePath, 'utf-8'));
       expect(data.failed).toEqual([]);
     });
 
     it('creates the state directory if it does not exist', () => {
-      const dir = join(TMP_DIR, '.cursor-plugin-evals');
+      const dir = join(TMP_DIR, DATA_DIR);
       expect(existsSync(dir)).toBe(false);
 
       saveLastRun(makeRunResult([]));
@@ -142,7 +143,7 @@ describe('last-run', () => {
     });
 
     it('returns empty array when file contains invalid JSON', () => {
-      const dir = join(TMP_DIR, '.cursor-plugin-evals');
+      const dir = join(TMP_DIR, DATA_DIR);
       mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, 'last-run.json'), 'not-json', 'utf-8');
 
