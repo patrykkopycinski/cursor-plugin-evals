@@ -16,6 +16,7 @@ import { generateDistractors } from './distractors.js';
 import { runConversationTest } from './conversation.js';
 import { mergeDefaults, parseEntry, getMissingEnvVars } from '../../core/utils.js';
 import { log } from '../../cli/logger.js';
+import { generateVariations, type VariationStyle } from '../../utils/prompt-variation.js';
 
 const DEFAULT_MAX_TURNS = 10;
 const DEFAULT_TIMEOUT = 120_000;
@@ -195,54 +196,73 @@ export async function runLlmSuite(
         }
       }
 
-      for (const model of models) {
-        for (let rep = 1; rep <= repetitions; rep++) {
-          const displayName =
-            models.length > 1 || repetitions > 1
-              ? `${llmTest.name} [${model}${repetitions > 1 ? ` #${rep}` : ''}]`
-              : llmTest.name;
+      // Build list of prompt variants: always include the original, plus any requested variations
+      const promptVariants: Array<{ name: string; prompt: string }> = [
+        { name: llmTest.name, prompt: llmTest.prompt },
+      ];
+      if (llmTest.variations && llmTest.variations.length > 0) {
+        const variations = generateVariations(
+          llmTest.prompt,
+          llmTest.name,
+          llmTest.variations as VariationStyle[],
+        );
+        for (const v of variations) {
+          promptVariants.push({ name: v.name, prompt: v.prompt });
+        }
+      }
 
-          log.test(displayName, 'running');
+      for (const variant of promptVariants) {
+        const variantTest: LlmTestConfig = { ...llmTest, name: variant.name, prompt: variant.prompt };
 
-          let result: TestResult;
+        for (const model of models) {
+          for (let rep = 1; rep <= repetitions; rep++) {
+            const displayName =
+              models.length > 1 || repetitions > 1
+                ? `${variant.name} [${model}${repetitions > 1 ? ` #${rep}` : ''}]`
+                : variant.name;
 
-          if (llmTest.type === 'conversation') {
-            result = await runConversationTest(
-              llmTest,
-              suite.name,
-              pluginConfig,
-              tools,
-              client,
-              mergedDefaults,
-              model,
-              evaluatorRegistry,
-              repetitions > 1 ? rep : undefined,
-            );
-          } else {
-            result = await runSingleLlmTest(
-              llmTest,
-              suite.name,
-              pluginConfig,
-              tools,
-              client,
-              mergedDefaults,
-              model,
-              testEvaluators,
-              repetitions > 1 ? rep : undefined,
-            );
+            log.test(displayName, 'running');
+
+            let result: TestResult;
+
+            if (variantTest.type === 'conversation') {
+              result = await runConversationTest(
+                variantTest,
+                suite.name,
+                pluginConfig,
+                tools,
+                client,
+                mergedDefaults,
+                model,
+                evaluatorRegistry,
+                repetitions > 1 ? rep : undefined,
+              );
+            } else {
+              result = await runSingleLlmTest(
+                variantTest,
+                suite.name,
+                pluginConfig,
+                tools,
+                client,
+                mergedDefaults,
+                model,
+                testEvaluators,
+                repetitions > 1 ? rep : undefined,
+              );
+            }
+
+            log.test(displayName, result.pass ? 'pass' : 'fail');
+
+            for (const evalResult of result.evaluatorResults) {
+              log.evaluator(evalResult.evaluator, evalResult.score, evalResult.pass);
+            }
+
+            if (!result.pass && result.error) {
+              log.debug(result.error);
+            }
+
+            results.push(result);
           }
-
-          log.test(displayName, result.pass ? 'pass' : 'fail');
-
-          for (const evalResult of result.evaluatorResults) {
-            log.evaluator(evalResult.evaluator, evalResult.score, evalResult.pass);
-          }
-
-          if (!result.pass && result.error) {
-            log.debug(result.error);
-          }
-
-          results.push(result);
         }
       }
     }

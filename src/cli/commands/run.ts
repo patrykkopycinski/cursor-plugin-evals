@@ -17,21 +17,23 @@ import { log, setLogLevel, setNoColor } from '../logger.js';
 import { watchAndRun } from '../watch.js';
 import { resolveRepeatFromPreset } from '../presets.js';
 import { executePostRunHooks } from '../../hooks/post-run.js';
+import { transformToLikert } from '../../reporting/likert.js';
 import { EXIT_FAIL, EXIT_CONFIG_ERROR, parsePositiveInt } from './helpers.js';
 
-export function formatReport(result: RunResult, format: string): string | null {
+export function formatReport(result: RunResult, format: string, options?: { likert?: boolean }): string | null {
+  const displayResult = options?.likert ? transformToLikert(result) : result;
   switch (format) {
     case 'json':
-      return generateJsonReport(result);
+      return generateJsonReport(displayResult);
     case 'markdown':
-      return generateMarkdownReport(result);
+      return generateMarkdownReport(displayResult);
     case 'html':
-      return generateHtmlReport(result);
+      return generateHtmlReport(displayResult);
     case 'junit-xml':
-      return generateJunitXmlReport(result);
+      return generateJunitXmlReport(displayResult);
     case 'terminal':
     default:
-      printTerminalReport(result);
+      printTerminalReport(displayResult);
       return null;
   }
 }
@@ -47,6 +49,7 @@ export async function runCommand(opts: {
   report: string;
   output?: string;
   ci?: boolean;
+  likert?: boolean;
   verbose?: boolean;
   noColor?: boolean;
   watch?: boolean;
@@ -105,7 +108,8 @@ export async function runCommand(opts: {
     return;
   }
 
-  const report = formatReport(result, opts.report);
+  const reportOpts = { likert: opts.likert };
+  const report = formatReport(result, opts.report, reportOpts);
 
   if (report !== null) {
     console.log(report);
@@ -115,7 +119,7 @@ export async function runCommand(opts: {
     const outPath = resolve(process.cwd(), opts.output);
     // Auto-detect format from extension when --report is terminal (default)
     const autoFormat = outPath.endsWith('.json') ? 'json' : outPath.endsWith('.html') ? 'html' : null;
-    const outputContent = (autoFormat ? formatReport(result, autoFormat) : report) ?? generateMarkdownReport(result);
+    const outputContent = (autoFormat ? formatReport(result, autoFormat, reportOpts) : report) ?? generateMarkdownReport(reportOpts.likert ? transformToLikert(result) : result);
     writeFileSync(outPath, outputContent, 'utf-8');
     log.success(`Report written to ${outPath}`);
   }
@@ -210,6 +214,7 @@ export function registerRunCommands(program: Command): void {
     )
     .option('-o, --output <path>', 'write report to file')
     .option('--ci', 'CI mode: enforce thresholds, exit non-zero on failure')
+    .option('--likert', 'display scores on 0-5 Likert scale instead of 0.0-1.0')
     .option('--lf, --last-failed', 'only re-run tests that failed in the last run')
     .option('--ff, --failed-first', 'run previously failed tests first, then the rest')
     .option('--shard <spec>', 'run only shard x of y (e.g. --shard 1/4)', parseShardArg)

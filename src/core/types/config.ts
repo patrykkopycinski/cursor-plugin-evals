@@ -67,6 +67,8 @@ export interface LlmTestConfig {
     mode: 'random' | 'targeted' | 'none';
     count?: number;
   };
+  /** Prompt variation styles to generate additional test runs (e.g., ['vague', 'casual']). */
+  variations?: Array<'vague' | 'casual' | 'terse' | 'verbose' | 'noisy'>;
 }
 
 export interface PerformanceTestConfig {
@@ -93,6 +95,7 @@ export type StaticCheck =
   | 'cross_component_coherence'
   | 'naming_conventions'
   | 'skill_content_quality'
+  | 'skill_content_structure'
   | 'skill_reference_files';
 
 export interface StaticTestConfig {

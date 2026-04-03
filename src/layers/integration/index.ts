@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import type {
   TestResult,
   SuiteConfig,
@@ -10,6 +11,16 @@ import type { McpPluginClient } from '../../mcp/client.js';
 import { evaluateAssertions } from './assertions.js';
 import { mergeDefaults, resolveDotPath, getMissingEnvVars } from '../../core/utils.js';
 import { log } from '../../cli/logger.js';
+
+function runScript(script: string, label: string): void {
+  log.debug(`Running ${label} script: ${script}`);
+  try {
+    execSync(script, { stdio: 'pipe', timeout: 60_000 });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`${label} script failed: ${msg}`);
+  }
+}
 
 const PREV_REF_PATTERN = /\$prev\.([a-zA-Z0-9_.]+)/g;
 
@@ -283,35 +294,61 @@ export async function runIntegrationSuite(
   const results: TestResult[] = [];
   const mergedDefaults: DefaultsConfig = mergeDefaults(suite.defaults, defaults);
 
-  for (const test of suite.tests) {
-    const integrationTest = test as IntegrationTestConfig;
-    const missingEnv = getMissingEnvVars(integrationTest.requireEnv, suite.requireEnv);
+  if (suite.setup) {
+    runScript(suite.setup, 'suite setup');
+  }
 
-    if (missingEnv.length > 0) {
-      log.test(integrationTest.name, 'skip');
-      results.push({
-        name: integrationTest.name,
-        suite: suite.name,
-        layer: 'integration',
-        pass: true,
-        skipped: true,
-        toolCalls: [],
-        evaluatorResults: [],
-        latencyMs: 0,
-        error: `Skipped: missing env ${missingEnv.join(', ')}`,
-      });
-      continue;
+  try {
+    for (const test of suite.tests) {
+      const integrationTest = test as IntegrationTestConfig;
+      const missingEnv = getMissingEnvVars(integrationTest.requireEnv, suite.requireEnv);
+
+      if (missingEnv.length > 0) {
+        log.test(integrationTest.name, 'skip');
+        results.push({
+          name: integrationTest.name,
+          suite: suite.name,
+          layer: 'integration',
+          pass: true,
+          skipped: true,
+          toolCalls: [],
+          evaluatorResults: [],
+          latencyMs: 0,
+          error: `Skipped: missing env ${missingEnv.join(', ')}`,
+        });
+        continue;
+      }
+
+      if (integrationTest.setup) {
+        runScript(integrationTest.setup, `test "${integrationTest.name}" setup`);
+      }
+
+      log.test(integrationTest.name, 'running');
+      const result = await runSingleTest(integrationTest, suite.name, client, mergedDefaults);
+      log.test(integrationTest.name, result.pass ? 'pass' : 'fail');
+
+      if (integrationTest.teardown) {
+        try {
+          runScript(integrationTest.teardown, `test "${integrationTest.name}" teardown`);
+        } catch (err) {
+          log.warn(`Teardown failed for "${integrationTest.name}": ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+
+      if (!result.pass && result.error) {
+        log.debug(result.error);
+      }
+
+      results.push(result);
     }
-
-    log.test(integrationTest.name, 'running');
-    const result = await runSingleTest(integrationTest, suite.name, client, mergedDefaults);
-    log.test(integrationTest.name, result.pass ? 'pass' : 'fail');
-
-    if (!result.pass && result.error) {
-      log.debug(result.error);
+  } finally {
+    if (suite.teardown) {
+      try {
+        runScript(suite.teardown, 'suite teardown');
+      } catch (err) {
+        log.warn(`Suite teardown failed: ${err instanceof Error ? err.message : String(err)}`);
+      }
     }
-
-    results.push(result);
   }
 
   return results;

@@ -385,8 +385,10 @@ export async function runEvaluation(
 
   if (options.ci && config.ci) {
     const { evaluateCi } = await import('../ci/index.js');
+    const { computeFirstTryPassRate } = await import('../utils/first-try-pass-rate.js');
+    const firstTryStats = computeFirstTryPassRate(allTests);
     runResult.ciResult = evaluateCi(allTests, config.ci, {
-      firstTryPassRate: runResult.overall.passRate,
+      firstTryPassRate: firstTryStats.firstTryPassRate,
       derivedMetrics: runResult.derivedMetrics,
     });
   }

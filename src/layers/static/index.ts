@@ -421,6 +421,7 @@ const CHECK_HANDLERS: Record<
   cross_component_coherence: checkCrossComponentCoherence,
   naming_conventions: checkNamingConventions,
   skill_content_quality: checkSkillContentQuality,
+  skill_content_structure: checkSkillContentQuality,
   skill_reference_files: checkSkillReferenceFiles,
 };
 
